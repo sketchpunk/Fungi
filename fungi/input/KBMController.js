@@ -214,7 +214,7 @@ class CameraController{
 
 			//------------------------------------ Orbit
 			case 2:
-				//Rotate the camer around X-Z
+				//Rotate the camera around X-Z
 				var pos		= Fungi.camera.getPosition(),
 					lenXZ	= Math.sqrt(pos.x*pos.x + pos.z*pos.z),
 					radXZ	= Math.atan2(pos.z, pos.x) + this.mOrbitRate * c.pdx;
@@ -259,7 +259,7 @@ class CameraController{
 			case 81: //Q
 			case 69: //E
 				var s = (keyCode == 69)? -this.kbRotateRate : this.kbRotateRate;
-				Fungi.camera.applyRotationAxis(Fungi.camera.up(), s * ss);
+				Fungi.camera.mulRotationAxis(Fungi.camera.up(), s * ss);
 				break;
 		}
 	}
