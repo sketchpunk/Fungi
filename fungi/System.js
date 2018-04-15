@@ -12,12 +12,18 @@ import Mat4			from "./maths/Mat4.js";
 class System{
 	static getResources(resAry, onInit = null, onRender = null){	
 		var p = Downloader.start(resAry)
-			.then( ()=>{ System.startUp(onInit, onRender); } )  
+			.then( ()=>{ System.prepare(onInit, onRender); } )  
 			.catch( (err)=>{ console.log(err); } );
 		//Promise.all([p]).then(values=>{ console.log(values); },reason =>{ console.log(reason); });
 	}
 
-	static startUp(onInit = null, onRender = null){
+	//Load Shaders First, Then Textures then Materials. If I load the resources in this order and if successful,
+	//	Can avoid saving shader / texture names to do JIT loading. Trying to avoid doing extra IF statements during
+	//	the render loop. For example, for materials I need the texture GPU ID, but I need to load texture first if not
+	//	then I need to save its name, then have an if statement to cache the GPU later OR for every material load call,
+	//	get the ID from the global cache. BUT if I can load textures first, then materials, I can save the up front
+	//	then not have to deal with getting it from the cache later during each frame.
+	static prepare(onInit = null, onRender = null){
 		//.........................................
 		// Get GL Context
 		if(!gl.init("FungiCanvas")){ console.log("Could not load canvas."); return; }
@@ -34,18 +40,44 @@ class System{
 			.unbind();
 
 		//.........................................
-		// Start Loading all the resources into GL.
-		if(Downloader.complete.length > 0) Loader.fromDownloads(Downloader.complete); 
+		//Prepare Shaders
+		var mapSnippets	= Loader.getSnippets( Downloader.complete ),
+			aryShaders 	= Loader.parseShaders( Downloader.complete, mapSnippets );
 
+		if(aryShaders == null){ console.log("Error parsing shader files."); return false; };
+
+		if(!Loader.compileShaders(aryShaders)){ console.log("Error compiling shaders"); return false; }
+		
+		//.........................................
+		//If we have things that requires time to load, Wait then continue
+		if(Downloader.promiseList.length > 0){
+			Promise.all( Downloader.promiseList ).then(
+				values=>{
+					Loader.textures( Downloader.complete );
+					Loader.materials( aryShaders );
+
+					//Start up System
+					System.startup(onInit, onRender);
+				}, reason=>{ console.log(reason); }
+			);
+		}else{
+			//Nothing to wait for, Finish up loading.
+			Loader.materials( aryShaders );
+			System.startup(onInit, onRender);
+		}
+	}
+
+	static startup(onInit, onRender){
+		if(gl.ctx == null){
+			if(!gl.init("FungiCanvas")){ console.log("Could not load canvas."); return; }
+		}
 
 		//.........................................
-		//
 		Fungi.camera	= new Camera().setPerspective();
 		Fungi.render	= new Renderer();
 		Fungi.scene		= new Scene();
 
 		if(onRender) Fungi.loop = new RenderLoop(onRender);
-
 
 		//.........................................
 		// Everything is setup, start the webapp.

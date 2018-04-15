@@ -5,11 +5,19 @@ import Fungi	from "./Fungi.js";
 // Loading Functions
 //------------------------------------------------------
 //Get shader code from an inline script tag, use that to load a shader.
-function LoadInlineShader(elmName){ return ParseShader( document.getElementById(elmName).innerText ); }
+function LoadInlineShader(elmName){
+	var shData = ParseShaderFile( document.getElementById(elmName).innerText );
+	if(shData == null){ console.log("error parsing inline Shader"); return null; }
 
+	var shader = LoadShader(shData);
+	if(shader == null){ console.log("error compiling inline shader"); return null; }
+
+	LoadMaterials(shData);
+	return shader;
+}
 
 //Apply Snippets and Break shader file into a data struct that can be used for loading
-function ParseShader(shText){
+function ParseShaderFile(shText){
 	var dat = { shader:null, materials:null, vertex:null, fragment:null },
 		posA, posB, txt, itm;
 
@@ -23,7 +31,7 @@ function ParseShader(shText){
 			if(itm == "materials") continue;
 
 			console.log("Error parsing shader, missing ", itm);
-			return false;
+			return null;
 		}
 
 		//...................................
@@ -31,13 +39,13 @@ function ParseShader(shText){
 		switch(itm){
 			case "shader": case "materials": //These are JSON elements, parse them so they're ready for use.
 				try{ dat[itm] = JSON.parse(txt); }
-				catch(err){ console.log(err.message); return false; }
+				catch(err){ console.log(err.message); return null; }
 			break;
 			default: dat[itm] = txt.trim(); break;
 		}
 	}
 
-	return LoadShader(dat);
+	return dat;
 }
 
 //Deserialize Downloaded Shader files to create shaders and materials.
@@ -45,12 +53,15 @@ function LoadShader(js){
 	//===========================================
 	//Create Shader
 	var shader = new Shader( js.shader.name, js.vertex, js.fragment );
+	if(shader.program == null) return null;
 
+	//..............................
 	//Setup Uniforms
 	if(js.shader.uniforms && js.shader.uniforms.length > 0){
 		shader.prepareUniforms(js.shader.uniforms);
 	}
 
+	//..............................
 	//Setup Uniform Buffer Objects
 	if(js.shader.ubo && js.shader.ubo.length > 0){
 		var i;
@@ -58,6 +69,7 @@ function LoadShader(js){
 			shader.prepareUniformBlock( js.shader.ubo[i] );
 	}
 
+	//..............................
 	//Setup Shader Options
 	if(js.shader.options){
 		for(var o in js.shader.options) shader.options[o] = js.shader.options[o];
@@ -67,26 +79,22 @@ function LoadShader(js){
 	}
 
 	gl.ctx.useProgram(null);
+	return shader; 
+}
 
+//Load All all the materials for a specific shader
+function LoadMaterials(js){
+	var m, mat, u, val, type;
+	for(m of js.materials){
+		mat = new Material(m.name, js.shader.name);
+		if(m.uniforms && m.uniforms.length > 0) mat.addUniforms( m.uniforms );
 
-	//===========================================
-	//Setup Materials
-	if(js.materials && js.materials.length > 0){
-		var m, mat, u, val, type;
-		for(m of js.materials){
-			mat = new Material(m.name, shader);
-			if(m.uniforms && m.uniforms.length > 0) mat.addUniforms( m.uniforms );
-
-			//..............................
-			//Load Options
-			if(m.options){
-				for(var o in m.options) mat.options[o] = m.options[o];
-			}
+		//..............................
+		//Load Options
+		if(m.options){
+			for(var o in m.options) mat.options[o] = m.options[o];
 		}
 	}
-
-	//===========================================
-	return shader;
 }
 
 
@@ -135,7 +143,13 @@ class Material{
 		switch(uType){
 			case "rgb"	: uValue = gl.rgbArray( uValue ); break;
 			case "rgba"	: uValue = gl.rgbaArray( uValue ); break;
-			case "tex"	: uValue = Fungi.textures.get( uValue ); break;
+			case "tex"	: 
+				var tmp = Fungi.getTexture( uValue ); 
+				if(tmp == null){
+					console.log("Material.addUniform: Texture not found %s for material %s uniform %s",uValue, this.name, uName);
+					return this;
+				}else uValue = tmp;
+			break;
 		}
 
 		//..........................
@@ -146,6 +160,7 @@ class Material{
 	applyUniforms(){
 		if(this.shader && this.uniforms.size > 0){
 			var key,itm;
+			this.shader.resetTextureSlot();
 			for([key,itm] of this.uniforms) this.shader.setUniform(key, itm.value);
 		}
 		return this;
@@ -158,17 +173,16 @@ class Material{
 //------------------------------------------------------
 class Shader{
 	constructor(name, vertShader, fragShader, tfeedbackVar = null, tfeedbackInterleaved = true){
-		this.name		= name;
-		this.program 	= gl.createShader(vertShader, fragShader, true, tfeedbackVar, tfeedbackInterleaved);
-		this.texSlot	= 0;
-
-		//............................
-		this.options = { modelMatrix : false, normalMatrix : false };
+		this.program = gl.createShader(vertShader, fragShader, true, tfeedbackVar, tfeedbackInterleaved);
 
 		//............................
 		if(this.program != null){
+			this.name		= name;
+			this.texSlot	= 0; //Keep track which texSlot has been used when loading textures.
+			this.options	= { modelMatrix : false, normalMatrix : false };
+
 			gl.ctx.useProgram(this.program);
-			this.uniforms = new Map();
+			this.uniforms	= new Map();
 
 			Fungi.shaders.set(name, this);
 		}
@@ -204,7 +218,7 @@ class Shader{
 		if(bIdx > 1000){ console.log("Ubo not found in shader %s : %s ", this.name, uboName); return this; }
 
 		var ubo = Fungi.getUBO(uboName);
-		if(!ubo){ console.log("Can not find UBO in fungi cache : %s", uboName); return this; }
+		if(!ubo){ console.log("Can not find UBO in fungi cache : %s for %s", uboName, this.name); return this; }
 
 		gl.ctx.uniformBlockBinding(this.program, bIdx, ubo.bindPoint);
 		return this;
@@ -256,21 +270,14 @@ class Shader{
 	bind(){		gl.ctx.useProgram(this.program);	return this; }
 	unbind(){	gl.ctx.useProgram(null);			return this; }
 
+	resetTextureSlot(){ this.texSlot = 0; }
+
 	//function helps clean up resources when shader is no longer needed.
 	dispose(){
 		//unbind the program if its currently active
 		if(gl.ctx.getParameter(gl.ctx.CURRENT_PROGRAM) === this.program) gl.ctx.useProgram(null);
 		gl.ctx.deleteProgram(this.program);
-	}
-
-	/*
-	preRender(){
-		this.texSlot = 0;
-		gl.ctx.useProgram(this.program); //Save a function call and just activate this shader program on preRender
-
-		return this;
-	}
-	*/
+	}	
 }
 
 
@@ -288,5 +295,5 @@ Shader.UNIFORM_NORMALMAT	= "u_normalMatrix";
 //------------------------------------------------------
 // Export
 //------------------------------------------------------
-export { ParseShader, LoadInlineShader, Material };
+export { ParseShaderFile, LoadInlineShader, LoadMaterials, LoadShader, Material };
 export default Shader;

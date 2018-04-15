@@ -31,6 +31,11 @@ export default {
 		return m;
 	},
 
+	getTexture	: function(name){
+		var m = this.textures.get(name);
+		if(!m){ console.log("Texture Not Found %s", name); return null; }
+		return m;
+	},
 
 	//............................
 	//Constants

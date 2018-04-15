@@ -16,7 +16,8 @@ var DebugMode		= false,
 	Queue			= [],		//Queue of items to download
 	Complete 		= [],		//Queue of completed items downloaded.
 	XhrPoolSize		= 3,		//How Many xhr objects to make
-	XhrPool 		= [];		//Like a threadpool
+	XhrPool 		= [],		//Like a threadpool
+	PromiseList		= [];
 
 
 for(var i=0; i < XhrPoolSize; i++){
@@ -149,11 +150,12 @@ function onXhrComplete(e){
 	}
 
 	//When download is done, do any further processing if needed.
+	var doSave = true;
 	var handler = Handlers[ this.activeItem.type ];
-	if(handler.onReady) handler.onReady( this.activeItem, e.currentTarget.response );
+	if(handler.onReady) doSave = handler.onReady( this.activeItem, e.currentTarget.response );
 
 	//Save Download Data and put in on the complete list
-	this.activeItem.download = e.currentTarget.response;
+	if(doSave) this.activeItem.download = e.currentTarget.response;
 	Complete.push(this.activeItem);
 	
 	//Cleanup and start next download
@@ -173,6 +175,23 @@ function onXhrTimeout(e){	this.inUse = false; finalize(false,e); console.log("on
 //Downloader is suppose to be expandable by adding new ways to handle
 //different types of files for downloading.
 var Handlers = {
+	//...........................................
+	"image":{ downloadType:"blob",
+		onReady : function(itm,dl){
+			//Loading Blob into Image, takes time, so create a promise
+			//Then later in loading, wait for all promise to be complete.
+			PromiseList.push(
+				new Promise((resolve,reject)=>{
+					var img		= new Image();
+					img.onload	= ()=>{ resolve(); }
+					img.src		= URL.createObjectURL(dl);
+					itm.image	= img;
+				})
+			);
+  			return false;
+		}	
+	},
+
 	//...........................................
 	"snippet":{ downloadType:"text" },
 
@@ -196,6 +215,8 @@ var Handlers = {
 			}
 
 			if(snip.length > 0) itm.snippets = snip;
+
+			return true;
 		}
 	}
 	//...........................................
@@ -206,9 +227,10 @@ var Handlers = {
 //------------------------------------------------------------
 
 var mod = {
-	start:start,
-	complete:Complete,
-	handlers:Handlers
+	start		: start,
+	complete	: Complete,
+	handlers	: Handlers,
+	promiseList	: PromiseList
 };
 
 export default mod;

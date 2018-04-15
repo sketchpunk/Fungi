@@ -348,7 +348,7 @@ class Quaternion extends Float32Array{
 
 			//..............................
 			// singularity at north pole
-			if(test > 0.499){ console.log("North");
+			if(test > 0.499){ //console.log("North");
 				pitch	= 2 * Math.atan2(x,w);
 				yaw		= Math.PI/2;
 				roll	= 0;
@@ -356,14 +356,14 @@ class Quaternion extends Float32Array{
 
 			//..............................
 			// singularity at south pole
-			if(test < -0.499){ console.log("South");
+			if(test < -0.499){ //console.log("South");
 				pitch	= -2 * Math.atan2(x,w);
 				yaw		= - Math.PI/2;
 				roll	= 0;
 			}
 
 			//..............................
-			if(isNaN(pitch)){ console.log("isNan");
+			if(isNaN(pitch)){ //console.log("isNan");
 				var sqz	= z*z;
 				roll	= Math.atan2(2*x*w - 2*y*z , 1 - 2*x*x - 2*sqz); // bank
 				pitch	= Math.atan2(2*y*w - 2*x*z , 1 - 2*y*y - 2*sqz); // Heading
