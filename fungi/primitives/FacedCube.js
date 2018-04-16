@@ -1,19 +1,22 @@
-import gl,{ VAO }	from "../gl.js";
-import Renderable	from "../entities/Renderable.js";
+import gl			from "../gl.js";
+import Vao			from "../Vao.js";
+import Fungi		from "../Fungi.js";
+import Renderable	from "../rendering/Renderable.js";
 
-function FacedCube(matName){
+function FacedCube(name ="FaceCube", matName = "VecWColor"){
 	//If the vao exists, create a new renderable using it.
-	if(gl.res.vao["FungiFCube"]) return new Renderable(gl.res.vao["FungiFCube"],matName);
+	let vao = Fungi.vaos.get("FungiFCube");
+	if(vao) return new Renderable(name, vao, matName);
 
 
-	var width = 1, height = 1, depth = 1, x = 0, y = 0, z = 0;
-	var w = width*0.5, h = height*0.5, d = depth*0.5;
-	var x0 = x-w, x1 = x+w, y0 = y-h, y1 = y+h, z0 = z-d, z1 = z+d;
+	let width = 1, height = 1, depth = 1, x = 0, y = 0, z = 0;
+	let w = width*0.5, h = height*0.5, d = depth*0.5;
+	let x0 = x-w, x1 = x+w, y0 = y-h, y1 = y+h, z0 = z-d, z1 = z+d;
 
 	//Starting bottom left corner, then working counter clockwise to create the front face.
 	//Backface is the first face but in reverse (3,2,1,0)
 	//keep each quad face built the same way to make index and uv easier to assign
-	var aVert = [
+	let aVert = [
 		x0, y1, z1, 0,	//0 Front
 		x0, y0, z1, 0,	//1
 		x1, y0, z1, 0,	//2
@@ -46,15 +49,15 @@ function FacedCube(matName){
 	];
 
 	//Build the index of each quad [0,1,2, 2,3,0]
-	var aIndex = [];
+	let aIndex = [];
 	for(var i=0; i < aVert.length / 4; i+=2) aIndex.push(i, i+1, (Math.floor(i/4)*4)+((i+2)%4));
 
 	//Build UV data for each vertex
-	var aUV = [];
+	let aUV = [];
 	for(var i=0; i < 6; i++) aUV.push(0,0,	0,1,  1,1,  1,0);
 
 	//Build Normal data for each vertex
-	var aNorm = [
+	let aNorm = [
 		 0, 0, 1,	 0, 0, 1,	 0, 0, 1,	 0, 0, 1,		//Front
 		 0, 0,-1,	 0, 0,-1,	 0, 0,-1,	 0, 0,-1,		//Back
 		-1, 0, 0,	-1, 0, 0,	-1, 0, 0,	-1, 0, 0,		//Left
@@ -63,11 +66,8 @@ function FacedCube(matName){
 		 0, 1, 0,	 0, 1, 0,	 0, 1, 0,	 0, 1, 0		//Top
 	];
 
-	var vao = VAO.standardRenderable("FungiFCube",4,aVert,aNorm,aUV,aIndex),
-		entity = new Renderable(vao,matName);
-	
-	entity.name = "facedCube";
-	return entity;
+	vao = Vao.standardRenderable("FungiFCube", 4, aVert, aNorm, aUV, aIndex);
+	return new Renderable(name, vao, matName);
 }
 
 export default FacedCube;
