@@ -21,7 +21,7 @@ function GridFloor(){
 	v.push(-t,0.007,0,1, t,0.007,0,1, 0,0.007,t,2, 0,0.007,-t,2); //origin x,z lines
 
 	var vao 	= Vao.standardRenderable("GridFloor",4,v),
-		model 	= new Renderable(vao,"MatGridFloor");
+		model 	= new Renderable("GridFloor",vao,"MatGridFloor");
 
 	model.name		= "GridFloor";
 	model.drawMode	= gl.ctx.LINES;

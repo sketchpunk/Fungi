@@ -5,11 +5,12 @@ import { Mat4 }		from "../Maths.js";
 
 
 class Renderable extends Transform{
-	constructor(vao, matName = null){
+	constructor(name, vao, matName = null){
 		super();
+		this.name 			= name;
 		this.vao			= vao;
 
-		this.drawOrder		= 10;
+		//this.drawOrder		= 10;
 		this.drawMode		= gl.ctx.TRIANGLES;
 		this.material		= (matName)? Fungi.getMaterial(matName) : null;
 

@@ -6,7 +6,7 @@ function Quad(bx0, by0, bz0, bx1, by1, bz1, matName, name="Quad"){
 	var d = Quad.vertData(bx0, by0, bz0, bx1, by1, bz1);
 	
 	var vao 	= Vao.standardRenderable(name, 3, d.vertices, null, d.uv, d.index),
-		entity	= new Renderable(vao, matName);
+		entity	= new Renderable(name, vao, matName);
 	
 	entity.name = name;
 	entity.options.cullFace = false;
