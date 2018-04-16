@@ -1,8 +1,6 @@
 import gl			from "./gl.js";
 import Ubo			from "./Ubo.js";
 import Fungi		from "./Fungi.js";
-import Downloader	from "./net/Downloader.js";
-import Loader		from "./data/Loader.js";
 import Camera		from "./data/Camera.js";
 import Renderer 	from "./rendering/Renderer.js";
 import RenderLoop 	from "./rendering/RenderLoop.js";
@@ -10,23 +8,12 @@ import Scene 		from "./rendering/Scene.js";
 import Mat4			from "./maths/Mat4.js";
 
 class System{
-	static getResources(resAry, onInit = null, onRender = null){	
-		var p = Downloader.start(resAry)
-			.then( ()=>{ System.prepare(onInit, onRender); } )  
-			.catch( (err)=>{ console.log(err); } );
-		//Promise.all([p]).then(values=>{ console.log(values); },reason =>{ console.log(reason); });
-	}
 
-	//Load Shaders First, Then Textures then Materials. If I load the resources in this order and if successful,
-	//	Can avoid saving shader / texture names to do JIT loading. Trying to avoid doing extra IF statements during
-	//	the render loop. For example, for materials I need the texture GPU ID, but I need to load texture first if not
-	//	then I need to save its name, then have an if statement to cache the GPU later OR for every material load call,
-	//	get the ID from the global cache. BUT if I can load textures first, then materials, I can save the up front
-	//	then not have to deal with getting it from the cache later during each frame.
-	static prepare(onInit = null, onRender = null){
+	//Setup GL Canvas and Uniform Blocks
+	static gl_init(){
 		//.........................................
 		// Get GL Context
-		if(!gl.init("FungiCanvas")){ console.log("Could not load canvas."); return; }
+		if(!gl.init("FungiCanvas")) throw new Error("Unable to load canvas");
 
 		//.........................................
 		//Build UBOs
@@ -38,39 +25,56 @@ class System{
 			.finalize(false)
 			.updateItem("screenSize", new Float32Array( [ gl.width, gl.height ] ) )
 			.unbind();
-
-		//.........................................
-		//Prepare Shaders
-		var mapSnippets	= Loader.getSnippets( Downloader.complete ),
-			aryShaders 	= Loader.parseShaders( Downloader.complete, mapSnippets );
-
-		if(aryShaders == null){ console.log("Error parsing shader files."); return false; };
-
-		if(!Loader.compileShaders(aryShaders)){ console.log("Error compiling shaders"); return false; }
-		
-		//.........................................
-		//If we have things that requires time to load, Wait then continue
-		if(Downloader.promiseList.length > 0){
-			Promise.all( Downloader.promiseList ).then(
-				values=>{
-					Loader.textures( Downloader.complete );
-					Loader.materials( aryShaders );
-
-					//Start up System
-					System.startup(onInit, onRender);
-				}, reason=>{ console.log(reason); }
-			);
-		}else{
-			//Nothing to wait for, Finish up loading.
-			Loader.materials( aryShaders );
-			System.startup(onInit, onRender);
-		}
 	}
 
-	static startup(onInit, onRender){
-		if(gl.ctx == null){
-			if(!gl.init("FungiCanvas")){ console.log("Could not load canvas."); return; }
-		}
+
+	//Begin the startup Process by downloading resources
+	static async beginWithResources(dlAry){
+		//.........................................
+		// Download Modules for Download and Loading support
+		var Downloader, Loader;
+		await Promise.all([
+			import("./net/Downloader.js").then( mod=>{ Downloader = mod.default; }),
+			import("./data/Loader.js").then( mod=>{ Loader = mod.default; })
+		]);
+
+		//.........................................
+		var dl 		= new Downloader(dlAry),
+			isOk	= await dl.start();
+
+		if(!isOk) throw new Error("Error Downloading");
+
+		System.gl_init();
+
+		//....................................
+		//Load Up Shaders
+		var arySnippets	= Loader.getSnippets( dl.complete ),
+			aryShaders	= Loader.parseShaders( dl.complete, arySnippets );
+
+		if(aryShaders == null)
+			throw new Error("Problems parsing shader text");
+		
+		if(!Loader.compileShaders(aryShaders))
+			throw new Error("Failed compiling shaders");
+
+		//....................................
+		//Load Textures
+		Loader.textures( dl.complete );
+		
+		//....................................
+		//Load Materials
+		Loader.materials( aryShaders );
+
+		return true;
+	}
+
+
+	/* Start up the system
+		Opt 1 == GridFloor()
+		Opt 2 == KBM with Camera Controller
+	*/
+	static async startUp(onRender, opt=3){
+		if(gl.ctx == null) System.gl_init();
 
 		//.........................................
 		Fungi.camera	= new Camera().setPerspective();
@@ -78,12 +82,27 @@ class System{
 		Fungi.scene		= new Scene();
 
 		if(onRender) Fungi.loop = new RenderLoop(onRender);
+		
+		//.........................................
+		if( (opt & 1) == 1 ){
+			await import("./primitives/GridFloor.js").then( 
+				mod=>{ Fungi.scene.add( mod.default() ); }
+			);
+		}
 
 		//.........................................
-		// Everything is setup, start the webapp.
-		if(onInit) setTimeout(onInit, 50);
+		if( (opt & 2) == 2 ){
+			await import("./input/KBMController.js").then(
+				mod=>{
+					Fungi.controller = new mod.KBMController();
+					Fungi.controller.addHandler("camera", new mod.CameraController(), true, true );
+				}
+			);
+		}
 	}
 
+
+	//prepare scene and render frame
 	static update(){
 		//..............................................
 		//Update Camera and UBO
@@ -102,6 +121,8 @@ class System{
 		//..............................................
 		Fungi.render.drawScene( Fungi.scene.items );
 	}
+
+
 };
 
 System.UBOTransform = null; //Save reference, so no need to request it from Fungi in render loop

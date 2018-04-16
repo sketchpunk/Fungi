@@ -15,7 +15,7 @@ export default class Loader{
 				doYFlip = (itm.doYFlip == true);
 				useMips = (itm.useMips == true);
 
-				gl.loadTexture(itm.name, itm.image, doYFlip, useMips);
+				gl.loadTexture(itm.name, itm.download, doYFlip, useMips);
 			}
 		}
 	//endregion

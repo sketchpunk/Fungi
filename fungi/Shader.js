@@ -39,7 +39,7 @@ function ParseShaderFile(shText){
 		switch(itm){
 			case "shader": case "materials": //These are JSON elements, parse them so they're ready for use.
 				try{ dat[itm] = JSON.parse(txt); }
-				catch(err){ console.log(err.message); return null; }
+				catch(err){ console.log(err.message,"\n",txt); return null; }
 			break;
 			default: dat[itm] = txt.trim(); break;
 		}

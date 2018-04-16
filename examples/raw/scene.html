@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<style>
+			html,body{margin:0px; padding:0px; width:100%; height:100%;}
+			body{background-color:#404040;}
+			canvas{border:0px solid green;}
+			div{display:flex; width:100%; height:100%; align-items:center; justify-content:center;}
+			#lblFPS{position:absolute; top:0px; left:0px; width:40px; padding:5px 5px;
+				background:gray; color:white; font-weight:bold; text-align:center; font-family:arial; font-size:13px; }
+		</style>
+
+		<script type="module">
+			//import gl		from "../../fungi/gl.js";
+			import Fungi	from "../../fungi/Fungi.js";
+			import System	from "../../fungi/System.js";
+			import Quad 	from "../../fungi/primitives/Quad.js";
+			
+			window.addEventListener("load",function(){
+				System.beginWithResources([
+					{ type:"shader", file:"../../fungi/shaders/VecWColor.txt" },
+					//{ type:"shader", file:"../../fungi/shaders/TextureUV.txt" },
+					{ type:"image", name:"tex01", file:"../../images/UV_Grid_Sm.jpg", doYFlip:true, useMips:false }
+				])	.then( async()=>{ await System.startUp(onRender); } )
+					.then( ()=>onInit() )
+					.catch( err=>console.log("Catch",err) );
+			});
+
+			var model;
+			function onInit(){
+				//........................
+				Fungi.camera.setPosition(0,1,5);//.setDegrees(-100,"y");
+
+				//........................
+				Fungi.scene.add( model = Quad(-1, -1, 0, 1, 1, 0, "VecWColor", "Quad") );
+
+				//........................
+				Fungi.loop.start();
+			}
+
+			function onRender(dt, ss){ System.update(); }
+		</script>
+	</head>
+<body>
+	<div><canvas id="FungiCanvas"></canvas></div>
+	<span id="lblFPS">0</div>
+</body>
+</html>

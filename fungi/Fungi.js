@@ -5,6 +5,7 @@ export default {
 	scene		: null,
 	render		: null,
 	loop		: null,
+	controller	: null,
 
 	//............................
 	//Shared Global Data
