@@ -3,7 +3,7 @@ import Vao 				from "../Vao.js";
 import Renderable		from "../rendering/Renderable.js";
 import DynamicBuffer	from "../data/DynamicBuffer.js";
 
-class Lines extends Renderable{
+class LineBoxes extends Renderable{
 	constructor(name, startSize, matName = "VecWColor"){
 		super(name, null, matName);
 		this.drawMode		= gl.ctx.LINES;
@@ -12,21 +12,28 @@ class Lines extends Renderable{
 		this._hasChanged	= false;
 	}
 
-	addRaw(x0,y0,z0,x1,y1,z1,w0=0,w1){
-		this.vertBuffer.data.push(
-			x0, y0, z0, w0,
-			x1, y1, z1, w1 || w0
-		);
-		this._hasChanged = true;
-		return this;
-	}
+	addVec(v1, v2, c=0){ return this.addRaw(v1[0],v1[1],v1[2], v2[0],v2[1],v2[2], c); }
+	addRaw(x1,y1,z1, x2,y2,z2, c=0){//Min -> Max to creating a bounding box.		
+		//TopLeft,TopRight,BotRight,BotLeft
+		var b = [	[x1,y1,z1], [x2,y1,z1],
+					[x2,y1,z2], [x1,y1,z2] ],
+			t = [	[x1,y2,z1], [x2,y2,z1],
+					[x2,y2,z2], [x1,y2,z2] ],
+			ii;
 
-	addVec(v0,v1,w0=0,w1){
-		this.vertBuffer.data.push(
-			v0[0], v0[1], v0[2], w0,
-			v1[0], v1[1], v1[2], w1 || w0
-		);
-		this._hasChanged = true;
+		for(var i=0; i < 4; i++){
+			ii = (i+1) % 4;
+			this.vertBuffer.data.push(
+				b[i][0],	b[i][1],	b[i][2],	c,	//Draw Bottom
+				b[ii][0],	b[ii][1],	b[ii][2],	c,
+				t[i][0],	t[i][1],	t[i][2],	c,	//Draw Top
+				t[ii][0],	t[ii][1],	t[ii][2],	c,
+				b[i][0],	b[i][1],	b[i][2],	c,	//Draw Sides
+				t[i][0],	t[i][1],	t[i][2],	c
+			);
+		}
+
+		this._hasChanged = true;	
 		return this;
 	}
 
@@ -47,4 +54,4 @@ class Lines extends Renderable{
 	}
 }
 
-export default Lines;
+export default LineBoxes;

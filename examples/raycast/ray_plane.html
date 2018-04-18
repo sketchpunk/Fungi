@@ -11,51 +11,71 @@
 		</style>
 
 		<script type="module">
-			//import gl		from "../../fungi/gl.js";
 			import Fungi	from "../../fungi/Fungi.js";
 			import System	from "../../fungi/System.js";
-			//import Quad 	from "../../fungi/primitives/Quad.js";
+
+			import { Vec3 }	from "../../fungi/Maths.js";
+			
 			import Lines 	from "../../fungi/primitives/Lines.js";
+			import Points 	from "../../fungi/primitives/Points.js";
+			import Quad 	from "../../fungi/primitives/Quad.js";
 
 			import Ray from "../../fungi.mod/raycast/Ray.js";
 			
 			window.addEventListener("load",function(){
 				System.beginWithResources([
 					{ type:"shader", file:"../../fungi/shaders/VecWColor.txt" }
-					//{ type:"shader", file:"../../fungi/shaders/TextureUV.txt" },
-					//{ type:"image", name:"tex01", file:"../../images/UV_Grid_Sm.jpg", doYFlip:true, useMips:false }
 				])	.then( async()=>{ await System.startUp(onRender); } )
-					.then( ()=>setTimeout(onInit,50) )
+					.then( ()=>onInit() )
 					.catch( err=>console.log("Catch",err) );
 			});
 
-			var dLines;
+			var dLines, dPoints, quad,
+				planeNorm, planePos;
+
 			function onInit(){
 				//........................				
 				Fungi.camera.setPosition(0,1,5);//.setDegrees(-100,"y");
-
-				Fungi.controller.onMouseStart = function(e, ctrl, c){
-					if(e.shiftKey && e.ctrlKey){
-						var ray = Ray.MouseSegment(c.x, c.y);
-						dLines.addVec(ray.origin, ray.end, 0);
-						return true;
-					}
-					return false;
-				}
+				Fungi.controller.onMouseStart = onMouseStart;
 
 				//........................
-				//Fungi.scene.add( model = Quad(-1, -1, 0, 1, 1, 0, "VecWColor", "Quad") );
-				//dLines.addRaw(0,0,0, 0,1,0, 0,2).update();
+				Fungi.scene.add( quad = Quad("VecWColor").setPosition(0,1,0) );
 				Fungi.scene.add( dLines = new Lines("debugLine", 10) );
+				Fungi.scene.add( dPoints = new Points("debugPoint", 10) );
 
-				
+				//Define Plane
+				planeNorm	= new Vec3(0,0,1);
+				planePos	= new Vec3(0,1,0);
+
+				//See Plane
+				//dPoints.addVec(planePos,6);
+				//dLines.addVec(planePos, Vec3.add(planePos,planeNorm) ,0,6);
+
 				//........................
 				Fungi.loop.start();
 			}
 
 			function onRender(dt, ss){
 				dLines.update();
+				dPoints.update();
 				System.update();
+			}
+
+			function onMouseStart(e, ctrl, c){
+				if(e.shiftKey && e.ctrlKey){
+					
+					//Get Ray
+					var ray = Ray.MouseSegment(c.x, c.y);
+					dLines.addVec(ray.origin, ray.end, 0);
+
+					//var t = Ray.inPlane(ray, planePos, planeNorm);
+					//var t = Ray.inCircle(ray, 1, planePos, planeNorm);
+					var t = Ray.inQuad(ray, quad, 1);
+
+					if(t != null) dPoints.addVec(ray.getPos(t),0);
+					return true;
+				}
+				return false;
 			}
 		</script>
 	</head>

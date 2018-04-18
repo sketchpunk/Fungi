@@ -46,119 +46,123 @@ class KBMController{
 
 	//------------------------------------------------------
 	// Handler Stack
-	//------------------------------------------------------
-	stackSwitch(name,data){
-		if(this._activeHandler) this._handlerStack.push(this._activeHandler.name);
-		this.switchHandler(name, data);
-	}
-
-	unStack(){
-		if(this._handlerStack.length > 0){
-			//if we have a stacked item, switch to it.
-			this.switchHandler(this._handlerStack.pop()); 
-		}else if(this._activeHandler != null && this._activeHandler.name != this._defaultHandler){
-			this.switchHandler(this._defaultHandler,null);
+		stackSwitch(name,data){
+			if(this._activeHandler) this._handlerStack.push(this._activeHandler.name);
+			this.switchHandler(name, data);
 		}
-	}
+
+		unStack(){
+			if(this._handlerStack.length > 0){
+				//if we have a stacked item, switch to it.
+				this.switchHandler(this._handlerStack.pop()); 
+			}else if(this._activeHandler != null && this._activeHandler.name != this._defaultHandler){
+				this.switchHandler(this._defaultHandler,null);
+			}
+		}
+	//endregion
+
 
 	//------------------------------------------------------
 	// Methods
-	//------------------------------------------------------
-	switchHandler(name,data){
-		if(this._activeHandler.onDeactivate)	this._activeHandler.onDeactivate();
-		this._activeHandler = this._handlers.get(name);
+		switchHandler(name,data){
+			if(this._activeHandler.onDeactivate)	this._activeHandler.onDeactivate();
+			this._activeHandler = this._handlers.get(name);
 
-		if(this._activeHandler.onActive)		this._activeHandler.onActive(data);
-		return this;
-	}
+			if(this._activeHandler.onActive)		this._activeHandler.onActive(data);
+			return this;
+		}
 
-	addHandler(name, h, active = false, isDefault = false){
-		h.name = name;
-		this._handlers.set(name, h);
+		addHandler(name, h, active = false, isDefault = false){
+			h.name = name;
+			this._handlers.set(name, h);
 
-		if(active == true)		this._activeHandler = h;
-		if(isDefault == true)	this._defaultHandler = name;
+			if(active == true)		this._activeHandler = h;
+			if(isDefault == true)	this._defaultHandler = name;
 
-		return this;
-	}
-	
-	setMouseStart(d){ this.onMouseStart = d; return this; }
+			return this;
+		}
+		
+		//setMouseStart(d){ this.onMouseStart = d; return this; }
+	//endregion
 
 
 	//------------------------------------------------------
 	// Mouse
+		updateCoords(e){
+			//Current Position
+			this.coord.x = e.pageX - this.offsetX;
+			this.coord.y = e.pageY - this.offsetY;
+
+			//Change since last
+			this.coord.pdx = this.coord.x - this.coord.px;
+			this.coord.pdy = this.coord.y - this.coord.py;
+
+			//Change Since Initial
+			this.coord.idx = this.coord.x - this.coord.ix;
+			this.coord.idy = this.coord.y - this.coord.iy;		
+		}
+
+		onMouseWheel(e){
+			if(!this._activeHandler.onMouseWheel) return;
+
+			e.preventDefault(); e.stopPropagation();
+
+			var delta = Math.max(-1, Math.min(1, (e.wheelDelta || -e.detail))); //Try to map wheel movement to a number between -1 and 1
+			this._activeHandler.onMouseWheel(e,this,delta);
+		}
+
+		onMouseDown(e){
+			e.preventDefault(); e.stopPropagation();
+
+			this.coord.ix = this.coord.px = this.coord.x = e.pageX - this.offsetX;
+			this.coord.iy = this.coord.py = this.coord.y = e.pageY - this.offsetY;
+			this.coord.pdx = this.coord.idx = this.coord.pdy = this.coord.idy = 0;
+
+			if(this.onMouseStart &&
+				this.onMouseStart(e, this, this.coord) ) return true;
+
+			if(this._activeHandler.onMouseDown)
+				this._activeHandler.onMouseDown( e, this, this.initX, this.initY );
+
+			this.canvas.addEventListener("mousemove", this._boundMouseMove );
+		}
+
+		onMouseMove(e){
+			e.preventDefault(); e.stopPropagation();
+			this.updateCoords(e);
+
+			if(this._activeHandler.onMouseMove) this._activeHandler.onMouseMove(e, this, this.coord);
+
+			//Copy Current to Previous
+			this.coord.px = this.coord.x;
+			this.coord.py = this.coord.y;
+		}
+
+		onMouseUp(e){
+			e.preventDefault(); e.stopPropagation();
+			this.updateCoords(e);
+
+			this.canvas.removeEventListener("mousemove",this._boundMouseMove);
+			if(this._activeHandler.onMouseUp) this._activeHandler.onMouseUp(e, this, this.coord);
+		}
+	//endregion
+
 	//------------------------------------------------------
-	updateCoords(e){
-		//Current Position
-		this.coord.x = e.pageX - this.offsetX;
-		this.coord.y = e.pageY - this.offsetY;
-
-		//Change since last
-		this.coord.pdx = this.coord.x - this.coord.px;
-		this.coord.pdy = this.coord.y - this.coord.py;
-
-		//Change Since Initial
-		this.coord.idx = this.coord.x - this.coord.ix;
-		this.coord.idy = this.coord.y - this.coord.iy;		
-	}
-
-	onMouseWheel(e){
-		if(!this._activeHandler.onMouseWheel) return;
-
-		e.preventDefault(); e.stopPropagation();
-
-		var delta = Math.max(-1, Math.min(1, (e.wheelDelta || -e.detail))); //Try to map wheel movement to a number between -1 and 1
-		this._activeHandler.onMouseWheel(e,this,delta);
-	}
-
-	onMouseDown(e){
-		e.preventDefault(); e.stopPropagation();
-
-		this.coord.ix = this.coord.px = this.coord.x = e.pageX - this.offsetX;
-		this.coord.iy = this.coord.py = this.coord.y = e.pageY - this.offsetY;
-		this.coord.pdx = this.coord.idx = this.coord.pdy = this.coord.idy = 0;
-
-		if(this.onMouseStart &&
-			this.onMouseStart(e, this, this.initX, this.initY ) ) return true;
-
-		if(this._activeHandler.onMouseDown)
-			this._activeHandler.onMouseDown( e, this, this.initX, this.initY );
-
-		this.canvas.addEventListener("mousemove", this._boundMouseMove );
-	}
-
-	onMouseMove(e){
-		e.preventDefault(); e.stopPropagation();
-		this.updateCoords(e);
-
-		if(this._activeHandler.onMouseMove) this._activeHandler.onMouseMove(e, this, this.coord);
-
-		//Copy Current to Previous
-		this.coord.px = this.coord.x;
-		this.coord.py = this.coord.y;
-	}
-
-	onMouseUp(e){
-		e.preventDefault(); e.stopPropagation();
-		this.updateCoords(e);
-
-		this.canvas.removeEventListener("mousemove",this._boundMouseMove);
-		if(this._activeHandler.onMouseUp) this._activeHandler.onMouseUp(e, this, this.coord);
-	}
-
-	onKeyDown(e){
-		if(this._activeHandler.onKeyDown){
-			e.preventDefault(); e.stopPropagation();
-			this._activeHandler.onKeyDown(e,this,e.keyCode);
+	// Keyboard
+		onKeyDown(e){
+			if(this._activeHandler.onKeyDown){
+				e.preventDefault(); e.stopPropagation();
+				this._activeHandler.onKeyDown(e,this,e.keyCode);
+			}
 		}
-	}
 
-	onKeyUp(e){
-		if(this._activeHandler.onKeyUp){
-			e.preventDefault(); e.stopPropagation();
-			this._activeHandler.onKeyUp(e,this,e.keyCode);
+		onKeyUp(e){
+			if(this._activeHandler.onKeyUp){
+				e.preventDefault(); e.stopPropagation();
+				this._activeHandler.onKeyUp(e,this,e.keyCode);
+			}
 		}
-	}
+	//endregion
 }
 
 
@@ -181,8 +185,8 @@ class CameraController{
 	}
 	
 	onMouseDown(e, ctrl, c){
-		if(e.ctrlKey) 		this.mode = 0; //Pan Mode
-		else if(e.shiftKey)	this.mode = 2; //Orbit Mode
+		if(e.shiftKey) 		this.mode = 0; //Pan Mode
+		else if(e.ctrlKey)	this.mode = 2; //Orbit Mode
 		else				this.mode = 1; //Look Mode
 	}
 

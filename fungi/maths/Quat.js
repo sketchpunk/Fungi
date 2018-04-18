@@ -134,9 +134,13 @@ class Quaternion extends Float32Array{
 				dq = Vec3.dot(q,q),	// U DOT U
 				cqv = Vec3.cross(q,v,[0,0,0]);	// Cross Product for Q,V
 
-			Vec3.scalarRev(q,2.0 * d,q);
-			Vec3.scalarRev(v,s*s - dq,v);
-			Vec3.scalarRev(cqv,2.0 * s,cqv);
+			//Vec3.scalarRev(q,2.0 * d,q);
+			//Vec3.scalarRev(v,s*s - dq,v);
+			//Vec3.scalarRev(cqv,2.0 * s,cqv);
+
+			Vec3.scale(q,	2.0 * d,	q);
+			Vec3.scale(v,	s*s - dq,	v);
+			Vec3.scale(cqv,	2.0 * s,	cqv);
 
 			out[0] = q[0] + v[0] + cqv[0];
 			out[1] = q[1] + v[1] + cqv[1];

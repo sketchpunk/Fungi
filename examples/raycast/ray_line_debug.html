@@ -11,10 +11,8 @@
 		</style>
 
 		<script type="module">
-			//import gl		from "../../fungi/gl.js";
 			import Fungi	from "../../fungi/Fungi.js";
 			import System	from "../../fungi/System.js";
-			//import Quad 	from "../../fungi/primitives/Quad.js";
 			import Lines 	from "../../fungi/primitives/Lines.js";
 
 			import Ray from "../../fungi.mod/raycast/Ray.js";
@@ -22,14 +20,12 @@
 			window.addEventListener("load",function(){
 				System.beginWithResources([
 					{ type:"shader", file:"../../fungi/shaders/VecWColor.txt" }
-					//{ type:"shader", file:"../../fungi/shaders/TextureUV.txt" },
-					//{ type:"image", name:"tex01", file:"../../images/UV_Grid_Sm.jpg", doYFlip:true, useMips:false }
 				])	.then( async()=>{ await System.startUp(onRender); } )
-					.then( ()=>setTimeout(onInit,50) )
+					.then( ()=>onInit() )
 					.catch( err=>console.log("Catch",err) );
 			});
 
-			var dLines;
+			var dLines
 			function onInit(){
 				//........................				
 				Fungi.camera.setPosition(0,1,5);//.setDegrees(-100,"y");
@@ -44,8 +40,6 @@
 				}
 
 				//........................
-				//Fungi.scene.add( model = Quad(-1, -1, 0, 1, 1, 0, "VecWColor", "Quad") );
-				//dLines.addRaw(0,0,0, 0,1,0, 0,2).update();
 				Fungi.scene.add( dLines = new Lines("debugLine", 10) );
 
 				

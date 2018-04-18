@@ -12,14 +12,14 @@ class Points extends Renderable{
 		this._hasChanged	= false;
 	}
 
-	addRaw(x,y,z,w){
-		this.vertBuffer.data.push(x,y,z,w);
+	addRaw(x, y, z, w=0){
+		this.vertBuffer.data.push(x, y, z, w);
 		this._hasChanged = true;
 		return this;
 	}
 
-	addVec(v,w){
-		this.vertBuffer.data.push(v[0],v[1],v[2],w);
+	addVec(v, w=0){
+		this.vertBuffer.data.push(v[0], v[1], v[2], w);
 		this._hasChanged = true;
 		return this;
 	}
