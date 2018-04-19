@@ -22,7 +22,7 @@ class DynamicBuffer{
 		var finalData	= new this.GLArray( newData || this.data ),
 			pushSize	= finalData.length * this.GLArray.BYTES_PER_ELEMENT;	//How many bytes to push to gpu.
 
-		gl.ctx.bindBuffer(this.GLBufferType, this.GLBuffer);						//Activate Buffer
+		gl.ctx.bindBuffer(this.GLBufferType, this.GLBuffer);					//Activate Buffer
 
 		//If data being push fits the existing buffer, send it up
 		if(pushSize <= this.BufByteSize){

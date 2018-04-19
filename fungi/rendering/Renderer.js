@@ -7,7 +7,7 @@ class Renderer{
 		//Render Objects
 		this.material	= null;
 		this.shader		= null;
-		this.vao		= null;
+		//this.vao		= null;
 
 		//Misc
 		this.options	= {
@@ -66,10 +66,10 @@ class Renderer{
 		//Handle Drawing a Renderable's VAO
 		drawRenderable(r){
 			//...............................
-			if(this.vao !== r.vao){
-				this.vao = r.vao;
+			//if(this.vao != r.vao){
+				//this.vao = r.vao;
 				gl.ctx.bindVertexArray(r.vao.id);
-			}
+			//}
 
 			//...............................
 			//if shader require special uniforms from model, apply
@@ -90,6 +90,8 @@ class Renderer{
 			if(r.vao.isIndexed)	gl.ctx.drawElements(r.drawMode, r.vao.elmCount, gl.ctx.UNSIGNED_SHORT, 0); 
 			else				gl.ctx.drawArrays(r.drawMode, 0, r.vao.elmCount);
 
+
+			gl.ctx.bindVertexArray(null);
 			//...............................
 			return this;
 		}

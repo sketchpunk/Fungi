@@ -263,7 +263,8 @@ class CameraController{
 			case 81: //Q
 			case 69: //E
 				var s = (keyCode == 69)? -this.kbRotateRate : this.kbRotateRate;
-				Fungi.camera.mulRotationAxis(Fungi.camera.up(), s * ss);
+				//Fungi.camera.mulRotationAxis(Fungi.camera.up(), s * ss);
+				Fungi.camera.mulRotationAxis(Vec3.UP, s * ss);
 				break;
 		}
 	}

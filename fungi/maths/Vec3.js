@@ -211,12 +211,18 @@ class Vec3 extends Float32Array{
 			out[2] = a[2] - b[2];
 			return out;
 		}
+		static mul(a, b, out){
+			out = out || new Vec3();
+			out[0] = a[0] * b[0];
+			out[1] = a[1] * b[1];
+			out[2] = a[2] * b[2];
+			return out;
+		}
 		static div(a,b,out){
 			out = out || new Vec3();
 			out[0] = (b[0] != 0)? a[0] / b[0] : 0;
 			out[1] = (b[1] != 0)? a[1] / b[1] : 0;
 			out[2] = (b[2] != 0)? a[2] / b[2] : 0;
-
 			return out;
 		}
 		static scale(v,s,out){
@@ -226,7 +232,6 @@ class Vec3 extends Float32Array{
 			out[2] = v[2] * s;
 			return out;
 		}
-
 		static abs(v,out){
 			out = out || new Vec3();
 			out[0] = Math.abs( v[0] );
@@ -235,9 +240,19 @@ class Vec3 extends Float32Array{
 			return out;
 		}
 
+		static norm(v, out){
+			var mag = Math.sqrt( v[0]*v[0] + v[1]*v[1] + v[2]*v[2] );
+			if(mag == 0) return null;
+			out		= out || new Vec3();
+
+			mag 	= 1 / mag;
+			out[0]	= v[0] * mag;
+			out[1]	= v[1] * mag;
+			out[2]	= v[2] * mag;
+			return out
+		}
 
 		static dot(a,b){ return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]; }
-
 		static cross(a,b,out){
 			var ax = a[0], ay = a[1], az = a[2],
 				bx = b[0], by = b[1], bz = b[2];
@@ -251,7 +266,6 @@ class Vec3 extends Float32Array{
 
 		static lerp(a, b, t, out){
 			out = out || new Vec3();
-
 			let ax = a[0],
 				ay = a[1],
 				az = a[2];
@@ -279,19 +293,16 @@ class Vec3 extends Float32Array{
 		}
 		*/
 
-		static norm(v, out = null){
-			var mag = Math.sqrt( v[0]*v[0] + v[1]*v[1] + v[2]*v[2] );
-			if(mag == 0) return null;
-			if(out == null) out = v;
 
-			mag = 1 / mag;
-			out[0] = v[0] * mag;
-			out[1] = v[1] * mag;
-			out[2] = v[2] * mag;
-		}
 	//endregion
 }
 
-Vec3.UP = [0,1,0];
 
-export default Vec3
+//..........................................
+Vec3.UP			= [0,1,0];
+Vec3.LEFT		= [1,0,0];
+Vec3.FORWARD	= [0,0,1];
+
+
+//..........................................
+export default Vec3;

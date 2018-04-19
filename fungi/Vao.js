@@ -147,11 +147,11 @@ class Vao{
 			return this;
 		}
 
-		emptyIndexBuffer(name, aryCount, isStatic=true){
+		emptyIndexBuffer(name, byteCount, isStatic=false){
 			var rtn = { id:gl.ctx.createBuffer(), elmCount:0 };
 
-			gl.ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, rtn.id );  
-			gl.ctx.bufferData(ctx.ELEMENT_ARRAY_BUFFER, aryCount, (isStatic)? gl.ctx.STATIC_DRAW : gl.ctx.DYNAMIC_DRAW );
+			gl.ctx.bindBuffer(gl.ctx.ELEMENT_ARRAY_BUFFER, rtn.id );  
+			gl.ctx.bufferData(gl.ctx.ELEMENT_ARRAY_BUFFER, byteCount, (isStatic)? gl.ctx.STATIC_DRAW : gl.ctx.DYNAMIC_DRAW );
 
 			this.vao[name]		= rtn;
 			this.vao.isIndexed	= true;
@@ -200,11 +200,16 @@ class Vao{
 			return vao;
 		}
 
+
 		static standardEmpty(name, vertCompLen=3, vertCnt=4, normLen=null, uvLen=null, indexLen=null){
 			var o = new Vao().create()
 				.emptyFloatBuffer("bVertices",
 					Float32Array.BYTES_PER_ELEMENT * vertCompLen * vertCnt, 
 					Shader.ATTRIB_POSITION_LOC, vertCompLen );
+
+			//if(aryNorm)	VAO.floatArrayBuffer(rtn,	"bNormal",	aryNorm,	ATTR_NORM_LOC,	3,0,0,true);
+			//if(aryUV)	VAO.floatArrayBuffer(rtn,	"bUV",		aryUV,		ATTR_UV_LOC,	2,0,0,true);
+			if(indexLen > 0) o.emptyIndexBuffer("bIndex", Uint16Array.BYTES_PER_ELEMENT * indexLen, false);
 
 			var vao = o.finalize(name);
 			o.cleanup();
