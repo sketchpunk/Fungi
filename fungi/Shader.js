@@ -1,106 +1,104 @@
 import gl		from "./gl.js";
 import Fungi	from "./Fungi.js";
 
-//------------------------------------------------------
+//##################################################################
 // Loading Functions
-//------------------------------------------------------
-//Get shader code from an inline script tag, use that to load a shader.
-function LoadInlineShader(elmName){
-	var shData = ParseShaderFile( document.getElementById(elmName).innerText );
-	if(shData == null){ console.log("error parsing inline Shader"); return null; }
+	//Get shader code from an inline script tag, use that to load a shader.
+	function LoadInlineShader(elmName){
+		var shData = ParseShaderFile( document.getElementById(elmName).innerText );
+		if(shData == null){ console.log("error parsing inline Shader"); return null; }
 
-	var shader = LoadShader(shData);
-	if(shader == null){ console.log("error compiling inline shader"); return null; }
+		var shader = LoadShader(shData);
+		if(shader == null){ console.log("error compiling inline shader"); return null; }
 
-	LoadMaterials(shData);
-	return shader;
-}
+		LoadMaterials(shData);
+		return shader;
+	}
 
-//Apply Snippets and Break shader file into a data struct that can be used for loading
-function ParseShaderFile(shText){
-	var dat = { shader:null, materials:null, vertex:null, fragment:null },
-		posA, posB, txt, itm;
+	//Apply Snippets and Break shader file into a data struct that can be used for loading
+	function ParseShaderFile(shText){
+		var dat = { shader:null, materials:null, vertex:null, fragment:null },
+			posA, posB, txt, itm;
 
-	//Loop threw the rtn struct to find all the tag elements that should be in the text file
-	//THen parse out the text and save it to the object.
-	for(itm in dat){
-		//...................................
-		posA	= shText.indexOf("<" + itm + ">") + itm.length + 2;
-		posB	= shText.indexOf("<\\" + itm + ">");
-		if(posA == -1 || posB == -1){
-			if(itm == "materials") continue;
+		//Loop threw the rtn struct to find all the tag elements that should be in the text file
+		//THen parse out the text and save it to the object.
+		for(itm in dat){
+			//...................................
+			posA	= shText.indexOf("<" + itm + ">") + itm.length + 2;
+			posB	= shText.indexOf("<\\" + itm + ">");
+			if(posA == -1 || posB == -1){
+				if(itm == "materials") continue;
 
-			console.log("Error parsing shader, missing ", itm);
-			return null;
+				console.log("Error parsing shader, missing ", itm);
+				return null;
+			}
+
+			//...................................
+			txt	= shText.substring(posA,posB);
+			switch(itm){
+				case "shader": case "materials": //These are JSON elements, parse them so they're ready for use.
+					try{ dat[itm] = JSON.parse(txt); }
+					catch(err){ console.log(err.message,"\n",txt); return null; }
+				break;
+				default: dat[itm] = txt.trim(); break;
+			}
 		}
 
-		//...................................
-		txt	= shText.substring(posA,posB);
-		switch(itm){
-			case "shader": case "materials": //These are JSON elements, parse them so they're ready for use.
-				try{ dat[itm] = JSON.parse(txt); }
-				catch(err){ console.log(err.message,"\n",txt); return null; }
-			break;
-			default: dat[itm] = txt.trim(); break;
-		}
+		return dat;
 	}
 
-	return dat;
-}
-
-//Deserialize Downloaded Shader files to create shaders and materials.
-function LoadShader(js){
-	//===========================================
-	//Create Shader
-	var shader = new Shader( js.shader.name, js.vertex, js.fragment );
-	if(shader.program == null) return null;
-
-	//..............................
-	//Setup Uniforms
-	if(js.shader.uniforms && js.shader.uniforms.length > 0){
-		shader.prepareUniforms(js.shader.uniforms);
-	}
-
-	//..............................
-	//Setup Uniform Buffer Objects
-	if(js.shader.ubo && js.shader.ubo.length > 0){
-		var i;
-		for(i=0; i < js.shader.ubo.length; i++)
-			shader.prepareUniformBlock( js.shader.ubo[i] );
-	}
-
-	//..............................
-	//Setup Shader Options
-	if(js.shader.options){
-		for(var o in js.shader.options) shader.options[o] = js.shader.options[o];
-
-		if(shader.options.modelMatrix)	shader.prepareUniform(Shader.UNIFORM_MODELMAT, "mat4");
-		if(shader.options.normalMatrix)	shader.prepareUniform(Shader.UNIFORM_NORMALMAT, "mat3");
-	}
-
-	gl.ctx.useProgram(null);
-	return shader; 
-}
-
-//Load All all the materials for a specific shader
-function LoadMaterials(js){
-	var m, mat, u, val, type;
-	for(m of js.materials){
-		mat = new Material(m.name, js.shader.name);
-		if(m.uniforms && m.uniforms.length > 0) mat.addUniforms( m.uniforms );
+	//Deserialize Downloaded Shader files to create shaders and materials.
+	function LoadShader(js){
+		//===========================================
+		//Create Shader
+		var shader = new Shader( js.shader.name, js.vertex, js.fragment );
+		if(shader.program == null) return null;
 
 		//..............................
-		//Load Options
-		if(m.options){
-			for(var o in m.options) mat.options[o] = m.options[o];
+		//Setup Uniforms
+		if(js.shader.uniforms && js.shader.uniforms.length > 0){
+			shader.prepareUniforms(js.shader.uniforms);
+		}
+
+		//..............................
+		//Setup Uniform Buffer Objects
+		if(js.shader.ubo && js.shader.ubo.length > 0){
+			var i;
+			for(i=0; i < js.shader.ubo.length; i++)
+				shader.prepareUniformBlock( js.shader.ubo[i] );
+		}
+
+		//..............................
+		//Setup Shader Options
+		if(js.shader.options){
+			for(var o in js.shader.options) shader.options[o] = js.shader.options[o];
+
+			if(shader.options.modelMatrix)	shader.prepareUniform(Shader.UNIFORM_MODELMAT, "mat4");
+			if(shader.options.normalMatrix)	shader.prepareUniform(Shader.UNIFORM_NORMALMAT, "mat3");
+		}
+
+		gl.ctx.useProgram(null);
+		return shader; 
+	}
+
+	//Load All all the materials for a specific shader
+	function LoadMaterials(js){
+		var m, mat, u, val, type;
+		for(m of js.materials){
+			mat = new Material(m.name, js.shader.name);
+			if(m.uniforms && m.uniforms.length > 0) mat.addUniforms( m.uniforms );
+
+			//..............................
+			//Load Options
+			if(m.options){
+				for(var o in m.options) mat.options[o] = m.options[o];
+			}
 		}
 	}
-}
+//endregion
 
-
-//------------------------------------------------------
+//##################################################################
 // Material
-//------------------------------------------------------
 class Material{
 	constructor(name, shader=null){
 		//..................................../
@@ -123,7 +121,7 @@ class Material{
 		this.shader 	= shader;
 		this.uniforms 	= new Map();
 
-		Fungi.materials.set(name, this);
+		if(name != null) Fungi.materials.set(name, this);
 	}
 
 	addUniforms(ary){
@@ -168,9 +166,8 @@ class Material{
 }
 
 
-//------------------------------------------------------
+//##################################################################
 // Shaders
-//------------------------------------------------------
 class Shader{
 	constructor(name, vertShader, fragShader, tfeedbackVar = null, tfeedbackInterleaved = true){
 		this.program = gl.createShader(vertShader, fragShader, true, tfeedbackVar, tfeedbackInterleaved);
@@ -228,6 +225,13 @@ class Shader{
 	//---------------------------------------------------
 	// Setters Getters
 	//---------------------------------------------------
+	setOptions(useModelMat = null, useNormalMat = null){
+		if(useModelMat != null) this.options.modelMatrix = useModelMat;
+		if(useNormalMat != null) this.options.normalMatrix = useNormalMat;
+
+		return this;
+	}
+
 	//Uses a 2 item group argument array. Uniform_Name, Uniform_Value;
 	setUniforms(uName, uValue){
 		if(arguments.length % 2 != 0){ console.log("setUniforms needs arguments to be in pairs."); return this; }
@@ -281,9 +285,9 @@ class Shader{
 }
 
 
-//------------------------------------------------------
+//##################################################################
 // Constants
-//------------------------------------------------------
+
 Shader.ATTRIB_POSITION_LOC	= 0;
 Shader.ATTRIB_NORMAL_LOC	= 1;
 Shader.ATTRIB_UV_LOC		= 2;
@@ -292,8 +296,8 @@ Shader.UNIFORM_MODELMAT		= "u_modelMatrix";
 Shader.UNIFORM_NORMALMAT	= "u_normalMatrix";
 
 
-//------------------------------------------------------
+//##################################################################
 // Export
-//------------------------------------------------------
+
 export { ParseShaderFile, LoadInlineShader, LoadMaterials, LoadShader, Material };
 export default Shader;

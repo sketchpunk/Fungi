@@ -9,8 +9,8 @@ export default {
 
 	//............................
 	//Shared Global Data
-	deltaTime	: 0,
-	sinceStart	: 1,
+	deltaTime		: 0,
+	sinceStart		: 1,
 
 	//............................
 	//Resources 

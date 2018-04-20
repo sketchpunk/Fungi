@@ -19,7 +19,9 @@ class Renderer{
 	}
 
 	//----------------------------------------------
-	//region Loading
+	//region Clear and Loading
+		clearMaterial(){ this.material = null; return this; }
+
 		//Load up a shader
 		loadShader(s){
 			if(this.shader === s) return;
@@ -29,6 +31,7 @@ class Renderer{
 		}
 
 		//Load Material and its shader
+		
 		loadMaterial(mat){
 			//...............................
 			//If material is the same, exit.
@@ -59,19 +62,8 @@ class Renderer{
 			//...............................
 			return this;
 		}
-	//endregion
 
-	//----------------------------------------------
-	//region Drawing
-		//Handle Drawing a Renderable's VAO
-		drawRenderable(r){
-			//...............................
-			//if(this.vao != r.vao){
-				//this.vao = r.vao;
-				gl.ctx.bindVertexArray(r.vao.id);
-			//}
-
-			//...............................
+		loadRenderable(r){
 			//if shader require special uniforms from model, apply
 			r.updateMatrix();
 			if(this.shader.options.modelMatrix)		this.shader.setUniform(Shader.UNIFORM_MODELMAT, r.worldMatrix);
@@ -85,14 +77,33 @@ class Renderer{
 					gl.ctx[ (this.options[o].state)? "enable" : "disable" ]( this.options[o].id );
 				}
 			}
+			return this;
+		}
+
+		renderableComplete(){
+			gl.ctx.bindVertexArray(null);
+			return this;
+		}
+	//endregion
+
+	//----------------------------------------------
+	//region Drawing
+		//Handle Drawing a Renderable's VAO
+		drawRenderable(r){
+			//...............................
+			//if(this.vao != r.vao){
+				//this.vao = r.vao;
+				gl.ctx.bindVertexArray(r.vao.id);
+			//}
 
 			//...............................
+			this.loadRenderable(r);
+
 			if(r.vao.isIndexed)	gl.ctx.drawElements(r.drawMode, r.vao.elmCount, gl.ctx.UNSIGNED_SHORT, 0); 
 			else				gl.ctx.drawArrays(r.drawMode, 0, r.vao.elmCount);
 
-
-			gl.ctx.bindVertexArray(null);
 			//...............................
+			gl.ctx.bindVertexArray(null);
 			return this;
 		}
 
@@ -102,11 +113,12 @@ class Renderer{
 
 			var itm;
 			for(itm of ary){
-				if(!itm.visible || itm.vao.elmCount == 0) continue;
+				if(!itm.visible) continue;
 
-				if(itm.draw){
-					console.log("Run Custom Drawing Method");
-				}else{
+				if(itm.draw) itm.draw(this);
+				else{
+					if(itm.vao.elmCount == 0) continue;
+
 					this.loadMaterial(itm.material);
 					this.drawRenderable(itm);
 				}
