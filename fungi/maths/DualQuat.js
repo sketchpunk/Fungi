@@ -161,7 +161,9 @@ class DualQuat extends Float32Array{
 	}
 
 	//Multiplies two dual quat's
-	static multi(out,a,b){
+	static mul(a, b, out){
+		out = out || new DualQuat();
+
 		var ax0 = a[0], ay0 = a[1], az0 = a[2], aw0 = a[3],
 			ax1 = a[4], ay1 = a[5], az1 = a[6], aw1 = a[7],
 			bx0 = b[0], by0 = b[1], bz0 = b[2], bw0 = b[3],

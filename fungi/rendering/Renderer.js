@@ -99,8 +99,13 @@ class Renderer{
 			//...............................
 			this.loadRenderable(r);
 
-			if(r.vao.isIndexed)	gl.ctx.drawElements(r.drawMode, r.vao.elmCount, gl.ctx.UNSIGNED_SHORT, 0); 
-			else				gl.ctx.drawArrays(r.drawMode, 0, r.vao.elmCount);
+			if(!r.vao.isInstanced){
+				if(r.vao.isIndexed)	gl.ctx.drawElements(r.drawMode, r.vao.elmCount, gl.ctx.UNSIGNED_SHORT, 0); 
+				else				gl.ctx.drawArrays(r.drawMode, 0, r.vao.elmCount);
+			}else{
+				if(r.vao.isIndexed)	gl.ctx.drawElementsInstanced(r.drawMode, r.vao.elmCount, gl.ctx.UNSIGNED_SHORT, 0, r.vao.instanceCount); 
+				else				gl.ctx.drawArraysInstanced(r.drawMode, 0, r.vao.elmCount, r.vao.instanceCount);
+			}
 
 			//...............................
 			gl.ctx.bindVertexArray(null);
@@ -119,7 +124,11 @@ class Renderer{
 				else{
 					if(itm.vao.elmCount == 0) continue;
 
+					//Prepare for drawing
 					this.loadMaterial(itm.material);
+					if(itm.onPreDraw) itm.onPreDraw(this);
+
+					//Start Drawing
 					this.drawRenderable(itm);
 				}
 			}

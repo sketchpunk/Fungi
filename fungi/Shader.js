@@ -204,7 +204,7 @@ class Shader{
 			loc = gl.ctx.getUniformLocation(this.program, itm.name);
 
 			if(loc != null)	this.uniforms.set( itm.name, { loc:loc, type:itm.type } );
-			else console.log("prepareUniforms : Uniform not found %s in %s", uName, this.name);
+			else console.log("prepareUniforms : Uniform not found %s in %s", itm.nam, this.name);
 		}
 
 		return this;
@@ -288,12 +288,15 @@ class Shader{
 //##################################################################
 // Constants
 
-Shader.ATTRIB_POSITION_LOC	= 0;
-Shader.ATTRIB_NORMAL_LOC	= 1;
-Shader.ATTRIB_UV_LOC		= 2;
+Shader.ATTRIB_POSITION_LOC		= 0;
+Shader.ATTRIB_NORMAL_LOC		= 1;
+Shader.ATTRIB_UV_LOC			= 2;
 
-Shader.UNIFORM_MODELMAT		= "u_modelMatrix";
-Shader.UNIFORM_NORMALMAT	= "u_normalMatrix";
+Shader.ATTRIB_JOINT_IDX_LOC		= 8;
+Shader.ATTRIB_JOINT_WEIGHT_LOC	= 9;
+
+Shader.UNIFORM_MODELMAT			= "u_modelMatrix";
+Shader.UNIFORM_NORMALMAT		= "u_normalMatrix";
 
 
 //##################################################################

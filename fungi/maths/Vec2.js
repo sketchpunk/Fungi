@@ -1,7 +1,7 @@
 class Vec2 extends Float32Array{
 	constructor(ini){
 		super(2);
-		if(ini instanceof Vec3 || (ini && ini.length == 2)){
+		if((ini && ini.length == 2)){
 			this[0] = ini[0]; this[1] = ini[1];
 		}else if(arguments.length == 2){
 			this[0] = arguments[0]; this[1] = arguments[1];
@@ -108,4 +108,4 @@ class Vec2 extends Float32Array{
 	}
 }
 
-export default Vec3
+export default Vec2;

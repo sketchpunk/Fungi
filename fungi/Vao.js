@@ -10,8 +10,11 @@ class Vao{
 			this.vao = { 
 				id			: gl.ctx.createVertexArray(), 
 				elmCount	: 0,
-				isIndexed	: false
-			};
+				isIndexed	: false,
+				isInstanced	: false
+			}; 
+
+			//vao.instanceCount - Added dynamicly if needed.
 
 			gl.ctx.bindVertexArray(this.vao.id);
 			return this;
@@ -26,6 +29,12 @@ class Vao{
 			
 			Fungi.vaos.set(name, this.vao);
 			return this.vao;
+		}
+
+		setInstanced(cnt){
+			this.vao.isInstanced	= true;
+			this.vao.instanceCount	= cnt;
+			return this;
 		}
 
 		cleanup(){ this.vao = null; return this; }
@@ -200,6 +209,23 @@ class Vao{
 			return vao;
 		}
 
+		static standardArmature(name, vertCompLen, aryVert, aryNorm=null, aryUV=null, aryInd=null, jointSize=0, aryJoint = null, aryWeight = null){
+			var o = new Vao().create()
+				.floatBuffer("bVertices", aryVert, Shader.ATTRIB_POSITION_LOC, vertCompLen);
+
+			if(aryNorm)	o.floatBuffer("bNormal", aryNorm, Shader.ATTRIB_NORMAL_LOC, 3);
+			if(aryUV)	o.floatBuffer("bUV", aryUV, Shader.ATTRIB_UV_LOC, 2);
+			if(aryInd)	o.indexBuffer("bIndex", aryInd)
+			if(jointSize > 0){
+				o.floatBuffer("bJointIdx",		aryJoint,	Shader.ATTRIB_JOINT_IDX_LOC,	jointSize);
+			   	o.floatBuffer("bJointWeight",	aryWeight,	Shader.ATTRIB_JOINT_WEIGHT_LOC,	jointSize);
+			}
+						
+			var vao = o.finalize(name);
+			o.cleanup();
+
+			return vao;
+		}
 
 		static standardEmpty(name, vertCompLen=3, vertCnt=4, normLen=null, uvLen=null, indexLen=null){
 			var o = new Vao().create()
