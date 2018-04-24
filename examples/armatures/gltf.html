@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<style>
+			html,body{margin:0px; padding:0px; width:100%; height:100%;}
+			body{background-color:#404040;}
+			canvas{border:0px solid green;}
+			div{display:flex; width:100%; height:100%; align-items:center; justify-content:center;}
+			#lblFPS{position:absolute; top:0px; left:0px; width:40px; padding:5px 5px;
+				background:gray; color:white; font-weight:bold; text-align:center; font-family:arial; font-size:13px; }
+		</style>
+
+		<script type="module">
+			import Fungi	from "../../fungi/Fungi.js";
+			import System	from "../../fungi/System.js";
+			import GLTFLoader, { gltfToVao, gltfArmature } from "../../lib/GLTFLoader.js";
+
+			import Vao				from "../../fungi/Vao.js";
+			import Geometry			from "../../fungi/data/Geometry.js";
+			import Renderable		from "../../fungi/rendering/Renderable.js";
+			import Armature 		from "../../fungi.mod/armature/Armature.js";
+			import ArmaturePreview 	from "../../fungi.mod/armature/ArmaturePreview.js";
+
+			window.addEventListener("load",function(){
+				System.beginWithResources([
+					{ type:"shader", file:"../../fungi/shaders/VecWColor.txt" },
+					{ type:"gltf", name:"mesh", file:"../gltf/RiggedSimple.gltf"},
+					{ type:"shader", file:"../../fungi.mod/armature/shaders/ArmaturePreview.txt" },
+					{ type:"shader", file:"../../fungi.mod/armature/shaders/ArmatureSkin.txt" }
+				])	.then( async()=>{ await System.startUp(onRender); } )
+					.then( ()=>onInit() )
+					.catch( err=>console.log("Catch",err) );
+			});
+
+
+			var j0, j1, j2, arm, armPreview;
+			function onInit(){
+				//........................				
+				Fungi.camera.setPosition(4,1.5,9).setDegrees(45,"y");
+
+				//----------------
+				getMeshReady();
+
+				//........................
+				Fungi.loop.start();
+			}
+
+			function onRender(dt, ss){
+				System.update();
+			}
+
+			/**/
+			function applyArmature(model, armature){
+				model.onPreDraw = function(renderer){
+					var offset = armature.getFlatOffset();
+					renderer.shader
+						.setUniform("u_joints", offset)
+						.setUniform("u_jointCount", 2);
+				}				
+			}
+			
+			function getMeshReady(){
+				var tfJson	= Fungi.popTempCache("mesh"),
+					gltf	= new GLTFLoader( tfJson ),
+					m 		= gltf.parseMesh(0),
+					vao 	= gltfToVao("gltf_mesh", m),
+					mRender = new Renderable("gltf_mesh", vao, "ArmatureSkin") //VecWColor
+					;
+				
+				Fungi.scene.add(mRender);
+				//console.log(m);
+				if(m.armature){
+					//Load data and set Bind Pose
+					arm = new Armature();
+					gltfArmature(m.armature, arm);
+					arm.bindPose();
+
+					//Test
+					j0 = arm.root;
+					j1 = arm.getJoint("joint1");
+
+					j0.rotation = j0.rotation.rx(-25 * Math.PI / 180);
+					j1.rotation = j1.rotation.rx(-45 * Math.PI / 180);
+					arm.update();
+
+					//Setup Armature Preview Renderable
+					armPreview = new ArmaturePreview("testbones", arm, 1.5);
+					Fungi.scene.add(armPreview);
+
+					applyArmature(mRender, arm);
+				}
+			}
+		</script>
+	</head>
+<body>
+	<div><canvas id="FungiCanvas"></canvas></div>
+	<span id="lblFPS">0</div>
+</body>
+</html>

@@ -396,6 +396,16 @@ class Quaternion extends Float32Array{
 			return out;
 		}
 
+		static lerp2(a, b, t, out){
+			var tm1 = 1 - t;
+			out		= out || new Quaternion();
+			out[0]	= a[0] * tm1 + b[0] * t;
+			out[1]	= a[1] * tm1 + b[1] * t;
+			out[2]	= a[2] * tm1 + b[2] * t;
+			out[3]	= a[3] * tm1 + b[3] * t;
+			return out;
+		}
+
 		//https://github.com/toji/gl-matrix/blob/master/src/gl-matrix/quat.js
 		static invert(a,out) {
 			let a0	= a[0],

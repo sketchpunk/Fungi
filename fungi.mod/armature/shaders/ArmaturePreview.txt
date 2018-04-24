@@ -6,8 +6,8 @@
 }<\shader>
 	
 <materials>[
-	{ "name":"ArmaturePreview" }
-]<\materials> "useBlending":false
+	{ "name":"ArmaturePreview", "options": { "depthTest":false } }
+]<\materials>
 	
 <vertex>
 	#version 300 es

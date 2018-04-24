@@ -38,9 +38,11 @@ class Armature{
 			//Add children to stack, to continue the loop
 			if(j.children.length > 0) for(jj of j.children) stack.push(jj);
 		}
+
+		return this;
 	}
 
-	update(){ var j; for(j of this.joints) j.update(); }
+	update(){ var j; for(j of this.joints) j.update(); return this; }
 
 	getJoint(name){
 		var j;
