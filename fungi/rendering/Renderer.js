@@ -5,9 +5,10 @@ import Shader	from "../Shader.js"
 class Renderer{
 	constructor(){
 		//Render Objects
-		this.material	= null;
-		this.shader		= null;
-		//this.vao		= null;
+		this.frameBuffer 	= null;
+		this.material		= null;
+		this.shader			= null;
+		//this.vao			= null;
 
 		//Misc
 		this.options	= {
@@ -17,6 +18,9 @@ class Renderer{
 			depthTest				: { state : true,	id : gl.ctx.DEPTH_TEST }
 		}
 	}
+
+	useCustomBuffer(fb){ this.frameBuffer = fb; return this; }
+	setFrameBuffer(fb = null){ gl.ctx.bindFramebuffer(gl.ctx.FRAMEBUFFER, fb); return this; }
 
 	//----------------------------------------------
 	//region Clear and Loading
@@ -114,22 +118,26 @@ class Renderer{
 
 		//Handle Drawing a Scene
 		drawScene(ary){
+			//Set custom framebuffer if it has been set;
+			if(this.frameBuffer) gl.ctx.bindFramebuffer(gl.ctx.FRAMEBUFFER, this.frameBuffer.id);
+		
+			//Reset current framebuffer
 			gl.clear();
 
 			var itm;
 			for(itm of ary){
+				//Check for what Items to ignore.
 				if(!itm.visible) continue;
 
-				if(itm.draw) itm.draw(this);
-				else{
-					if(itm.vao.elmCount == 0) continue;
+				if(itm.draw) itm.draw(this);	//Do Custom Drawing if the object has a Draw function
+				else{ 							//Do standard rendering steps
+					
+					if(itm.vao.elmCount == 0) continue; 	//No Elements to be drawn.
 
-					//Prepare for drawing
-					this.loadMaterial(itm.material);
-					if(itm.onPreDraw) itm.onPreDraw(this);
+					this.loadMaterial(itm.material);		//Load Material and Shader
+					if(itm.onPreDraw) itm.onPreDraw(this);	//Do any preperations needed before drawing if object has onPreDraw
 
-					//Start Drawing
-					this.drawRenderable(itm);
+					this.drawRenderable(itm);				//Start Drawing
 				}
 			}
 			return this;

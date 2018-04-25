@@ -142,7 +142,7 @@ class Material{
 			case "rgb"	: uValue = gl.rgbArray( uValue ); break;
 			case "rgba"	: uValue = gl.rgbaArray( uValue ); break;
 			case "tex"	: 
-				var tmp = Fungi.getTexture( uValue ); 
+				var tmp = (uValue instanceof WebGLTexture)? uValue : Fungi.getTexture( uValue ); 
 				if(tmp == null){
 					console.log("Material.addUniform: Texture not found %s for material %s uniform %s",uValue, this.name, uName);
 					return this;
