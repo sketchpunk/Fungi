@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<style>
+			html,body{margin:0px; padding:0px; width:100%; height:100%;}
+			body{background-color:#404040;}
+			canvas{border:0px solid green;}
+			div{display:flex; width:100%; height:100%; align-items:center; justify-content:center;}
+			#lblFPS{position:absolute; top:0px; left:0px; width:40px; padding:5px 5px;
+				background:gray; color:white; font-weight:bold; text-align:center; font-family:arial; font-size:13px; }
+		</style>
+
+		<script type="module">
+			import Fungi 		from "/fungi/Fungi.js";
+			import System 		from "/fungi/System.js";
+			import Quad			from "/fungi/primitives/Quad.js";
+			import { LoadInlineShader } from "/fungi/Shader.js";
+
+			window.addEventListener("load",function(){
+				System.startUp(onRender, 0).then(()=>{
+					LoadInlineShader("inline_shader");
+					Fungi.scene.add( Quad("MatShader") );
+					Fungi.loop.start();
+				});
+			});
+
+			function onRender(){ System.update(); }
+		</script>
+	</head>
+<body>
+	<div><canvas id="FungiCanvas"></canvas></div>
+	<span id="lblFPS">0</div>
+
+	<script id="inline_shader" type="plain/text">
+		<shader>{ "name":"Shader", "ubo":[ "UBOTransform" ] }<\shader>
+		<materials> [ { "name":"MatShader" } ] <\materials>
+			
+		<vertex>
+			#version 300 es
+			layout(location=0) in vec4 a_position;
+			layout(location=2) in vec2 a_uv;
+
+			out highp vec2 v_uv;
+			flat out vec2 v_screenRes;
+			flat out float v_time;
+
+			uniform UBOTransform{
+				mat4 	projViewMatrix;
+				vec3	cameraPos;
+				float	globalTime;
+				vec2	screenSize;
+			};
+
+			void main(void){
+				v_uv = a_uv;
+				v_time = globalTime;
+				v_screenRes = screenSize;
+				gl_Position	= vec4(a_position.xyz,1.0);
+			}
+		<\vertex>
+
+		<fragment>
+			#version 300 es
+			precision highp float;
+
+			in highp vec2 v_uv;
+			flat in vec2 v_screenRes;
+			flat in float v_time;
+
+			out vec4 outColor;
+
+			//https://www.youtube.com/watch?v=r1UOB8NVE8I&index=15&list=PLGmrMu-IwbguU_nY2egTFmlg691DN7uE5
+			void main(void){
+				vec2 uv = (gl_FragCoord.xy - 0.5 * v_screenRes) / v_screenRes.y;
+				vec3 c = vec3(.0);
+
+				//.......................................
+				//Convert Coord to Polar (atan creates angle in rads from X,Y)
+				vec2 st = vec2( atan(uv.x,uv.y), length(uv) );
+				//c = vec3(st.y);
+				//c = vec3(st.x); //Visually see angel of Pi to -Pi, Black half of screen is the negative range, since pi is 3.14 > 1, you will see more white because we can only see colors between 0 and 1.
+		 
+				//c = vec3(st.x / 6.2831); //try to normalize the angle by dividing it by 2Pi, creates a value between -0.5 to 0.5
+				//c = vec3(st.x / 6.2831 + 0.5); //Adding half shows the whole range
+
+				//.......................................
+				//uv = st; //Makes a horizontal texture rotate around the center like a loop but not perfect
+				//uv = vec2(st.x / 6.2831 + 0.5, st.y); //Fix it by converts to -0.5:0.5, then 0:1;
+				//uv = vec2(st.x / 6.2831 + 0.5 + (v_time * 0.0005), st.y); //animate and rotate
+				uv = vec2(st.x/6.2831 + 0.5 + st.y*3.0, st.y); //turn the pattern to a spiral by adding y,Then can change strength by multi
+
+
+				float x = uv.x * 5.0; //control how many bars or Points in the follower to make.
+				float m = min( fract(x), fract(1.0 - x) );
+				//float cc = m; //Makes gradient stripes
+				//float cc = m - uv.y; //Makes a zig-zag battern, kinda like teeth
+				//float cc = smoothstep(0.0, 0.05, m - uv.y); //smooth it out 
+				//float cc = smoothstep(0.0, 0.02, m*0.3 - uv.y); //make the zig zag smaller
+				float cc = smoothstep(0.0, 0.02, m*0.3 + 0.2 - uv.y); //Move the pattern up above the zero line
+				c = vec3(cc);
+				
+				outColor = vec4(c,1.0);
+			}
+		<\fragment>
+	</script>
+
+</body>
+</html>
