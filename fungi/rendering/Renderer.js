@@ -76,7 +76,7 @@ class Renderer{
 			//Apply GL Options
 			var o;
 			for(o in r.options){
-				if(this.options[o].state != r.options[o]){
+				if(this.options[o] && this.options[o].state != r.options[o]){
 					this.options[o].state = r.options[o];
 					gl.ctx[ (this.options[o].state)? "enable" : "disable" ]( this.options[o].id );
 				}

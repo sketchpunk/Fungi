@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<style>
+			html,body{margin:0px; padding:0px; width:100%; height:100%;}
+			body{background-color:#404040;}
+			canvas{border:0px solid green;}
+			div{display:flex; width:100%; height:100%; align-items:center; justify-content:center;}
+			#lblFPS{position:absolute; top:0px; left:0px; width:40px; padding:5px 5px;
+				background:gray; color:white; font-weight:bold; text-align:center; font-family:arial; font-size:13px; }
+		</style>
+
+		<script type="module">
+			import gl		from "/fungi/gl.js";
+			import Fungi	from "/fungi/Fungi.js";
+			import Vao 		from "/fungi/Vao.js";
+			import Quad 	from "/fungi/primitives/Quad.js";
+			import Shader, { LoadInlineShader }	from "/fungi/Shader.js";
+
+			window.addEventListener("load",function(){
+				gl.init("FungiCanvas");
+				LoadInlineShader("inline_shader");
+				
+				//..................................
+				var	shader	= Fungi.shaders.get("BaseColor"),
+					qVert	= Quad.vertData(-1,-1,0, 1,1,0),
+					vao		= new Vao().create()
+						.floatBuffer("bVertices",	qVert.vertices,	Shader.ATTRIB_POSITION_LOC, 3)
+						.floatBuffer("bUV",			qVert.uv,		Shader.ATTRIB_UV_LOC, 		2)
+						.indexBuffer("bIndex",		qVert.index)
+						.finalize("Quad");
+
+				//..................................
+				shader.bind().setUniform("u_color", [1,0,0]);
+				Vao.bind(vao).draw(vao, Fungi.TRI);
+			});
+		</script>
+	</head>
+<body>
+	<div><canvas id="FungiCanvas"></canvas></div>
+	<span id="lblFPS">0</div>
+
+	<script id="inline_shader" type="plain/text">
+		<shader>{
+			"name":"BaseColor",
+			"uniforms":[
+				{ "name":"u_color", "type":"vec3" }
+			]
+		}<\shader>
+			
+		<vertex>
+			#version 300 es
+			layout(location=0) in vec3 a_position;
+
+			void main(void){
+				gl_Position = vec4(a_position, 1.0);
+			}
+		<\vertex>
+
+		<fragment>
+			#version 300 es
+			precision mediump float;
+
+			uniform vec3 u_color;
+			out vec4 oFragColor;
+
+			void main(void){ oFragColor = vec4(u_color, 1.0); }
+		<\fragment>
+	</script>
+</body>
+</html>

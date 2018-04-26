@@ -44,7 +44,7 @@ class System{
 
 		if(!isOk) throw new Error("Error Downloading");
 
-		System.gl_init();
+		if(gl.ctx == null) System.gl_init();
 
 		//....................................
 		//Load Up Shaders

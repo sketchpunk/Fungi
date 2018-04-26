@@ -11,7 +11,7 @@ import Fungi	from "./Fungi.js";
 		var shader = LoadShader(shData);
 		if(shader == null){ console.log("error compiling inline shader"); return null; }
 
-		LoadMaterials(shData);
+		if(shData.materials) LoadMaterials(shData);
 		return shader;
 	}
 

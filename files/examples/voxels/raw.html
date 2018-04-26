@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<style>
+			html,body{margin:0px; padding:0px; width:100%; height:100%;}
+			body{background-color:#404040;}
+			canvas{border:0px solid green;}
+			div{display:flex; width:100%; height:100%; align-items:center; justify-content:center;}
+			#lblFPS{position:absolute; top:0px; left:0px; width:40px; padding:5px 5px;
+				background:gray; color:white; font-weight:bold; text-align:center; font-family:arial; font-size:13px; }
+		</style>
+
+		<script type="module">
+			import Fungi		from "/fungi/Fungi.js";
+			import System		from "/fungi/System.js";
+			import Vao			from "/fungi/Vao.js";
+			import Renderable	from "/fungi/rendering/Renderable.js";
+
+			import Voxel		from "/fungi.mod/voxel/Voxel.js";
+			import VoxelChunk	from "/fungi.mod/voxel/VoxelChunk.js";
+			
+			window.addEventListener("load",function(){
+				System.beginWithResources([
+					{ type:"shader", file:"/fungi/shaders/VecWColor.txt" },
+					{ type:"shader", file:"/fungi/shaders/LowPolyPhong.txt" }
+				])	.then( async()=>{ await System.startUp(onRender); } )
+					.then( ()=>onInit() )
+					.catch( err=>console.log("Catch",err) );
+			});
+
+			var dBoxes, dLines, dPoints, bbox;
+
+			function onInit(){
+				//........................				
+				Fungi.camera.setPosition(0,1,2).setDegrees(-20,"x");
+
+				//........................		
+				var vc = new VoxelChunk(3,3,3, 1);
+				vc.set(
+					1,2,1,0,
+
+					0,1,1,0,  1,1,1,0,  2,1,1,0,  1,1,0,0,  1,1,2,0,
+
+					1,0,1,0
+				);
+
+				var vAry 	= [], iAry = [];
+					Voxel.buildMesh(vc,vAry,iAry);
+
+				var vao 	= Vao.standardRenderable("Voxel001", Voxel.COMPLEN, vAry, null, null, iAry),
+					model 	= new Renderable("Voxel001", vao, "LowPolyPhong");
+
+				Fungi.scene.add(model);
+
+				//........................
+				Fungi.loop.start();
+			}
+
+			function onRender(dt, ss){ System.update(); }
+		</script>
+	</head>
+<body>
+	<div><canvas id="FungiCanvas"></canvas></div>
+	<span id="lblFPS">0</div>
+</body>
+</html>
