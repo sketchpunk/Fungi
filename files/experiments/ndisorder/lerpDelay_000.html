@@ -3,14 +3,16 @@
 	<head>
 		<style>
 			html,body{margin:0px; padding:0px; width:100%; height:100%;}
-			body{background-color:#404040;}
+			body{background-color:#606060;}
 			canvas{border:0px solid green;}
-			div{display:flex; width:100%; height:100%; align-items:center; justify-content:center;}
+			div.win{display:flex; width:100%; height:100%; align-items:center; justify-content:center;}
 			#lblFPS{position:absolute; top:0px; left:0px; width:40px; padding:5px 5px;
 				background:gray; color:white; font-weight:bold; text-align:center; font-family:arial; font-size:13px; }
 		</style>
 
 		<script type="module">
+			import Overlay 		from "/lib/Overlay/Overlay.js";
+
 			import Canvas2D		from "/lib/Canvas2D.js";
 			import RenderLoop	from "/fungi/rendering/RenderLoop.js";
 			import Vec2			from "/fungi/maths/Vec2.js";
@@ -26,20 +28,24 @@
 				gCanvas	= new Canvas2D("FungiCanvas").center().style("#00ff00").lineDash([5,10]);
 				gLoop	= new RenderLoop(onRender, 30);
 
+				Overlay.init()
+					.range("Delay 0", 1, 0, 5, 0.1, function(e){ delay0 = this.value; })
+					.range("Delay 1", 0, 0, 5, 0.1, function(e){ delay1 = this.value; });
+
 				//----------------------------------
 				//Finish Up
 				gLoop.start();
-				//onRender(0,789);
 			});
 
 
-			const SECONDS = 4000;
-			const STEPS = 40;
-			const STEPSinv = 1 / STEPS;
-			const DELAY = 1.0;
+			const SECONDS	= 4;
+			const STEPS		= 40;
+			const STEPSinv	= 1 / STEPS;
 
-			var p0 = new Vec2(-200,0),
-				p1 = new Vec2(200,0);
+			let p0		= new Vec2(-200,0),
+				p1		= new Vec2(200,0),
+				delay0	= 1.0,
+				delay1	= 0.0;
 
 			function onRender(dt,ss){
 				//----------------------------------
@@ -61,8 +67,9 @@
 				for(var i=0; i <= STEPS; i++){
 					tStep = i * STEPSinv;
 
-					pA = pos0( tTime - DELAY * tStep );
-					//pA = pos0( tTime - tStep );
+					pA = pos0( tTime - delay0 * tStep );
+					pB = pos1( tTime - delay1 * tStep );
+
 					//onsole.log(tTime,tStep,tTime - DELAY * tStep);
 					pA.lerp(pB, tStep, p);
 					gCanvas.vecCircle("fill", 2.5, p );
@@ -86,6 +93,6 @@
 		</script>
 	</head>
 <body>
-	<div><canvas id="FungiCanvas"></canvas></div>
+	<div class="win"><canvas id="FungiCanvas"></canvas></div>
 </body>
 </html>
