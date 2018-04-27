@@ -93,6 +93,13 @@ class Vec2 extends Float32Array{
 			return this;
 		}
 
+		addXY(x, y, out=null){
+			out = out || this;
+			out[0] = this[0] + x;
+			out[1] = this[1] + y;
+			return this;
+		}
+
 		sub(v, out=null){
 			out = out || this;
 			out[0] = this[0] - v[0];

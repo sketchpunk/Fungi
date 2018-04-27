@@ -1,12 +1,14 @@
 *{font-family:verdana;}
 
 /* ---------------------------------------------------- */
-	.OverlayPanel{ position:fixed; top:0px; right:20px; z-index:1001;
-		background-color:rgba(63,63,63,.7); display:block; border-radius:0px 0px 5px 5px; box-shadow: 0px 5px 10px #000000;
+	.OverlayPanel{ position:fixed; top:0px; left:20px; z-index:1001;
+		background-color:rgba(63,63,63,.7); display:block; border-radius:0px 0px 5px 5px; 
+		box-shadow: 0px 1px 10px #000000;
 		width:200px; }
 
-	.OverlayPanel > header{ display:block; background-color:#297286; color:white; border-radius:5px 5px 0px 0px;
-		text-align:center; padding:4px 12px;
+	.OverlayPanel > header{ display:block; background-color:#297286;
+		border-radius:5px 5px 0px 0px; padding:4px 12px;
+		text-align:center; color:white; font-size:14px;
 		-webkit-touch-callout: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none;           
 	}
 
@@ -14,23 +16,33 @@
 		padding:4px 12px;         
 	}
 
-	.OverlayPanel > main {margin:10px;}
+	.OverlayPanel > main {margin:10px 0px;}
 
 
 /* ---------------------------------------------------- */
-	.OverlayPanel section{ display:grid;
+	.OverlayPanel section{ display:grid; margin:0px 10px;
 		grid-template-columns>: 50% 50%;
 		grid-template-rows: auto auto;
 		grid-template-areas:"label value" "input input";
 		grid-row-gap:1ch;
 		margin-top:10px;
 	}
-	.OverlayPanel section label{ grid-area:label; padding:0px; margin:0px; font-size:12px; color:white; opacity:0.9;  }
+	.OverlayPanel section label{ grid-area:label; padding:0px; margin:0px; font-size:12px; color:white; opacity:0.6;  }
 
-	.OverlayPanel section span{ display:block; grid-area:value; padding:0px; margin:0px; text-align:right; color:white; opacity:0.5; }
+	.OverlayPanel section span{ display:block; grid-area:value; padding:0px; margin:0px; text-align:right; color:white; opacity:0.9; font-size:12px; }
 
 	.OverlayPanel section input{ grid-area:input;}
 
+
+	.OverlayPanel section.div{ background-color:#373737;
+		border-top:1px solid #202020;
+		border-bottom:1px solid #575757;
+		padding:3px 0px; margin-left:0px; margin-right:0px;
+
+		grid-template-rows: auto;
+		grid-template-areas:"value value";
+	}
+	.OverlayPanel section.div span{text-align:center;}
 
 /* ----------------------------------------------------
 INPUT STYLES*/

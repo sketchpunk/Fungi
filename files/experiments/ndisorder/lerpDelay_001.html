@@ -17,6 +17,7 @@
 			import RenderLoop	from "/fungi/rendering/RenderLoop.js";
 			import Vec2			from "/fungi/maths/Vec2.js";
 			import Maths 		from "/fungi/Maths.js";
+			import Noise		from "/lib/Noise.js";
 			
 			//https://necessarydisorder.wordpress.com/2018/03/31/a-trick-to-get-looping-curves-with-lerp-and-delay/ 
 			//========================================================
@@ -29,8 +30,12 @@
 				gLoop	= new RenderLoop(onRender, 30);
 
 				Overlay.init()
-					.range("Delay 0", 1, 0, 5, 0.1, function(e){ delay0 = this.value; })
-					.range("Delay 1", 0, 0, 5, 0.1, function(e){ delay1 = this.value; });
+					.range("Delay", 1, 0, 5, 0.1, function(e){ delay0 = this.value; })
+					.range("X Radius", 100, 15, 200, 5, function(e){ xMax = this.value; })
+					.range("Y Radius", 100, 15, 200, 5, function(e){ yMax = this.value; })
+					.range("Noise Freq", 0.5, 0.1, 2, 0.01, function(e){ freq = this.value; })
+					//.range("Delay 1", 0, 0, 5, 0.1, function(e){ delay1 = this.value; })
+					;
 
 				//----------------------------------
 				//Finish Up
@@ -40,15 +45,22 @@
 
 			const SECONDS		= 4;
 			const SECONDS_INV	= 1 / SECONDS;
-			const STEPS			= 40;
+			const STEPS			= 100;
 			const STEPSinv		= 1 / STEPS;
+
 
 			let p0		= new Vec2(-200,0),
 				p1		= new Vec2(200,0),
 				delay0	= 1.0,
-				delay1	= 0.0,
-				pA 		= new Vec2(),
-				pB		= new Vec2();
+				//delay1	= 0.0,
+				pA 		= new Vec2();
+				//pB		= new Vec2();
+
+			let xMax 	= 100,
+				yMax 	= 100,
+				freq	= 0.5;
+
+			//pos1(0);
 
 			function onRender(dt,ss){
 				//----------------------------------
@@ -59,45 +71,49 @@
 					tTime	= (ss % SECONDS) * SECONDS_INV; // T of Seconds
 					
 				pos0(tTime);
-				pos1(tTime);
+				//pos1(tTime);
 
 				gCanvas.lineDash()
 					.style(null,"#909090", 2)
-					.vecCircle("stroke", 10, pA, pB )	//Moving Points
+					.vecCircle("stroke", 10, pA, p1 )	//Moving Points
 					.lineDash([5,5])
 					.style(null,"#505050", 3)
-					.vecEllipse(p0, 25, 50)				//Left Rotation Path
-					.vecEllipse(p1, 75, 50)				//Right Rotation Path
-					.vecLine("stroke", pA, pB);			//Line Connecting the Moving Points
+					.vecEllipse(p0, xMax, yMax)			//Left Rotation Path
+					//.vecEllipse(p1, 75, 50)			//Right Rotation Path
+					.vecLine("stroke", pA, p0)			//Line Connecting the Moving Point to center
+					.vecCircle("fill", 3, p0 ); 		//Center Point
 
 				var p = [0,0];
 				for(var i=0; i <= STEPS; i++){
 					tStep = i * STEPSinv;
 
 					pos0( tTime - delay0 * tStep );
-					pos1( tTime - delay1 * tStep );
+					//pos1( tTime - delay1 * tStep );
 
-					//onsole.log(tTime,tStep,tTime - DELAY * tStep);
-					pA.lerp(pB, tStep, p);
+					pA.lerp(p1, tStep, p);
 					gCanvas.vecCircle("fill", 2.5, p );
 				}
 			}
 
+
 			function pos0(t){
+				var cos = Math.cos( Maths.PI_2 * t ),
+					sin = Math.sin( Maths.PI_2 * t );
+
 				p0.addXY(
-					25 * Math.cos( Maths.PI_2 * t ),
-					50 * Math.sin( Maths.PI_2 * t ),
+					xMax * Noise.simplex2(1337 + freq * cos, 0.5 * sin ),
+					yMax * Noise.simplex2(1515 + freq * cos, 0.5 * sin ),
 					pA
 				);
 			}
 
-			function pos1(t){
-				p1.addXY(
-					75 * Math.cos( 2.0 * Maths.PI_2 * t ),
-					50 * Math.sin( 2.0 * Maths.PI_2 * t ),
-					pB
-				);
-			}
+			//function pos1(t){
+			//	p1.addXY(
+			//		75 * Math.cos( 2.0 * Maths.PI_2 * t ),
+			//		50 * Math.sin( 2.0 * Maths.PI_2 * t ),
+			//		pB
+			//	);
+			//}
 		</script>
 	</head>
 <body>

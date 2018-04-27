@@ -17,6 +17,7 @@
 			import RenderLoop	from "/fungi/rendering/RenderLoop.js";
 			import Vec2			from "/fungi/maths/Vec2.js";
 			import Maths 		from "/fungi/Maths.js";
+			import Noise		from "/lib/Noise.js";
 			
 			//https://necessarydisorder.wordpress.com/2018/03/31/a-trick-to-get-looping-curves-with-lerp-and-delay/ 
 			//========================================================
@@ -25,12 +26,20 @@
 			window.addEventListener("load",function(){
 				//----------------------------------
 				//Setup
-				gCanvas	= new Canvas2D("FungiCanvas").center().style("#00ff00");
+				gCanvas	= new Canvas2D("FungiCanvas").center().font("bold 12px verdana","center");
 				gLoop	= new RenderLoop(onRender, 30);
 
 				Overlay.init()
-					.range("Delay 0", 1, 0, 5, 0.1, function(e){ delay0 = this.value; })
-					.range("Delay 1", 0, 0, 5, 0.1, function(e){ delay1 = this.value; });
+					.range("Noise Freq", 0.5, 0.1, 2, 0.01, function(e){ freq = this.value; })
+					.title("Point A")
+					.range("Delay", 1, -2, 5, 0.1, function(e){ delay0 = this.value; })
+					.range("X Radius", 100, 15, 200, 5, function(e){ xMax0 = this.value; })
+					.range("Y Radius", 100, 15, 200, 5, function(e){ yMax0 = this.value; })
+					.title("Point B")
+					.range("Delay", 0, -2, 5, 0.1, function(e){ delay1 = this.value; })
+					.range("X Radius", 75, 15, 200, 5, function(e){ xMax1 = this.value; })
+					.range("Y Radius", 50, 15, 200, 5, function(e){ yMax1 = this.value; })
+					;
 
 				//----------------------------------
 				//Finish Up
@@ -40,8 +49,9 @@
 
 			const SECONDS		= 4;
 			const SECONDS_INV	= 1 / SECONDS;
-			const STEPS			= 40;
+			const STEPS			= 100;
 			const STEPSinv		= 1 / STEPS;
+
 
 			let p0		= new Vec2(-200,0),
 				p1		= new Vec2(200,0),
@@ -49,6 +59,14 @@
 				delay1	= 0.0,
 				pA 		= new Vec2(),
 				pB		= new Vec2();
+
+			let xMax0 	= 100,
+				yMax0 	= 100,
+				xMax1 	= 75,
+				yMax1 	= 50,
+				freq	= 0.5;
+
+			//pos1(0);
 
 			function onRender(dt,ss){
 				//----------------------------------
@@ -62,13 +80,19 @@
 				pos1(tTime);
 
 				gCanvas.lineDash()
-					.style(null,"#909090", 2)
+					.style("#b0b0b0")
+					.text(pA.x, pA.y+22, "pA")
+					.text(pB.x, pB.y+22, "pB")
+
+					.style("#00ff00","#909090", 2)
 					.vecCircle("stroke", 10, pA, pB )	//Moving Points
+					
 					.lineDash([5,5])
 					.style(null,"#505050", 3)
-					.vecEllipse(p0, 25, 50)				//Left Rotation Path
-					.vecEllipse(p1, 75, 50)				//Right Rotation Path
-					.vecLine("stroke", pA, pB);			//Line Connecting the Moving Points
+					.vecEllipse(p0, xMax0, yMax0)		//Left Rotation Path
+					.vecEllipse(p1, xMax1, yMax1)		//Right Rotation Path
+					.vecLine("stroke", pA, p0)			//Line Connecting the Moving Point to center
+					.vecCircle("fill", 3, p0 ); 		//Center Point
 
 				var p = [0,0];
 				for(var i=0; i <= STEPS; i++){
@@ -77,24 +101,27 @@
 					pos0( tTime - delay0 * tStep );
 					pos1( tTime - delay1 * tStep );
 
-					//onsole.log(tTime,tStep,tTime - DELAY * tStep);
 					pA.lerp(pB, tStep, p);
 					gCanvas.vecCircle("fill", 2.5, p );
 				}
 			}
 
+
 			function pos0(t){
+				var cos = Math.cos( Maths.PI_2 * t ),
+					sin = Math.sin( Maths.PI_2 * t );
+
 				p0.addXY(
-					25 * Math.cos( Maths.PI_2 * t ),
-					50 * Math.sin( Maths.PI_2 * t ),
+					xMax0 * Noise.simplex2(1337 + freq * cos, 0.5 * sin ),
+					yMax0 * Noise.simplex2(1515 + freq * cos, 0.5 * sin ),
 					pA
 				);
 			}
 
 			function pos1(t){
 				p1.addXY(
-					75 * Math.cos( 2.0 * Maths.PI_2 * t ),
-					50 * Math.sin( 2.0 * Maths.PI_2 * t ),
+					xMax1 * Math.cos( 2.0 * Maths.PI_2 * t ),
+					yMax1 * Math.sin( 2.0 * Maths.PI_2 * t ),
 					pB
 				);
 			}
