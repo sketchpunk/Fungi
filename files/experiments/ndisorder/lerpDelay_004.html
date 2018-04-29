@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<style>
+			html,body{margin:0px; padding:0px; width:100%; height:100%;}
+			body{background-color:#606060;}
+			canvas{border:0px solid green;}
+			div.win{display:flex; width:100%; height:100%; align-items:center; justify-content:center;}
+			#lblFPS{position:absolute; top:0px; left:0px; width:40px; padding:5px 5px;
+				background:gray; color:white; font-weight:bold; text-align:center; font-family:arial; font-size:13px; }
+		</style>
+
+		<script type="module">
+			import Overlay 		from "/lib/Overlay/Overlay.js";
+
+			import Canvas2D		from "/lib/Canvas2D.js";
+			import RenderLoop	from "/fungi/rendering/RenderLoop.js";
+			import Vec2			from "/fungi/maths/Vec2.js";
+			import Maths 		from "/fungi/Maths.js";
+			import Noise		from "/lib/Noise.js";
+			
+			//https://necessarydisorder.wordpress.com/2018/03/31/a-trick-to-get-looping-curves-with-lerp-and-delay/ 
+			//https://codepen.io/megatroncoder/pen/MVGrer
+			//========================================================
+			var gCanvas, gLoop;
+
+			window.addEventListener("load",function(){
+				//----------------------------------
+				//Setup
+				gCanvas	= new Canvas2D("FungiCanvas").center();//.font("bold 12px verdana","center");
+				gLoop	= new RenderLoop(onRender, 30);
+
+				gCanvas.style("#00ff00","#303030a0", 2).lineDash([5,5]);
+				
+				//----------------------------------
+				Overlay.init()
+					.range("Height", 150, 10, 300, 5, function(e){ maxHeight = this.value; })
+					.range("Jumpy", 3, 1, 8, 1, function(e){ mJumpy = this.value; })
+					.range("Factor", 1, 0.1, 2, 0.1, function(e){ mOffset = parseFloat(this.value); })
+				;
+
+				//----------------------------------
+				//Finish Up
+				gLoop.start();
+			});
+
+			const SECONDS		= 3;
+			const SECONDS_INV	= 1 / SECONDS;
+			const STEPS			= 150;
+			const STEPSinv		= 1 / STEPS;
+
+			let maxHeight 	= 150,
+				mJumpy		= 3,
+				mOffset		= 1.5;
+
+
+			function easeBouncy(t, jump=6, offset=1){
+				var rad = 6.283185307179586 * t; //PI_2 * t
+				return (offset + Math.sin(rad)) / 2 * Math.sin(jump * rad);
+			}
+
+
+			function onRender(dt,ss){
+				//----------------------------------
+				gCanvas.clear();
+
+				var tTime = (ss % SECONDS) * SECONDS_INV, // T of Seconds
+					tStep, s; 
+				
+				var p0 = new Vec2(-250,0),
+					p1 = new Vec2(250,0),
+					pp = new Vec2();
+
+				gCanvas.vecLine("stroke", [p0.x,maxHeight], [p0.x,-maxHeight])
+
+				//----------------------------------
+				p0.y = maxHeight * easeBouncy(tTime, mJumpy, mOffset);
+
+				gCanvas.vecCircle("fill", 6, p0); //Bouncy Point
+				gCanvas.vecCircle("fill", 6, p1); //Static Point
+
+
+				//----------------------------------
+				//Create points between P0 and P1
+				for(s=0; s < STEPS; s++){	
+					tStep	= s * STEPSinv;
+					p0.y	= maxHeight * easeBouncy( tTime + tStep, mJumpy, mOffset );
+
+					p1.lerp(p0, tStep, pp);
+					gCanvas.vecCircle("fill", 1.5, pp);
+				}
+			}
+
+		</script>
+	</head>
+<body>
+	<div class="win"><canvas id="FungiCanvas"></canvas></div>
+</body>
+</html>

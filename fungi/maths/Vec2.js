@@ -16,6 +16,13 @@ class Vec2 extends Float32Array{
 		clone(){ return new Vec2(this); }
 		copy(v){ this[0] = v[0]; this[1] = v[1]; return this; }
 
+		fromAngleLen(ang, len){
+			this[0] = len * Math.cos(ang);
+			this[1] = len * Math.sin(ang);
+			return this;
+		}
+
+
 		//When values are very small, like less then 0.000001, just make it zero.
 		nearZero(){
 			if(Math.abs(this[0]) <= 1e-6) this[0] = 0;
@@ -57,11 +64,11 @@ class Vec2 extends Float32Array{
 			out[0] = this[0] / mag;
 			out[1] = this[1] / mag;
 
-			return this;
+			return out;
 		}
 
 		lerp(v, t, out){
-			if(out == null) out = this;
+			out = out || this;
 			var tMin1 = 1 - t;
 
 			//Linear Interpolation : (1 - t) * v0 + t * v1;
@@ -71,7 +78,7 @@ class Vec2 extends Float32Array{
 		}
 
 		rotate(ang, out){
-			if(out == null) out = this;
+			out = out || this;
 
 			var cos = Math.cos(ang),
 				sin = Math.sin(ang),
@@ -90,49 +97,49 @@ class Vec2 extends Float32Array{
 			out = out || this;
 			out[0] = this[0] + v[0];
 			out[1] = this[1] + v[1];
-			return this;
+			return out;
 		}
 
 		addXY(x, y, out=null){
 			out = out || this;
 			out[0] = this[0] + x;
 			out[1] = this[1] + y;
-			return this;
+			return out;
 		}
 
 		sub(v, out=null){
 			out = out || this;
 			out[0] = this[0] - v[0];
 			out[1] = this[1] - v[1];
-			return this;
+			return out;
 		}
 
 		mul(v, out=null){
 			out = out || this;
 			out[0] = this[0] * v[0];
 			out[1] = this[1] * v[1];
-			return this;
+			return out;
 		}
 
 		div(v, out=null){
 			out = out || this;
 			out[0] = (v[0] != 0)? this[0] / v[0] : 0;
 			out[1] = (v[1] != 0)? this[1] / v[1] : 0;
-			return this;
+			return out;
 		}
 
 		scale(v, out=null){
 			out = out || this;
 			out[0] = this[0] * v;
 			out[1] = this[1] * v;
-			return this;
+			return out;
 		}
 
 		divInvScale(v, out=null){
 			out = out || this;
 			out[0] = (this[0] != 0)? v / this[0] : 0;
 			out[1] = (this[1] != 0)? v / this[1] : 0;
-			return this;
+			return out;
 		}
 	//endregion
 }

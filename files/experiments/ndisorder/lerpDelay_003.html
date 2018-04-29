@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<style>
+			html,body{margin:0px; padding:0px; width:100%; height:100%;}
+			body{background-color:#606060;}
+			canvas{border:0px solid green;}
+			div.win{display:flex; width:100%; height:100%; align-items:center; justify-content:center;}
+			#lblFPS{position:absolute; top:0px; left:0px; width:40px; padding:5px 5px;
+				background:gray; color:white; font-weight:bold; text-align:center; font-family:arial; font-size:13px; }
+		</style>
+
+		<script type="module">
+			import Overlay 		from "/lib/Overlay/Overlay.js";
+
+			import Canvas2D		from "/lib/Canvas2D.js";
+			import RenderLoop	from "/fungi/rendering/RenderLoop.js";
+			import Vec2			from "/fungi/maths/Vec2.js";
+			import Maths 		from "/fungi/Maths.js";
+			import Noise		from "/lib/Noise.js";
+			
+			//https://necessarydisorder.wordpress.com/2018/03/31/a-trick-to-get-looping-curves-with-lerp-and-delay/ 
+			//https://codepen.io/megatroncoder/pen/MVGrer
+			//========================================================
+			var gCanvas, gLoop;
+
+			window.addEventListener("load",function(){
+				//----------------------------------
+				//Setup
+				gCanvas	= new Canvas2D("FungiCanvas").center();//.font("bold 12px verdana","center");
+				gLoop	= new RenderLoop(onRender, 30);
+
+				//----------------------------------
+				Overlay.init()
+					.title("Delay")
+					.range("For P0", 0, -5, 5, 0.1, function(e){ delay0 = this.value; })
+					.range("For P1", 0, -5, 5, 0.1, function(e){ delay1 = this.value; })
+					.range("Increment", 0, -5, 5, 0.1, function(e){ delay1 = this.value; })
+					
+					.title("Radius")
+					.range("Outer", 150, 15, 200, 5, function(e){ setMainPoints(this.value);  })
+					.range("Inner", 30, 15, 200, 5, function(e){ subRadius = this.value; })
+				;
+
+				//----------------------------------
+				setMainPoints();
+
+				//----------------------------------
+				//Finish Up
+				gLoop.start();
+			});
+
+			const SECONDS		= 3;
+			const SECONDS_INV	= 1 / SECONDS;
+			const STEPS			= 80;
+			const STEPSinv		= 1 / STEPS;
+
+			let pointCnt	= 3,
+				points		= new Array(pointCnt);
+			for(var i=0; i < pointCnt; i++) points[i] = new Vec2();
+			
+			let mainRadius	= 150,
+				subRadius	= 30,
+				delay0		= 0,
+				delay1		= 0,
+				delayP		= 0;
+
+			function onRender(dt,ss){
+				//----------------------------------
+				gCanvas.clear();
+
+				var tTime	= (ss % SECONDS) * SECONDS_INV, // T of Seconds
+					tStep,
+					i, ii, s; 
+				
+				//----------------------------------
+				//Draw the Paths of movement
+				gCanvas.lineDash([5,5]).style("#00ff00","#30303050", 2).vecCircle("stroke", mainRadius, [0,0]);
+
+				for(i=0; i < pointCnt; i++){
+					points[i].rotate( Maths.PI_2 * dt * 0.03 );
+					gCanvas.vecCircle("stroke", subRadius, points[i]);
+				}
+
+				//----------------------------------
+				//Draw connection between each point in the circular pattern.
+				var p	= new Vec2().fromAngleLen(0,subRadius), //Base Point used for rotation
+					p0	= new Vec2(),	//Rotation result of P for the A Lerp
+					p1	= new Vec2(),	//Rotation result of P for the B Lerp
+					pp	= new Vec2();	//Lerp point between P0 & P1
+
+				for(i=0; i < pointCnt; i++){ 	//loop for two points at a time
+					ii = (i + 1) % pointCnt; 	//Get index of the next point after this one.
+
+					for(s=0; s < STEPS; s++){	//Create points between P0 and P1
+						tStep = s * STEPSinv;
+
+						p.rotate( Maths.PI_2 * (tTime - delay0 * tStep) + (i * delayP), p0).add(points[i]);
+						p.rotate( Maths.PI_2 * (tTime - delay1 * (1-tStep)) + (ii * delayP), p1).add(points[ii]);
+
+						p0.lerp(p1, tStep, pp);
+						gCanvas.vecCircle("fill", (s==0)?5:1.2, pp);
+					}
+				}
+			}
+
+			function setMainPoints(r){
+				if(r) mainRadius = r;
+
+				var inc = Maths.PI_2 / pointCnt;
+				for(var i=0; i < pointCnt; i++) points[i].fromAngleLen(i*inc, mainRadius);
+			}
+		</script>
+	</head>
+<body>
+	<div class="win"><canvas id="FungiCanvas"></canvas></div>
+</body>
+</html>
