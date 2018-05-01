@@ -22,6 +22,14 @@ class Vec2 extends Float32Array{
 			return this;
 		}
 
+		getAngle(v = null){
+			if(v){
+				var x = v[0] - this[0],
+					y = v[1] - this[1];
+				return Math.atan2(y, x);
+			}
+			return Math.atan2(this[1], this[0]);
+		}
 
 		//When values are very small, like less then 0.000001, just make it zero.
 		nearZero(){
@@ -91,6 +99,7 @@ class Vec2 extends Float32Array{
 		}
 	//endregion
 
+
 	//----------------------------------------------
 	// Math
 		add(v, out=null){
@@ -139,6 +148,23 @@ class Vec2 extends Float32Array{
 			out = out || this;
 			out[0] = (this[0] != 0)? v / this[0] : 0;
 			out[1] = (this[1] != 0)? v / this[1] : 0;
+			return out;
+		}
+	//endregion
+
+
+	//----------------------------------------------
+	//region Static
+		static add(a,b,out){
+			out = out || new Vec2();
+			out[0] = a[0] + b[0];
+			out[1] = a[1] + b[1];			
+			return out;
+		}
+		static sub(a, b, out){ 
+			out = out || new Vec2();
+			out[0] = a[0] - b[0];
+			out[1] = a[1] - b[1];
 			return out;
 		}
 	//endregion

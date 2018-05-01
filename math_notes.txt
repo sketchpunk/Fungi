@@ -1,0 +1,28 @@
+...........................................
+Derivatives Rules
+	Sum / Difference (+ or -) : treat each side as a function that you need to make a derivative of.
+
+	constant = 0, variable = 1 :: x - 1 become 1 - 0
+	
+	const * var :  D(2x)  ->  2 D(x)  ->  2 * 1
+
+	sqrt(x) : 1 / (2 * sqrt(x))
+
+	Power Rule :  x^2 = D( n*x^n-1 ) = 2x^1
+				 example2:	3x^2  ->  3 * 2x^1  ->  6x^1
+	
+	Product Rule : f() * g() =  f() * g'() + g() * f'();
+
+	Chain Rule :  f(g()) = f'( g() ) * g'();
+
+	Quatient Rule : f() / g() :: g()*f'() - f() * g'() / g() * g()
+
+	inversCOT(x) = -1 / 1 + x^2
+
+	sin(x) = cos(x)
+	cos(x) = -sin(x)
+
+
+...........................................
+MISC - GOOD TO KNOW
+	cos^2 + sin^2 == 1

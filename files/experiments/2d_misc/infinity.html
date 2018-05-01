@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<style>
+			html,body{margin:0px; padding:0px; width:100%; height:100%;}
+			body{background-color:#606060;}
+			canvas{border:0px solid green;}
+			div.win{display:flex; width:100%; height:100%; align-items:center; justify-content:center;}
+			#lblFPS{position:absolute; top:0px; left:0px; width:40px; padding:5px 5px;
+				background:gray; color:white; font-weight:bold; text-align:center; font-family:arial; font-size:13px; }
+		</style>
+
+		<script type="module">
+			import Overlay 		from "/lib/Overlay/Overlay.js";
+
+			import Canvas2D		from "/lib/Canvas2D.js";
+			import RenderLoop	from "/fungi/rendering/RenderLoop.js";
+			import Vec2			from "/fungi/maths/Vec2.js";
+			import Maths 		from "/fungi/Maths.js";
+			
+			//https://gamedev.stackexchange.com/questions/43691/how-can-i-move-an-object-in-an-infinity-or-figure-8-trajectory
+			//https://en.wikipedia.org/wiki/List_of_curves
+			//https://www.mathcurve.com/courbes2d.gb/watt/watt.shtml
+			//https://www.mathcurve.com/courbes2d.gb/troisbarres/troisbarre.shtml
+			//https://www.youtube.com/watch?v=NPJRuCYL9gc
+
+			//========================================================
+			var gCanvas, gLoop;
+
+			window.addEventListener("load",function(){
+				//----------------------------------
+				//Setup
+				gCanvas	= new Canvas2D("FungiCanvas").center();
+				gLoop	= new RenderLoop(onRender, 30);
+
+				gCanvas.style("#00ff00","#303030a0", 2);
+				
+				//----------------------------------
+				Overlay.init()
+					.range("Scale", 250, 40, 400, 10, function(e){ mScale = this.value; })
+					.range("Worm Step", 0.3, 0.1, 1, 0.01, function(e){ mWormStep = parseFloat(this.value); })
+					.range("Worm Size", 5, 1, 20, 1, function(e){ mWormSize = parseInt(this.value); })
+					.range("Worm Size offset", 3, 1, 20, 1, function(e){ mWormOffet =  parseInt(this.value); })
+				;
+
+				//----------------------------------
+				//Finish Up
+				gLoop.start();
+			});
+
+			const SECONDS		= 6;
+			const SECONDS_INV	= 1 / SECONDS;
+
+			let mScale		= 250,
+				mWormStep	= 0.3,
+				mWormSize	= 5,
+				mWormOffet	= 3;
+
+			function lemniscate_gerono(t, out){
+				out = out || [0,0];
+				out[0] = Math.cos(t);
+				out[1] = Math.sin(2*t) * 0.5;
+				return out;
+			}
+
+			function lemniscate_gerono_der(t, out){
+				out = out || [0,0];
+				out[0] = -Math.sin(t);
+				out[1] = Math.cos(2*t);
+				return out;
+			}
+
+			function lemniscate_bernoulli(t, out){
+				out = out || [0,0];
+
+				let t2		= t*2,
+					scale	= 2 / (3 - Math.cos(t2));
+
+				out[0] = scale * Math.cos(t);
+				out[1] = scale * Math.sin(t2) * 0.5;
+				return out;
+			}
+
+
+			// Thanks to  @teormech (Alexander Hohlov) for helping me solve the derivative of Y for bernoulli
+			// because of what I learned of his example i was able to get the derivative of X
+
+			// First derivative
+			// z = (-2sin(x) - 4cos(x)sin(2x)) / (3-cos(2x))
+			// y = (6cos(2x) - 2) / (3-cos(2x))^2
+			function lemniscate_bernoulli_der(t, out){
+				out = out || [0,0];
+
+				let t2		= 2 * t,
+					cos2t	= Math.cos(t2),
+					cos2t_3	= 3 - cos2t;
+
+				out[0] = (-2 * Math.sin(t) - 4 * Math.cos(t) * Math.sin(t2)) / cos2t_3;
+				out[1] = (6 * cos2t - 2) / (cos2t_3 * cos2t_3);
+				return out;
+			}
+
+			/*	Derivatives
+				constant = 0, variable = 1 :: x - 1 become 1 - 0
+				
+				const * var :: D(2x) = 2 D(x) = 2 * 1
+
+				sqrt(x) :: 1 / (2 * sqrt(x))
+
+				Power Rule ::  x^2 = D( n*x^n-1 ) = 2x^1
+								3x^2 = 3 * 2x^1 = 6x^1
+				
+				Product Rule :: f() * g() =  f() * g'() + g() * f'();
+
+				Chain Rule :  f(g()) = f'( g() ) * g'();
+
+				Quatient Rule : f() / g() :: g()*f'() - f() * g'() / g() * g()
+
+				inversCOT(x) = -1 / 1 + x^2
+
+				sin(x) = cos(x)
+				cos(x) = -sin(x)
+				
+				//..........................
+				not a derivative, but good to know.
+				cos^2 + sin^2 == 1
+
+			*/
+
+
+			function onRender(dt,ss){
+				//----------------------------------
+				gCanvas.clear();
+
+				var tTime = (ss % SECONDS) * SECONDS_INV, // T of Seconds
+					tStep, s; 
+				
+				var p0 = new Vec2(),
+					p1 = new Vec2();
+
+				//----------------------------------
+				//
+				gCanvas.lineWidth(1);
+
+				var STEPS = 40;
+				for(s=0; s < STEPS; s++){	
+					tStep	= s / STEPS;
+					
+					//Draw Step Dot
+					lemniscate_bernoulli(tStep * Maths.PI_2, p0).scale( mScale );
+					gCanvas.fill("#ffffff50").vecCircle("fill", 1.5, p0);
+
+					//Draw Vector Line of Direction
+					lemniscate_bernoulli_der(tStep * Maths.PI_2, p1).normalize().scale(50);
+					gCanvas.fill("#00ff00").vecLine("stroke", p0, Vec2.add(p0,p1) );
+				}
+
+
+				//----------------------------------
+				//Draw moving Worm
+				gCanvas.fill("#00ff00");
+
+				STEPS = 13;
+				var x, radius;
+				for(s=0; s < STEPS; s++){
+					tStep	= s / STEPS;	// T of creating worm body
+
+					x = (tStep*2) - 1.0; 	// Change 0 -> 1 to -1 -> 1
+					x *= x;					// x squared
+					if(x > 0) x = -x;		// Keep X in the negative
+
+					//Where on the curve is this part of of the body in.
+					lemniscate_bernoulli(tTime * Maths.PI_2 - mWormStep * tStep, p0);
+
+					//Draw Body part by making it thick in the center but thinner on the ends
+					radius = mWormSize + x * mWormOffet
+					if(radius > 0) gCanvas.vecCircle("fill", radius, p0.scale( mScale ));
+				}
+
+
+				//----------------------------------
+				//Draw Cube that faces the direction its moving.
+				lemniscate_bernoulli(tTime * Maths.PI_2 + 1, p0).scale( mScale );
+				lemniscate_bernoulli_der(tTime * Maths.PI_2 + 1, p1).normalize();
+				
+				gCanvas
+					.saveTransform(p0, p1.getAngle())
+					.rect(-10, -10, 20, 20)
+					.restoreTransform();
+
+			}
+
+		</script>
+	</head>
+<body>
+	<div class="win"><canvas id="FungiCanvas"></canvas></div>
+</body>
+</html>
