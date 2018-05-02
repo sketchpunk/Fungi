@@ -1,0 +1,157 @@
+.......................................................
+Triplanar Shaders
+https://medium.com/@bgolus/normal-mapping-for-a-triplanar-shader-10bf39dca05a
+
+.......................................................
+Morph Meshes
+http://diary.conewars.com/melting-shader-part-2/
+https://github.com/zz85/threejs-path-flow  (Deform mesh based on Spline)
+https://github.com/Erkaman/gl-rock  (Generate Rocks from Sphere)
+
+.......................................................
+Terrains
+http://www.pheelicks.com/2014/03/rendering-large-terrains/
+https://demo.marpi.pl/biomes/
+
+.......................................................
+Effects
+https://twitter.com/etiennepov/status/969703381471256576?s=03
+
+.......................................................
+Shadersso
+http://weber.itn.liu.se/~stegu/webglshadertutorial/shadertutorial.html  (Half Tones)
+https://tympanus.net/codrops/2016/05/03/animated-heat-distortion-effects-webgl/
+http://www.ro.me/tech/hatching-glow-shader
+https://experiments.withgoogle.com/chrome/twitter-matrix
+
+https://www.blendernation.com/2018/04/03/comic-inking-shaders-for-cycles-free-blender-internal-version/
+
+.......................................................
+Misc
+https://experiments.withgoogle.com/chrome/twitter-matrix
+https://www.alanzucconi.com/2017/04/12/tentacles/ Inverse Kinematics with TENTACLES, also spiders
+https://simblob.blogspot.com/2018/01/updating-mapgen2.html   MAP, Create Island
+https://simblob.blogspot.com/2017/09/mapgen2-html5.html
+
+http://www.dtecta.com/files/GDC17_VanDenBergen_Gino_Brep_Triangle_Meshes.pdf
+
+https://twitter.com/gabrielpeyre/status/983227642974494720  Cell like Interpolation
+
+http://vallandingham.me/becoming_datavis_practitioner.html
+
+.......................................................
+PHYSICS
+http://codeflow.org/entries/2010/nov/29/verlet-collision-with-impulse-preservation/
+
+https://www.youtube.com/watch?v=WHn2ouKKSfs  Coding Math Kinematics and Inverse 
+
+https://www.youtube.com/watch?v=xXjRlEr7AGk Kinematics CodingTrain
+https://www.youtube.com/watch?v=UNoX65PRehA
+
+.......................................................
+Voxels
+http://www.gedge.ca/dev/2014/08/17/greedy-voxel-meshing   Improvements to Rendering
+
+
+.......................................................
+Vector Field Textures
+
+https://twitter.com/anvaka/status/944101777149849600
+https://github.com/anvaka/graph-to-vector-field
+
+
+.......................................................
+Really Fun
+
+https://www.youtube.com/watch?time_continue=133&v=UuY-Id5t29c  (3d-dungeons-with-procedural in JS)
+https://gamedevelopment.tutsplus.com/tutorials/bake-your-own-3d-dungeons-with-procedural-recipes--gamedev-14360
+https://experiments.withgoogle.com/chrome/random-dungeon-generator
+
+https://www.raywenderlich.com/177695/procedural-generation-mazes (Dungeon Rooms)
+
+http://allenchou.net/2013/07/bending-solid-geometry-in-planetary-annihilation/ BENDING MESHES
+
+http://learningthreejs.com/blog/2013/09/16/how-to-make-the-earth-in-webgl/  CREATE PLANET WITH CLOUDS
+
+.......................................................
+Build Sphere
+https://medium.com/@peter_winslow/creating-procedural-planets-in-unity-part-1-df83ecb12e91
+https://experilous.com/1/blog/post/procedural-planet-generation
+http://donhavey.com/blog/tutorials/tutorial-3-the-icosahedron-sphere/
+http://blog.andreaskahler.com/2009/06/creating-icosphere-mesh-in-code.html
+http://kiwi.atmos.colostate.edu/BUGS/geodesic/text.html
+http://vterrain.org/Textures/spherical.html
+https://github.com/superwills/gtp/blob/master/gtp/geometry/Icosahedron.cpp
+https://en.wikipedia.org/wiki/Icosahedron
+http://mft-dev.dk/uv-mapping-sphere/
+http://wiki.unity3d.com/index.php/CreateIcoSphere
+https://stackoverflow.com/questions/47441844/how-do-i-detect-the-vertices-on-the-seam-of-a-procedurally-generated-icosphere/49410688#49410688
+
+.......................................................
+//Hex Sphere
+https://github.com/pkclsoft/HexasphereDemo/tree/master/HexasphereDemo
+https://github.com/arscan/hexasphere.js
+https://experilous.com/1/blog/post/procedural-planet-generation
+http://catlikecoding.com/unity/tutorials/hex-map/part-1/
+https://en.wikipedia.org/wiki/Hexagonal_tiling
+https://en.wikipedia.org/wiki/Geodesic_polyhedron
+
+.......................................................
+Hex Grids
+https://www.redblobgames.com/grids/hexagons/
+http://www.playchilla.com/how-to-check-if-a-point-is-inside-a-hexagon  RAY HEX INTERSECTION, KIND OF
+https://stackoverflow.com/questions/5193331/is-a-point-inside-regular-hexagon
+http://www-cs-students.stanford.edu/~amitp/Articles/HexLOS.html
+
+http://dmccooey.com/polyhedra/DualGeodesicIcosahedra.html
+https://levskaya.github.io/polyhedronisme/?recipe=A100ccD
+https://en.wikipedia.org/wiki/List_of_geodesic_polyhedra_and_Goldberg_polyhedra#Icosahedral
+
+.......................................................
+QuadTree
+https://www.youtube.com/watch?v=OJxEcs0w_kE
+
+Binary Tree
+https://www.youtube.com/watch?v=ZNH0MuQ51m4
+
+
+.......................................................
+https://www.blendernation.com/2018/04/08/anime-stylized-look-in-blender-grease-pencil-neko-girl/#prettyPhoto
+https://www.blendernation.com/2018/04/06/modeling-hair-in-blender-for-beginners-tutorial/
+https://www.blendernation.com/2018/04/06/demo-tut-bridge-edge-loops/
+https://www.blendernation.com/2018/04/06/free-material-with-included-node-creations/
+https://www.blendernation.com/2018/04/05/tutorial-converting-2d-images-to-3d-in-blender/
+https://www.blendernation.com/2018/04/03/comic-inking-shaders-for-cycles-free-blender-internal-version/
+https://www.blendernation.com/2018/03/30/2d-animation-style-with-grease-pencil-in-blender-2-80-5/
+https://www.blendernation.com/2018/03/26/how-to-create-a-stucco-plaster-material-in-1-minute/
+https://www.blendernation.com/2018/03/23/free-add-on-push-pull-in-blender-like-in-sketchup/
+https://www.blendernation.com/2018/03/22/new-cc0-pbr-textures-library/
+https://www.blendernation.com/2018/03/21/beginner-tutorial-how-to-model-a-medieval-house/
+https://www.blendernation.com/2018/03/19/why-is-my-uv-map-tilted-and-how-to-fix-it-fast/
+https://www.blendernation.com/2018/03/17/tutorial-sci-fi-grill-wallpaper/
+https://www.blendernation.com/2018/03/16/comic-color-shaders-using-cycles-material-nodes/
+https://www.blendernation.com/2018/03/15/how-to-create-and-use-your-own-matcaps/
+https://www.blendernation.com/2018/03/16/how-to-sculpt-a-leg-in-blender/
+https://www.blendernation.com/2018/03/14/blender-euler-angle-axis-angle-quaternion-rotations-w-x-y-z-explained/
+
+
+
+
+//----------------------------------------------------------
+VR RENDERER
+
+Use instanced data to pass in Left/Right Eye Matrix plus an index of which
+Render Target to save too.
+
+Setup a FrameBuffer with two Color Buffers using the size of One Eye.
+
+In Final Render we do a post effect sort of thing, we resize canvas to size of both eyes. Using Instancing we 
+pass in a Quad that  x0 to 0.5 (Half of screen), using data to push the quad the quad to the right by padding
+0.5 to x on the second instance. In the second instance, we can draw the next quad with the other eye texture.
+
+We can setup a UBO that holds the matrix for the Left and Right Eye matrix as an array, then use 
+glInstance_ID as a way to choose which matrix to use.
+
+//----------------------------------------------------------
+
+

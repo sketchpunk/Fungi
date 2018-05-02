@@ -24,5 +24,7 @@ Derivatives Rules
 
 
 ...........................................
-MISC - GOOD TO KNOW
+MISC - GOOD TO KNOW, Some of the stuff can help simplify equations
 	cos^2 + sin^2 == 1
+
+	tan = sin / cos
