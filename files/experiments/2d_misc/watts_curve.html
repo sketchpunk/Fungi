@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<style>
+			html,body{margin:0px; padding:0px; width:100%; height:100%;}
+			body{background-color:#606060;}
+			canvas{border:0px solid green;}
+			div.win{display:flex; width:100%; height:100%; align-items:center; justify-content:center;}
+			#lblFPS{position:absolute; top:0px; left:0px; width:40px; padding:5px 5px;
+				background:gray; color:white; font-weight:bold; text-align:center; font-family:arial; font-size:13px; }
+		</style>
+		<title>Watt's Curve</title>
+
+		<script type="module">
+			import Overlay 		from "/lib/Overlay/Overlay.js";
+
+			import Canvas2D		from "/lib/Canvas2D.js";
+			import RenderLoop	from "/fungi/rendering/RenderLoop.js";
+			import Vec2			from "/fungi/maths/Vec2.js";
+			import Maths 		from "/fungi/Maths.js";
+			
+			//https://www.mathcurve.com/courbes2d.gb/watt/watt.shtml
+
+			//========================================================
+			var gCanvas, gLoop;
+
+			window.addEventListener("load",function(){
+				//----------------------------------
+				//Setup
+				gCanvas	= new Canvas2D("FungiCanvas").center();
+				gLoop	= new RenderLoop(onRender, 30);
+
+				gCanvas.style("#00ff00","#303030a0", 2);
+				
+				//----------------------------------
+				Overlay.init()
+					.range("Circle Distance", 100, 40, 300, 5, function(e){ A = this.value; })
+					.range("Circle Radius", 200, 40, 300, 5, function(e){ B = this.value; })
+					.range("Rod Length", 100, 40, 300, 5, function(e){ C = this.value; })
+				;
+
+				//----------------------------------
+				//Finish Up
+				gLoop.start();
+			});
+
+			const SECONDS		= 12;
+			const SECONDS_INV	= 1 / SECONDS;
+
+			
+			/*https://www.mathcurve.com/courbes2d.gb/watt/watt.shtml
+			Polar parametrization:
+				d^2			= a^2 + b^2 - c^2
+				length		= b * cos(t);
+				sinTheta	= (d^2 - b^2 * cos(t)^2) / ( 2 * a * b * sin(t) )
+
+				a : Distance between the center of 2 circles
+				b : Radius of Circles
+				c : Length of Rods
+			*/
+			function watts_curve(a, b, c, t, out){
+				var bb		= b*b,
+					dd		= a*a + bb - c*c,
+					cosT	= Math.cos(t),
+					length	= b * cosT,
+					theta 	= (dd - bb * cosT * cosT) / (2 * a * b * Math.sin(t));
+
+				out = out || new Vec2();
+				out.fromAngleLen(theta, length);
+			}
+
+			//let A = 20,
+			//	B = 50,
+			//	C = 10;
+
+			let A = 100,
+				B = 200,
+				C = 100;
+			function onRender(dt,ss){
+				var tTime = (ss % SECONDS) * SECONDS_INV, // T of Seconds
+					tStep, s;
+
+				gCanvas.clear();
+
+				//...............................................
+				var pA = new Vec2(-A/2, 0);
+				//var pAr = new Vec2().fromAngleLen(Maths.PI_2 * tTime, B).add(pA);
+				var pB = new Vec2(A/2, 0);
+				//var pBr = new Vec2().fromAngleLen(Maths.PI_2 * tTime, B).add(pB);
+
+				gCanvas.style("#ffffff90","#30303090",1).lineDash([5,5]);
+				gCanvas.vecCircle("stroke", B, pB);
+				gCanvas.vecCircle("stroke", B, pA);
+				//gCanvas.vecLine("stroke", pA, pAr);
+				//gCanvas.vecLine("stroke", pB, pBr);
+
+
+				//...............................................
+				var STEPS = 40;
+				var p0 = new Vec2();
+				for(s=0; s <= STEPS; s++){
+					tStep = s / STEPS;
+
+					watts_curve(A, B, C, Maths.PI_2 * tStep, p0);
+
+					gCanvas.vecCircle("fill", 1.5, p0);
+				}
+
+				//...............................................
+				watts_curve(A, B, C, Maths.PI_2 * tTime, p0);
+				gCanvas.fill("#00ff00").vecCircle("fill", 5, p0);
+			}
+		</script>
+	</head>
+<body>
+	<div class="win"><canvas id="FungiCanvas"></canvas></div>
+</body>
+</html>

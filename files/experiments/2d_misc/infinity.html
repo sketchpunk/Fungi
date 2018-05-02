@@ -86,7 +86,7 @@
 			// because of what I learned of his example i was able to get the derivative of X
 
 			// First derivative
-			// z = (-2sin(x) - 4cos(x)sin(2x)) / (3-cos(2x))
+			// x = (-2sin(x) - 4cos(x)sin(2x)) / (3-cos(2x))
 			// y = (6cos(2x) - 2) / (3-cos(2x))^2
 			function lemniscate_bernoulli_der(t, out){
 				out = out || [0,0];
@@ -97,6 +97,9 @@
 
 				out[0] = (-2 * Math.sin(t) - 4 * Math.cos(t) * Math.sin(t2)) / cos2t_3;
 				out[1] = (6 * cos2t - 2) / (cos2t_3 * cos2t_3);
+				//out[1] = 2 / ((cos2t * cos2t) * 3);
+				//out[1] = (2 / 3) * (1 / (cos2t * cos2t));
+				//out[1] = (2/3) * ((1 / Math.cos(t2)) * (1 / Math.cos(t2)));
 				return out;
 			}
 
@@ -124,6 +127,8 @@
 				//..........................
 				not a derivative, but good to know.
 				cos^2 + sin^2 == 1
+
+				tan = sin / cos
 
 			*/
 
