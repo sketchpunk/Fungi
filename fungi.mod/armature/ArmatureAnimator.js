@@ -126,7 +126,7 @@ class KeyFrames{
 	addFrame(t,itmName,itmPropName,itmPropValue){
 		if(this.itemNames.indexOf(itmName) == -1) this.itemNames.push(itmName);
 		var iMin = -1;
-		t *= 1000; //Move time from seconds to miliseconds.
+		//t *= 1000; //Move time from seconds to miliseconds.
 
 		//---------------------------------
 		//Check if frame exists or a sorted location to add new frame

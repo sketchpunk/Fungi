@@ -45,7 +45,7 @@
 				
 				//j0.rotation = j0.rotation.rx(20 * Math.PI / 180);
 				//j1.rotation = j1.rotation.rx(20 * Math.PI / 180);
-				//j2.rotation = j2.rotation.rx(20 * Math.PI / 180);
+				//j2.rotation = j2.rotation.rx(40 * Math.PI / 180);
 				arm.update();
 
 				//----------------
@@ -61,7 +61,7 @@
 			}
 
 			function onRender(dt, ss){
-				var rot = 45 * (Math.PI/180) * Math.sin(ss * 0.002);
+				var rot = 45 * (Math.PI/180) * Math.sin(ss);
 				var q = j1.rotation.setAxisAngle([0,0,1],rot);
 				j1.rotation = q
 				j2.rotation = q;
