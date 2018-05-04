@@ -1,24 +1,19 @@
-import gl,{ VAO }	from "../gl.js";
-import Renderable	from "../entities/Renderable.js";
+import gl			from "../gl.js";
+import Vao			from "../Vao.js";
+import Renderable	from "../rendering/Renderable.js";
 
-import Fungi	from "../Fungi.js";
 
-function UVSphere(matName){
-	var d = UVSphereGeometry();
+function UVSphere(matName, name="UVSphere"){
+	var d 		= UVSphere.vertData(),
+		vao 	= Vao.standardRenderable(name, 3, d.vertices, d.normals, d.uv, d.index),
+		entity	= new Renderable(name, vao, matName);
 
-	//...........................................
-	var vao = VAO.standardRenderable("FungiPolarSphere",3,d.vertices,d.normals,d.uv,d.index),
-		entity = new Renderable(vao,matName);
-	entity.name = "Sphere";
 	entity.drawMode = gl.ctx.TRIANGLE_STRIP;
-	entity.useCulling = false;
-	entity.useNormals = true;
-
 	return entity;
 }
 
 
-function UVSphereGeometry(){
+UVSphere.vertData = function(){
 	var yLen	= 18,
 		xLen	= 25,
 		radius	= 0.5;
@@ -86,4 +81,4 @@ function UVSphereGeometry(){
 	return { vertices:aVert, normals:aNorm, uv:aUV, index:aIndex }
 }
 
-export { UVSphere, UVSphereGeometry }
+export default UVSphere;

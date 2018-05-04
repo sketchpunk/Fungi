@@ -68,6 +68,13 @@ class System{
 		return true;
 	}
 
+	static darkScene(){
+		gl.setClearColor("505050");
+
+		for(var itm of Fungi.scene.items){
+			if(itm.name == "GridFloor"){ itm.setMaterial("MatGridFloorDark"); break; }
+		}
+	}
 
 	/* Start up the system
 		Opt 1 == GridFloor()

@@ -204,7 +204,7 @@ class Shader{
 			loc = gl.ctx.getUniformLocation(this.program, itm.name);
 
 			if(loc != null)	this.uniforms.set( itm.name, { loc:loc, type:itm.type } );
-			else console.log("prepareUniforms : Uniform not found %s in %s", itm.nam, this.name);
+			else console.log("prepareUniforms : Uniform not found %s in %s", itm.name, this.name);
 		}
 
 		return this;

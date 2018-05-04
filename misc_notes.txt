@@ -1,0 +1,58 @@
+//////////////////////////////////////////////////
+BLINN-PHONG LIGHTING MODEL
+	Ambient = ambientMaterial * ambientLight 
+
+	lamberFactor = max (dot (lightVec, normal), 0.0) 
+	Diffuse = diffuseMaterial * diffuseLight * lamberFactor
+
+
+	speculatCoef = pow (max (dot (halfVec, normal), 0.0), shininess)
+	Specular = specularMaterial * specularLight * speculatCoef
+
+	pixelColor = Ambient + (Diffuse + Specular) * Shadow
+
+
+//////////////////////////////////////////////////
+RIM LIGHT
+	float cosTheta = abs( dot( normalize(vEye), N) );
+	float fresnel = pow(1.0 - cosTheta, 4.0);
+
+	...........................
+	http://roxlu.com/2014/037/opengl-rim-shader
+	uniform mat4 u_pm;
+	uniform mat4 u_vm;
+	 
+	layout( location = 0 ) out vec4 fragcolor;
+	 
+	in vec3 v_norm;
+	in vec4 v_pos; 
+	 
+	void main() {
+	 
+	  vec3 n = normalize(mat3(u_vm) * v_norm);      // convert normal to view space, u_vm (view matrix), is a rigid body transform.
+	  vec3 p = vec3(u_vm * v_pos);                   // position in view space
+	  vec3 v = normalize(-p);                       // eye vector
+	  float vdn = 1.0 - max(dot(v, n), 0.0);        // the rim contribution
+	 
+	  fragcolor.a = 1.0;
+	  fragcolor.rgb = vec3(smoothstep(0.6, 1.0, vdn));
+	}
+
+	...........................
+	vec3 V = normalize( eye_position - world_pos);
+	float rim = 1 - max(dot(V, world_normal), 0.0);
+	rim = smoothstep(0.6, 1.0, rim);
+	vec3 finalRim = RimColor * vec3(rim, rim, rim);
+
+
+//////////////////////////////////////////////////
+FOG
+	vec3 vVertex = (gl_ModelViewMatrix * gl_Vertex).xyz;
+
+	gl_FogFragCoord = length(vVertex);
+	fogFactor = exp2(-gl_Fog.density *
+					 gl_Fog.density  *
+					 gl_FogFragCoord *
+					 gl_FogFragCoord *
+					 LOG2);
+	fogFactor = clamp(fogFactor, 0.0, 1.0);

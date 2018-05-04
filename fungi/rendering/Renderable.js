@@ -12,11 +12,12 @@ class Renderable extends Transform{
 
 		//this.drawOrder		= 10;
 		this.drawMode		= gl.ctx.TRIANGLES;
-		this.material		= (matName)? Fungi.getMaterial(matName) : null;
-
+		this.material		= null;
 		this.normalMatrix	= null;
 
 		this.options = { cullFace : true }
+
+		if(matName) this.setMaterial(matName);
 	}
 
 	updateMatrix(){
@@ -29,8 +30,17 @@ class Renderable extends Transform{
 		return isUpdated;
 	}
 
-	setMaterial(matName){	this.material		= Fungi.getMaterial(matName);	return this; }
-	enableNormals(){		this.normalMatrix	= new Float32Array(9);			return this; }
+	setMaterial(matName){
+		this.material = (matName)? Fungi.getMaterial(matName) : null;;
+		
+		//If the shader reqires normal matrix, set it up to be updated when transformations are calculated.
+		if(!this.normalMatrix && this.material && this.material.shader.options.normalMatrix){
+			this.normalMatrix = new Float32Array(9);
+		}
+
+		return this; 
+	}
+	//enableNormals(){		this.normalMatrix	= new Float32Array(9);			return this; }
 
 	//clone(){
 	//	var o = new Renderable(this.vao,null);
