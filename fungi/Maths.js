@@ -17,10 +17,12 @@ var Maths = {
 
 	map		: function(x, xMin, xMax, zMin, zMax){ return (x - xMin) / (xMax - xMin) * (zMax-zMin) + zMin; },
 	clamp 	: function(v, min, max){ return Math.max(min, Math.min(max,v) ); },
+	norm	: function(min, max, v){ return (v-min) / (max-min); },
 
 	lerp 	: function(a, b, t){ return (1 - t) * a + t * b; },  //return a + t * (b-a); 
 
-	smoothStep : function(edge1, edge2, val){ //https://en.wikipedia.org/wiki/Smoothstep
+	nearZero	: function(v){ return (Math.abs(v) <= this.EPSILON)? 0 : v; },
+	smoothStep 	: function(edge1, edge2, val){ //https://en.wikipedia.org/wiki/Smoothstep
 		var x = Math.max(0, Math.min(1, (val-edge1)/(edge2-edge1)));
 		return x*x*(3-2*x);
 	}

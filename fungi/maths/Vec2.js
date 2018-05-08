@@ -24,9 +24,11 @@ class Vec2 extends Float32Array{
 
 		getAngle(v = null){
 			if(v){
-				var x = v[0] - this[0],
-					y = v[1] - this[1];
-				return Math.atan2(y, x);
+				return Math.acos( Vec2.dot(this,v) / (this.length() * v.length()) );
+
+				//var x = v[0] - this[0],
+				//	y = v[1] - this[1];
+				//return Math.atan2(y, x);
 			}
 			return Math.atan2(this[1], this[0]);
 		}
@@ -36,7 +38,9 @@ class Vec2 extends Float32Array{
 			if(Math.abs(this[0]) <= 1e-6) this[0] = 0;
 			if(Math.abs(this[1]) <= 1e-6) this[1] = 0;
 			return this;
-		}	
+		}
+
+
 	//endregion
 
 
@@ -64,7 +68,7 @@ class Vec2 extends Float32Array{
 			return x*x + y*y;
 		}
 
-		normalize(out){
+		normalize(out = null){
 			var mag = Math.sqrt( this[0]*this[0] + this[1]*this[1] );
 			if(mag == 0) return this;
 
@@ -95,6 +99,13 @@ class Vec2 extends Float32Array{
 
 			out[0] = x * cos - y * sin;
 			out[1] = x * sin + y * cos;
+			return out;
+		}
+
+		invert(out = null){
+			out = out || this;
+			out[0] = -this[0];
+			out[1] = -this[1];
 			return out;
 		}
 	//endregion
@@ -161,12 +172,22 @@ class Vec2 extends Float32Array{
 			out[1] = a[1] + b[1];			
 			return out;
 		}
+
 		static sub(a, b, out){ 
 			out = out || new Vec2();
 			out[0] = a[0] - b[0];
 			out[1] = a[1] - b[1];
 			return out;
 		}
+
+		static scale(v, s, out = null){
+			out = out || new Vec2();
+			out[0] = v[0] * s;
+			out[1] = v[1] * s;
+			return out;
+		}
+
+		static dot(a,b){ return a[0] * b[0] + a[1] * b[1]; }
 	//endregion
 }
 

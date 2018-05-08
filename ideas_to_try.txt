@@ -9,6 +9,14 @@ https://github.com/zz85/threejs-path-flow  (Deform mesh based on Spline)
 https://github.com/Erkaman/gl-rock  (Generate Rocks from Sphere)
 
 .......................................................
+Water
+https://www.youtube.com/watch?v=BZUdGqeOD0w 2D Water Ripples Coding train.
+	DO TO HELP UNDERSTAND Ripples
+	https://www.youtube.com/watch?v=DKGodqDs9sA coding train cellular automada
+	https://www.youtube.com/watch?v=FWSR_7kZuYg coding train game of life
+
+
+.......................................................
 Terrains
 http://www.pheelicks.com/2014/03/rendering-large-terrains/
 https://demo.marpi.pl/biomes/
@@ -26,9 +34,15 @@ https://experiments.withgoogle.com/chrome/twitter-matrix
 
 https://www.blendernation.com/2018/04/03/comic-inking-shaders-for-cycles-free-blender-internal-version/
 
+http://tuxedolabs.blogspot.se/2018/05/bokeh-depth-of-field-in-single-pass.html DEPTH OF FIELD
+
+https://gist.github.com/thedoor2009/e00f715d9bc931f0f7b3  Edge Detection Outline
+
 .......................................................
 Misc
 https://experiments.withgoogle.com/chrome/twitter-matrix
+
+
 
 https://simblob.blogspot.com/2018/01/updating-mapgen2.html   MAP, Create Island
 https://simblob.blogspot.com/2017/09/mapgen2-html5.html
@@ -51,6 +65,9 @@ https://www.youtube.com/watch?v=xXjRlEr7AGk Kinematics CodingTrain
 https://www.youtube.com/watch?v=UNoX65PRehA
 
 https://www.youtube.com/watch?v=E67e0RX-7Ew  Coding Train - Verlet Physics
+
+
+http://nbodyphysics.com/blog/2016/05/29/planetary-orbits-in-javascript/
 
 .......................................................
 Voxels
