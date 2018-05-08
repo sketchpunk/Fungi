@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<style>
+			html,body{margin:0px; padding:0px; width:100%; height:100%;}
+			body{background-color:#606060;}
+			canvas{border:0px solid green;}
+			div.win{display:flex; width:100%; height:100%; align-items:center; justify-content:center;}
+			#lblFPS{position:absolute; top:0px; left:0px; width:40px; padding:5px 5px;
+				background:gray; color:white; font-weight:bold; text-align:center; font-family:arial; font-size:13px; }
+		</style>
+		<title>Bezier Splines - Planetary Rocket Attack</title>
+
+		<script type="module">
+			import Overlay 		from "/lib/Overlay/Overlay.js";
+
+			import Canvas2D		from "/lib/Canvas2D.js";
+			import {Easing}		from "/lib/Tween.js";
+			import RenderLoop	from "/fungi/rendering/RenderLoop.js";
+			import Vec2			from "/fungi/maths/Vec2.js";
+			import Maths 		from "/fungi/Maths.js";
+
+			//========================================================
+			var gCanvas, gLoop;
+
+			window.addEventListener("load",function(){
+				//----------------------------------
+				//Setup
+				gCanvas	= new Canvas2D("FungiCanvas").center().flipY();
+				gLoop	= new RenderLoop(onRender, 30);
+
+				gCanvas.lineDash([5,5], 2);
+				
+				//----------------------------------
+				Overlay.init()
+					.range("pA", 0, 0, 360, 1, function(e){ radA = Maths.toRad(this.value); calc(); })
+					.range("pB", 180, 0, 360, 1, function(e){ radB = Maths.toRad(this.value); calc(); })
+				;
+
+				//----------------------------------
+				//Finish Up
+				calc();
+				//draw(1.5);
+				gLoop.start();
+			});
+
+			const SECONDS		= 6;
+			const SECONDS_INV	= 1 / SECONDS;
+
+			let radius	= 150,
+				radA 	= 0,
+				radB	= Math.PI;
+
+			let minAngle	= Maths.toRad(10),
+				maxAngle	= Math.PI,
+				extRadius	= 40,
+				minMidScale	= 10,
+				maxMidScale	= 150,
+				minEndScale	= 10,
+				maxEndScale	= 20;
+
+
+			//knots 0, 3, 6
+			let spline = [ new Vec2(), new Vec2(), new Vec2(), new Vec2(), new Vec2(),  new Vec2(), new Vec2() ];
+
+			//Try/Error Results of the arcs I'd like to see at different angles
+			//180	: radius 40, midScale 150, endScale 20
+			//90	: radius 40, midScale 80, endScale 10
+			//10	: radius 40, midcape 10, endScale = 10;
+			function calc(){
+				spline[0].fromAngleLen(radA, radius);	//Starting Point
+				spline[6].fromAngleLen(radB, radius);	//Ending Point
+
+
+				//..........................................
+				//Calc Mid Point
+				let radDiff		= radB - radA,	//The different between the two Angles
+					radM 		= 0,			//Angle between A and B
+					pathScale	= 0,			//How much to scale things based on angle difference
+					isFlipped	= 1;			//If angle is negative, set flipped to -1
+
+				//If Point A is after Point B, set stuff to compensate for it
+				if(radDiff < 0){
+					isFlipped	= -1;					//Set Value to opposite
+					radDiff		= Math.abs(radDiff);	//Remove Negative
+				}
+
+				//Calc the mid point angle, if over 180 deg, try going backwards which would result with a shorter path
+				if(radDiff > Math.PI){
+						radDiff	= (Maths.PI_2 - radDiff);
+						radM 	= radA + radDiff * 0.5 * -isFlipped;
+				}else 	radM 	= radA + radDiff * 0.5 * isFlipped;
+
+
+				//Scale specific things hased on the difference angle
+				pathScale = Maths.nearZero( Maths.norm(minAngle, maxAngle, radDiff) );
+
+				//Mid Point
+				spline[3].fromAngleLen(radM, radius+extRadius);	
+
+
+				//..........................................
+				//Mid Control Points
+				var n 			= new Vec2(),
+					midScale	= Maths.lerp(minMidScale, maxMidScale, pathScale );
+				
+				spline[6].sub( spline[0], n ).normalize().scale(midScale); // Get Line between A and C, so Controls will be parallel to line
+
+				spline[3].sub( n, spline[2] );	//Move Control Points to Proper Location On Parallel Line
+				spline[3].add( n, spline[4] );
+
+
+				//..........................................
+				//End Control Points
+				var endScale = Maths.lerp(minEndScale, maxEndScale, pathScale ); // 10;
+				spline[0].normalize(n).scale(endScale).add( spline[0], spline[1] );
+				spline[6].normalize(n).scale(endScale).add( spline[6], spline[5] );
+			}
+
+			function draw(ss=0){
+				gCanvas.clear()
+					.stroke("#000000FF")
+					.vecCircle("stroke", radius)
+
+					.stroke("#00000044")
+					.vecLine("stroke", spline[3], spline[2])
+					.vecLine("stroke", spline[3], spline[4])
+					.vecLine("stroke", spline[0], spline[1])
+					.vecLine("stroke", spline[6], spline[5])
+
+					.fill("#0000ff")
+					.vecCircle("fill", 7, spline[3])
+
+					.fill("#00ff00")
+					.vecCircle("fill", 7, spline[0])
+					.vecCircle("fill", 3, spline[1])
+					.vecCircle("fill", 3, spline[2])
+
+					.fill("#ff0000")
+					.vecCircle("fill", 3, spline[4])
+					.vecCircle("fill", 3, spline[5])
+					.vecCircle("fill", 7, spline[6]);					
+
+				//..................................
+				//Draw Path
+				var cnt	= 20,
+					p	= new Vec2();
+				for(var i=0; i <= cnt; i++){
+					Bezier.splineAt(spline, i/cnt, p);
+					gCanvas.fill("#ffffff").vecCircle("fill", 1.5, p);
+				}
+
+				//..................................
+				//Draw Triangle
+				var tTime = (ss % SECONDS) * SECONDS_INV; // T of Seconds
+				tTime = Easing.circ_In(tTime); //Build up speed instead of being linear
+
+				var dir = Bezier.splineDerivativeAt(spline, tTime).getAngle() - Maths.PI_H;
+				Bezier.splineAt(spline, tTime, p);
+				
+				gCanvas
+					.saveTransform(p, dir)
+					.fill("#FF8C00")
+					.vecTri("fill", 8, 10)
+					.restoreTransform();
+			}
+
+
+			function onRender(dt,ss){ draw(ss); }
+
+
+			//http://scaledinnovation.com/analytics/splines/aboutSplines.html
+			class Bezier{
+				//https://en.wikipedia.org/wiki/B%C3%A9zier_curve#Linear_B%C3%A9zier_curves
+					//quad = (1-t)^2 * P0 + 2(1-t) * t * P1 + t^2 * P2
+					//quadDer = 2(1-t) * (p1 - p0) + 2 * t * (p2-p1)
+					//static quad(p0, p1, p2, t, out){
+					//	var i = 1 - t;
+					//	out = out || new Vec2();
+					//	out.x = i * i * p0.x  +  2 * i * t * p1.x  +  t * t * p2.x;
+					//	out.y = i * i * p0.y  +  2 * i * t * p1.y  +  t * t * p2.y;
+					//	return out
+					//}
+
+				static get(p0, p1, p2, p3, t, out){
+					var i = 1 - t;
+					out = out || new Vec2();
+					out.x = i * i * i * p0.x  +  3 * i * i * t * p1.x  +  3 * i * t * t * p2.x  +  t * t * t * p3.x;
+					out.y = i * i * i * p0.y  +  3 * i * i * t * p1.y  +  3 * i * t * t * p2.y  +  t * t * t * p3.y;
+					return out;
+				}
+
+				static derivative(p0, p1, p2, p3, t, out){
+					//Clamp t betwen 0 and 1
+					if(t > 1)		t = 1;
+					else if(t < 0)	t = 0;
+
+					var i = 1 - t;
+					out = out || new Vec2();
+					out.x = 3 * i * i * (p1.x - p0.x)  +  6 * i * t * (p2.x - p1.x)  +  3 * t * t * (p3.x - p2.x);
+					out.y = 3 * i * i * (p1.y - p0.y)  +  6 * i * t * (p2.y - p1.y)  +  3 * t * t * (p3.y - p2.y);
+					return out;
+				}
+
+				static splineAt(ary, t, out){
+					var i;
+					out = out || new Vec2();
+
+					//Final Curve in the spline
+					//This only work if norm is less then 1, 1 can screw things up so this condition prevents things from breaking.
+					if(t >= 1){
+						t = 1;
+						i = ary.length - 4;
+					}else{ //Determine which curve is being accessed.
+						if(t < 0) t = 0;
+						/* NOTE TO SELF
+						The idea is to multiple t by total curves in the spline. This gives you a whole number and fraction. Ex : t = 0.6 cnt = 2, results 1.2
+						The result gives both the curve index to access and the normal to apply to it. So for the example we need to access the
+						second segment, so by flooring we strip out the decimal we get the value 1 (second curve where 0 would be the first based on indexes).
+						If we take the T minus the Index to get the decimal which also works as the new normal that can be applied to the second curve.
+						From there we just need to multiple by 3 to get the starting index of the curve.
+						*/
+						//determine which curve we're accessing by using the norm times curve count, Must be less then 1 to work.
+						t *= (ary.length - 1) * 0.33333333333; // divide by 3
+						i = Math.floor(t);		//Curve index by stripping out the decimal
+						t -= i;					//Strip out the whole number to get the decimal norm to be used for the curve 
+						i *= 3;					//Each curve starts at the 4th point in the array, so times 3 gets us the index where the curve starts.	
+					}
+					return Bezier.get( ary[i], ary[i+1], ary[i+2], ary[i+3], t, out );
+				}
+
+				static splineDerivativeAt(ary, t, out){
+					var i;
+					out = out || new Vec2();
+
+					//Final Curve in the spline
+					//This only work if norm is less then 1, 1 can screw things up so this condition prevents things from breaking.
+					if(t >= 1){
+						t = 1;
+						i = ary.length - 4;
+					}else{ //Determine which curve is being accessed.
+						if(t < 0) t = 0;
+
+						//determine which curve we're accessing by using the norm times curve count, Must be less then 1 to work.
+						t *= (ary.length - 1) * 0.33333333333; // divide by 3
+						i = Math.floor(t);		//Curve index by stripping out the decimal
+						t -= i;					//Strip out the whole number to get the decimal norm to be used for the curve 
+						i *= 3;					//Each curve starts at the 4th point in the array, so times 3 gets us the index where the curve starts.	
+					}
+					return Bezier.derivative( ary[i], ary[i+1], ary[i+2], ary[i+3], t, out );
+				}
+
+				static applySplineMidControl(ary, a, b, c, scale){
+					//http://scaledinnovation.com/analytics/splines/aboutSplines.html
+					let lenBA	= ary[a].length( ary[b] ),	// Length of M to A
+						lenBC	= ary[c].length( ary[b] ),	// Length of M to B
+						lenACi	= 1 / (lenBA + lenBC),		// Total Length of MA+MB inverted
+						scaleA	= scale * lenBA * lenACi,	// Using the lengths, normalize it
+						scaleB	= scale * lenBC * lenACi,
+						deltaAC	= Vec2.sub( ary[c], ary[a] );	// Slope of A and B, used as the line for the mid control pnts
+
+					ary[b].sub( Vec2.scale(deltaAC, scaleA), ary[b-1] );
+					ary[b].add( Vec2.scale(deltaAC, scaleB), ary[b+1] );
+				}
+			}
+		</script>
+	</head>
+<body>
+	<div class="win"><canvas id="FungiCanvas"></canvas></div>
+</body>
+</html>
