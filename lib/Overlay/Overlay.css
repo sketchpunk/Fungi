@@ -16,7 +16,7 @@
 		padding:4px 12px;         
 	}
 
-	.OverlayPanel > main {margin:10px 0px;}
+	.OverlayPanel > main {margin:0px 0px;}
 
 
 /* ---------------------------------------------------- */
@@ -26,6 +26,7 @@
 		grid-template-areas:"label value" "input input";
 		grid-row-gap:1ch;
 		margin-top:10px;
+		margin-bottom:10px;
 	}
 	.OverlayPanel section label{ grid-area:label; padding:0px; margin:0px; font-size:12px; color:white; opacity:0.6;  }
 
@@ -37,7 +38,7 @@
 	.OverlayPanel section.div{ background-color:#373737;
 		border-top:1px solid #202020;
 		border-bottom:1px solid #575757;
-		padding:3px 0px; margin-left:0px; margin-right:0px;
+		padding:3px 0px; margin-left:0px; margin-right:0px; margin-top:0px;
 
 		grid-template-rows: auto;
 		grid-template-areas:"value value";

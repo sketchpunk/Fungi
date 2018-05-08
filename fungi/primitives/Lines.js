@@ -12,11 +12,19 @@ class Lines extends Renderable{
 		this._hasChanged	= false;
 	}
 
+	lineStrip(){ this.drawMode = gl.ctx.LINE_STRIP; return this; }
+
 	addRaw(x0,y0,z0,x1,y1,z1,w0=0,w1){
 		this.vertBuffer.data.push(
 			x0, y0, z0, w0,
 			x1, y1, z1, w1 || w0
 		);
+		this._hasChanged = true;
+		return this;
+	}
+
+	addPoint(v0, w0=0){
+		this.vertBuffer.data.push(v0[0], v0[1], v0[2], w0);
 		this._hasChanged = true;
 		return this;
 	}

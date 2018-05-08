@@ -25,9 +25,29 @@ var Maths = {
 	smoothStep 	: function(edge1, edge2, val){ //https://en.wikipedia.org/wiki/Smoothstep
 		var x = Math.max(0, Math.min(1, (val-edge1)/(edge2-edge1)));
 		return x*x*(3-2*x);
-	}
-};
+	},
 
+	//https://gist.github.com/jhermsmeier/72626d5fd79c5875248fd2c1e8162489
+	polarToCartesian : function(lon, lat, radius, out) {
+		out = out || new Vec3();
+
+		let phi 	= ( 90 - lat ) * this.DEG2RAD,
+	  		theta 	= ( lon + 180 ) * this.DEG2RAD;
+
+	  	out[0] = -(radius * Math.sin(phi) * Math.sin(theta));
+	    out[1] = radius * Math.cos(phi);
+	    out[2] = radius * Math.sin(phi) * Math.cos(theta);
+	  	return out;
+	},
+	cartesianToPolar : function( v, radius, out ){
+		out = out || [0,0];
+  		var lon 	= Math.atan2( v[0], -v[2] ) * this.RAD2DEG,
+  			length 	= Math.sqrt( v[0] * v[0] + v[2] * v[2] ),
+  			lat 	= Math.atan2( v[1], length ) * this.RAD2DEG;
+  		return [ lon, lat ]
+	}
+
+};
 
 
 /*

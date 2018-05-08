@@ -4,7 +4,7 @@ import Renderable		from "../rendering/Renderable.js";
 import DynamicBuffer	from "../data/DynamicBuffer.js";
 
 class Points extends Renderable{
-	constructor(name, startSize, matName = "VecWColor"){
+	constructor(name, startSize = 1, matName = "VecWColor"){
 		super(name, null, matName);
 		this.drawMode		= gl.ctx.POINTS;
 		this.vao			= Vao.standardEmpty(name, 4, startSize);

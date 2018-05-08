@@ -38,6 +38,8 @@ http://tuxedolabs.blogspot.se/2018/05/bokeh-depth-of-field-in-single-pass.html D
 
 https://gist.github.com/thedoor2009/e00f715d9bc931f0f7b3  Edge Detection Outline
 
+http://apoorvaj.io/exploring-bump-mapping-with-webgl.html#toc2 NORMAL and PARALAX BUMP MAPPING.
+
 .......................................................
 Misc
 https://experiments.withgoogle.com/chrome/twitter-matrix

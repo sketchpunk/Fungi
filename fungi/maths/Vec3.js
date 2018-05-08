@@ -55,7 +55,7 @@ class Vec3 extends Float32Array{
 			out[1] = this[1] / mag;
 			out[2] = this[2] / mag;
 
-			return this;
+			return out;
 		}
 
 		//When values are very small, like less then 0.000001, just make it zero.
@@ -66,7 +66,7 @@ class Vec3 extends Float32Array{
 			if(Math.abs(out[1]) <= 1e-6) out[1] = 0;
 			if(Math.abs(out[2]) <= 1e-6) out[2] = 0;
 
-			return this;
+			return out;
 		}
 	//endregion
 
@@ -78,7 +78,7 @@ class Vec3 extends Float32Array{
 			out[1] = this[1] * v;
 			out[2] = this[2] * v;
 
-			return this;
+			return out;
 		}
 
 		mul(v,out){
@@ -87,7 +87,7 @@ class Vec3 extends Float32Array{
 			out[1] = this[1] * v[1];
 			out[2] = this[2] * v[2];
 
-			return this;
+			return out;
 		}
 
 		add(v,out){
@@ -95,7 +95,7 @@ class Vec3 extends Float32Array{
 			out[0] = this[0] + v[0];
 			out[1] = this[1] + v[1];
 			out[2] = this[2] + v[2];
-			return this;
+			return out;
 		}
 
 		sub(v,out){
@@ -103,7 +103,7 @@ class Vec3 extends Float32Array{
 			out[0] = this[0] - v[0];
 			out[1] = this[1] - v[1];
 			out[2] = this[2] - v[2];
-			return this;
+			return out;
 		}
 
 		div(v,out){
@@ -112,7 +112,7 @@ class Vec3 extends Float32Array{
 			out[1] = (v[1] != 0)? this[1] / v[1] : 0;
 			out[2] = (v[2] != 0)? this[2] / v[2] : 0;
 
-			return this;
+			return out;
 		}
 
 		divInvScale(v,out){
@@ -120,7 +120,7 @@ class Vec3 extends Float32Array{
 			out[0] = (this[0] != 0)? v / this[0] : 0;
 			out[1] = (this[1] != 0)? v / this[1] : 0;
 			out[2] = (this[2] != 0)? v / this[2] : 0;
-			return this;
+			return out;
 		}	
 
 		abs(v,out){
@@ -128,7 +128,7 @@ class Vec3 extends Float32Array{
 			out[0] = Math.abs( this[0] );
 			out[1] = Math.abs( this[1] );
 			out[2] = Math.abs( this[2] );
-			return this;
+			return out;
 		}
 
 
@@ -292,8 +292,6 @@ class Vec3 extends Float32Array{
 			return out;
 		}
 		*/
-
-
 	//endregion
 }
 
