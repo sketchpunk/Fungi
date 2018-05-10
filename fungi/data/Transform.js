@@ -1,7 +1,7 @@
 import Maths, { Vec3, Mat4, Quat } from "../Maths.js";
 
 class Transform{
-	constructor(){
+	constructor(name = "Transform"){
 		//Transformation Data
 		this._position		= new Vec3(0);
 		this._scale			= new Vec3(1);
@@ -17,7 +17,7 @@ class Transform{
 		this._parentModified = false;
 
 		//Misc
-		this.name		= "";
+		this.name		= name;
 		this._visible	= true;
 	}
 
@@ -86,7 +86,7 @@ class Transform{
 	//region Rotation
 		set rotation(v){ this._isModified = true; this._rotation.copy(v); }
 
-		setDegrees(deg, axis="x"){ this._isModified = true; this._rotation["r"+axis](deg * Maths.DEG2RAD); return this;}
+		setDegrees(deg, axis="y"){ this._isModified = true; this._rotation["r"+axis](deg * Maths.DEG2RAD); return this;}
 		getRotation(out=null){ return (out != null)? out.copy(this._rotation) : new Quat(this._rotation); }
 
 		mulRotationAxis(axis, angle){ this._isModified = true; this._rotation.mulAxisAngle(axis, angle); return this; }
@@ -103,8 +103,8 @@ class Transform{
 
 		setScale(x, y = null, z = null){
 			this._isModified = true;
-			if(!y && !z) 	this._scale.set(x,x,x); //If not y,z then its a uniform scale
-			else			this._scale.set(x,y,z);
+			if(y==null && z==null) 	this._scale.set(x,x,x); //If not y,z then its a uniform scale
+			else					this._scale.set(x,y,z);
 			return this;
 		}
 	//endregion
@@ -120,13 +120,14 @@ class Transform{
 		//		This will cascade all its children that they need world update
 
 
-		updateMatrix(){ 
-			if(!this._parentModified && !this._isModified) return false;
+		updateMatrix(){
+			if(!this._parentModified && !this._isModified && (this._parent && !this._parent._isModified)) return false;
 
 			var isUpdated = false;
 
 			//......................................
 			//If parent exists BUT its matrix hasn't been updated, Request Update.
+			
 			if(this._parent != null && this._parent._isModified){
 				this._parent.updateMatrix();
 			}
@@ -144,7 +145,7 @@ class Transform{
 
 			//......................................
 			//Figure out the world matrix.
-			if(this.parent != null && (this._parentModified || this._isModified)){
+			if(this._parent != null && (this._parentModified || this._isModified)){
 				Mat4.mult(this.worldMatrix, this._parent.worldMatrix, this.localMatrix);
 				this._parentModified	= false;
 				this._isModified		= false;
@@ -174,13 +175,16 @@ class Transform{
 		}
 
 		get parent(){ this._parent; }
-		set parent(p){
-			if(this._parent != null){ this._parent.removeChild(this); }
-			if(p != null) p.addChild(this); //addChild also sets parent
-		}
+		
+		//set parent(p){
+		//	if(this._parent != null){ this._parent.removeChild(this); }
+		//	if(p != null) p.addChild(this); //addChild also sets parent
+		//}
 
 		addChild(c){
 			if(this.children.indexOf(c) == -1){ //check if child already exists
+				if(c._parent != null) c._parent.removeChild(c);
+
 				c._parent = this;
 				this.children.push(c);
 			}

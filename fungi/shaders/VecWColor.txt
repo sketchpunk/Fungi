@@ -26,7 +26,7 @@
 	layout(location=0) in vec4 a_position;
 
 	uniform UBOTransform{
-		mat4 	projViewMatrix;
+		mat4	projViewMatrix;
 		vec3	cameraPos;
 		float	globalTime;
 		vec2	screenSize;

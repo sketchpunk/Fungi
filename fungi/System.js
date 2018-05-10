@@ -112,7 +112,7 @@ class System{
 	//prepare scene and render frame
 	static update(){
 		//..............................................
-		//Update Camera and UBO
+		// Step : Update Camera and UBO
 		Fungi.camera.updateMatrix();
 		System.GlobalTime[0] = Fungi.sinceStart;
 
@@ -126,9 +126,16 @@ class System{
 			.unbind();
 
 		//..............................................
-		Fungi.render.drawScene( Fungi.scene.items );
-	}
+		// Step : Perform Updates
+		if( Fungi.scene.updateItems ){
+			for(var i of Fungi.scene.updateItems) i.update(Fungi.deltaTime, Fungi.sinceStart);
+		}
 
+		//..............................................
+		// Step : Perform Drawing
+		if( !Fungi.scene.renderItems )	Fungi.render.drawScene( Fungi.scene.items );
+		else							Fungi.render.drawScene( Fungi.scene.renderItems );
+	}
 
 };
 

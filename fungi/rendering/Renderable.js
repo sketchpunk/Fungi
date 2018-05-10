@@ -40,17 +40,21 @@ class Renderable extends Transform{
 
 		return this; 
 	}
-	//enableNormals(){		this.normalMatrix	= new Float32Array(9);			return this; }
 
-	//clone(){
-	//	var o = new Renderable(this.vao,null);
-	//	o.useCulling	= this.useCulling;
-	//	o.useDepthTest	= this.useDepthTest;
-	//	o.useNormals	= this.useNormals;
-	//	o.drawMode		= this.drawMode;
-	//	o.material		= this.material;
-	//	return o;
-	//}
+	clone(incTransform = false){
+		var o = new Renderable(this.name+"_clone", this.vao, null);
+		o.drawMode = this.drawMode;
+		o.material = this.material;
+		o.options.cullFace = this.options.cullFace;
+
+		if(incTransform){
+			o.position	= this._position;
+			o.scale		= this._scale;
+			o.rotation	= this._rotation;
+		}
+
+		return o;
+	}
 
 	//draw(render){
 	//	if(this.vao.elmCount == 0) return;

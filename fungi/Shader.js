@@ -135,31 +135,47 @@ class Material{
 			console.log("Uniform already exists : %s", uName);
 			return this;
 		}
-
 		//..........................
-		//Certain Types need processing of the value
-		switch(uType){
-			case "rgb"	: uValue = gl.rgbArray( uValue ); break;
-			case "rgba"	: uValue = gl.rgbaArray( uValue ); break;
+		this.uniforms.set(uName,{type:uType, value:Material.checkData(uValue, uType)});
+		return this;
+	}
+
+	updateUniform(uName, uValue){
+		var itm = this.uniforms.get(uName);
+		if(!itm){
+			console.log("Material.setUniform: not found %s for material %s",uName, this.name);
+			return this;
+		}
+
+		itm.value = Material.checkData(uValue, itm.type);
+		return this;
+	}
+
+	static checkData(value, type){
+		switch(type){
+			case "rgb"	: value = gl.rgbArray( value ); break;
+			case "rgba"	: value = gl.rgbaArray( value ); break;
 			case "tex"	: 
-				var tmp = (uValue instanceof WebGLTexture)? uValue : Fungi.getTexture( uValue ); 
+				var tmp = (value instanceof WebGLTexture)? value : Fungi.getTexture( value ); 
 				if(tmp == null){
-					console.log("Material.addUniform: Texture not found %s for material %s uniform %s",uValue, this.name, uName);
+					console.log("Material.checkData: Texture not found %s for material %s uniform %s",uValue, this.name, uName);
 					return this;
-				}else uValue = tmp;
+				}else value = tmp;
 			break;
 		}
 
-		//..........................
-		this.uniforms.set(uName,{type:uType, value:uValue});
-		return this;
+		if(Array.isArray(value) && value.length == 0) value = null;
+		
+		return value;
 	}
 
 	applyUniforms(){
 		if(this.shader && this.uniforms.size > 0){
 			var key,itm;
 			this.shader.resetTextureSlot();
-			for([key,itm] of this.uniforms) this.shader.setUniform(key, itm.value);
+			for([key,itm] of this.uniforms){
+				if(itm.value != null) this.shader.setUniform(key, itm.value);
+			}
 		}
 		return this;
 	}

@@ -27,6 +27,8 @@ var Maths = {
 		return x*x*(3-2*x);
 	},
 
+	rnd(min,max){ return Math.random() * (max - min) + min; },
+
 	//https://gist.github.com/jhermsmeier/72626d5fd79c5875248fd2c1e8162489
 	polarToCartesian : function(lon, lat, radius, out) {
 		out = out || new Vec3();

@@ -25,6 +25,8 @@ https://demo.marpi.pl/biomes/
 Effects
 https://twitter.com/etiennepov/status/969703381471256576?s=03
 
+http://joostdevblog.blogspot.com/2016/09/creating-crisper-special-effects-with.html  STYLIZED TRAILS, MESH EFFECTS, ETC VERY COOL
+
 .......................................................
 Shaders
 http://weber.itn.liu.se/~stegu/webglshadertutorial/shadertutorial.html  (Half Tones)
@@ -40,11 +42,46 @@ https://gist.github.com/thedoor2009/e00f715d9bc931f0f7b3  Edge Detection Outline
 
 http://apoorvaj.io/exploring-bump-mapping-with-webgl.html#toc2 NORMAL and PARALAX BUMP MAPPING.
 
+https://thebookofshaders.com/07/  SHAPES
+
+
+https://twitter.com/Ed_dV/status/876958877446676480  TOON FIRE VERY COOL
+https://twitter.com/Ed_dV/status/873063629666435072
+https://simonschreibt.de/gat/stylized-vfx-in-rime/
+
+https://www.artstation.com/artwork/rnmNe  STYLIZED WATER
+
+http://leztusi.tumblr.com/post/171924487650/anime-style-lighting-in-unity-part-2-sunset
+https://github.com/keijiro/UnitySkyboxShaders
+
+.......................................................
+Biodomes
+http://procworld.blogspot.ca/2016/04/geometry-is-destiny.html
+http://procworld.blogspot.com/2016/07/geometry-is-destiny-part-2.html
+
+.......................................................
+Modelling
+
+https://twitter.com/minionsart/status/869213387699388418  create rocks
+
+https://www.blendernation.com/2018/04/26/how-to-model-game-tiles-3d-low-poly-game-modeling-for-beginners/
+https://www.blendernation.com/2018/04/20/texture-mapping-for-absolute-beginners/
+https://www.blendernation.com/2018/04/19/character-clothes-modeling-timelapse/
+https://www.blendernation.com/2018/04/17/game-character-part-2-sculpting/
+https://www.blendernation.com/2018/04/12/character-modelling-tutorial-sculpting-and-texturing-part-1/
+https://www.blendernation.com/2018/04/16/how-to-model-a-fantasy-style-scene/
+https://www.blendernation.com/2018/04/16/compositing-for-comics-in-blender/
+https://www.blendernation.com/2018/04/14/real-time-glsl-crosshatches-shader/
+https://www.blendernation.com/2018/04/14/how-to-use-the-screw-modifier-and-curves/
+https://www.blendernation.com/2018/04/13/tutorial-procedural-paper-texture-material/
+https://www.blendernation.com/2018/04/12/cleaning-up-your-mesh-properly-quick-tips/
+https://www.blendernation.com/2018/04/10/procedural-texture-blurring/
+
 .......................................................
 Misc
 https://experiments.withgoogle.com/chrome/twitter-matrix
 
-
+https://kwantuum.github.io/WattCurve/
 
 https://simblob.blogspot.com/2018/01/updating-mapgen2.html   MAP, Create Island
 https://simblob.blogspot.com/2017/09/mapgen2-html5.html

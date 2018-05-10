@@ -45,8 +45,8 @@ class RenderLoop{
 		//Calculate Deltatime between frames and the FPS currently.
 		var msCurrent	= performance.now(),
 			msDelta		= (msCurrent - this._lastFrame),
-			deltaTime	= (msDelta * 0.001).toFixed(3),		//What fraction of a single second is the delta time
-			sinceStart	= ((msCurrent - this._startTime) * 0.001).toFixed(3);
+			deltaTime	= (msDelta * 0.001),		//What fraction of a single second is the delta time
+			sinceStart	= ((msCurrent - this._startTime) * 0.001);
 
 		if(msDelta >= this._fpsLimit){ //Now execute frame since the time has elapsed.
 			this.fps			= Math.floor(1/deltaTime);
@@ -64,8 +64,8 @@ class RenderLoop{
 	runFull(){
 		//Calculate Deltatime between frames and the FPS currently.
 		var msCurrent		= performance.now(),	//Gives you the whole number of how many milliseconds since the dawn of time :)
-			deltaTime		= ((msCurrent - this._lastFrame) * 0.001).toFixed(3),	//ms between frames, Then / by 1 second to get the fraction of a second.
-			sinceStart		= ((msCurrent - this._startTime) * 0.001).toFixed(3);
+			deltaTime		= ((msCurrent - this._lastFrame) * 0.001),	//ms between frames, Then / by 1 second to get the fraction of a second.
+			sinceStart		= ((msCurrent - this._startTime) * 0.001);
 
 		Fungi.deltaTime		= deltaTime;
 		Fungi.sinceStart 	= sinceStart;
