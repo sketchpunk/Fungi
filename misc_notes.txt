@@ -56,3 +56,12 @@ FOG
 					 gl_FogFragCoord *
 					 LOG2);
 	fogFactor = clamp(fogFactor, 0.0, 1.0);
+
+
+//////////////////////////////////////////////////
+Instead of doing Matrix math like matProj * matView * matModel * vec3,
+breaking it out per line using only vec will generate less ALU instructions, thus increasing performance a bit.
+vec4 v = matModel * a_v;
+v = matView * v
+gl_position = matProj * v;
+	http://www.geeks3d.com/20111028/how-to-compute-the-position-in-a-glsl-vertex-shader-opengl-matrix-gpu-shaderanalyzer-part-2/

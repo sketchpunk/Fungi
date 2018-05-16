@@ -1,5 +1,43 @@
 import Vec3 from "./Vec3.js";
 
+//http://physicsforgames.blogspot.com/2010/03/quaternion-tricks.html
+//http://physicsforgames.blogspot.com/2010/02/quaternions.html
+/*
+Here is a function that will give you the rotation quaternion that will rotate some initial vector into some final vector
+Quat getRotationQuat(const Vector& from, const Vector& to)
+{
+     Quat result;
+
+     Vector H = VecAdd(from, to);
+     H = VecNormalize(H);
+
+     result.w = VecDot(from, H);
+     result.x = from.y*H.z - from.z*H.y;
+     result.y = from.z*H.x - from.x*H.z;
+     result.z = from.x*H.y - from.y*H.x;
+     return result;
+}
+
+Vector rotateVector(const Vector& v, const Quat& q)
+{
+     Vector result;
+     float x1 = q.y*v.z - q.z*v.y;
+     float y1 = q.z*v.x - q.x*v.z;
+     float z1 = q.x*v.y - q.y*v.x;
+
+     float x2 = q.w*x1 + q.y*z1 - q.z*y1;
+     float y2 = q.w*y1 + q.z*x1 - q.x*z1;
+     float z2 = q.w*z1 + q.x*y1 - q.y*x1;
+
+     result.x = v.x + 2.0f*x2;
+     result.y = v.y + 2.0f*y2;
+     result.z = v.z + 2.0f*z2;
+
+     return result;
+}
+*/
+
+
 class Quaternion extends Float32Array{
 	constructor(q = null){
 		super(4);
@@ -423,6 +461,42 @@ class Quaternion extends Float32Array{
 			out[1]	= -a1*invDot;
 			out[2]	= -a2*invDot;
 			out[3]	= a3*invDot;
+			return out;
+		}
+
+		//https://github.com/toji/gl-matrix/blob/master/src/gl-matrix/quat.js#L305
+		static fromMat3(m, out){
+			// Algorithm in Ken Shoemake's article in 1987 SIGGRAPH course notes
+			// article "Quaternion Calculus and Fast Animation".
+			let fRoot, fTrace = m[0] + m[4] + m[8];
+
+			if( fTrace > 0.0 ){
+				// |w| > 1/2, may as well choose w > 1/2
+				fRoot	= Math.sqrt( fTrace + 1.0 );  // 2w
+				out[3]	= 0.5 * fRoot;
+				
+				fRoot	= 0.5 / fRoot;  // 1/(4w)
+				out[0]	= (m[5]-m[7])*fRoot;
+				out[1]	= (m[6]-m[2])*fRoot;
+				out[2]	= (m[1]-m[3])*fRoot;
+			}else{
+				// |w| <= 1/2
+				let i = 0;
+
+				if ( m[4] > m[0] )		i = 1;
+				if ( m[8] > m[i*3+i] )	i = 2;
+				
+				let j = (i+1) % 3;
+				let k = (i+2) % 3;
+
+				fRoot	= Math.sqrt( m[i*3+i] - m[j*3+j] - m[k*3+k] + 1.0);
+				out[i]	= 0.5 * fRoot;
+
+				fRoot	= 0.5 / fRoot;
+				out[3]	= ( m[j*3+k] - m[k*3+j] ) * fRoot;
+				out[j]	= ( m[j*3+i] + m[i*3+j] ) * fRoot;
+				out[k]	= ( m[k*3+i] + m[i*3+k] ) * fRoot;
+			}
 			return out;
 		}
 	//endregion

@@ -195,13 +195,16 @@ class Vao{
 
 	//----------------------------------------------------------
 	//Templates
-		static standardRenderable(name, vertCompLen, aryVert, aryNorm=null, aryUV=null, aryInd=null){
+		static standardRenderable(name, vertCompLen, aryVert, aryNorm=null, aryUV=null, aryInd=null, aryTan=null, aryBi=null){
 			var o = new Vao().create()
 				.floatBuffer("bVertices", aryVert, Shader.ATTRIB_POSITION_LOC, vertCompLen);
 
 			if(aryNorm)	o.floatBuffer("bNormal", aryNorm, Shader.ATTRIB_NORMAL_LOC, 3);
 			if(aryUV)	o.floatBuffer("bUV", aryUV, Shader.ATTRIB_UV_LOC, 2);
 			if(aryInd)	o.indexBuffer("bIndex", aryInd)
+
+			if(aryTan)	o.floatBuffer("bTangent", aryTan, Shader.ATTRIB_TANGENT_LOC, 3);
+			if(aryBi)	o.floatBuffer("bBitangent", aryBi, Shader.ATTRIB_BITANGENT_LOC, 3);
 						
 			var vao = o.finalize(name);
 			o.cleanup();

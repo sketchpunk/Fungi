@@ -13,7 +13,7 @@ function Quad(matName, name="Quad", bx0=-1, by0=-1, bz0=0, bx1=1, by1=1, bz1=0){
 	return entity;
 }
 
-Quad.vertData = function(bx0, by0, bz0, bx1, by1, bz1){
+Quad.vertData = function(bx0=-1, by0=-1, bz0=0, bx1=1, by1=1, bz1=0){
 	return {
 		vertices	:[ bx0,by0,bz0,   bx1,by0,bz1,   bx1,by1,bz0,   bx0,by1,bz0 ],
 		uv			:[ 0.0,0.0,   1.0,0.0,   1.0,1.0,   0.0,1.0 ],

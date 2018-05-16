@@ -21,11 +21,15 @@ Terrains
 http://www.pheelicks.com/2014/03/rendering-large-terrains/
 https://demo.marpi.pl/biomes/
 
+https://www.youtube.com/watch?v=ELpZW62HGVs  Coding Train
+
 .......................................................
 Effects
 https://twitter.com/etiennepov/status/969703381471256576?s=03
 
 http://joostdevblog.blogspot.com/2016/09/creating-crisper-special-effects-with.html  STYLIZED TRAILS, MESH EFFECTS, ETC VERY COOL
+
+https://www.youtube.com/watch?v=X0kjv0MozuY  coding train fire
 
 .......................................................
 Shaders
@@ -53,6 +57,17 @@ https://www.artstation.com/artwork/rnmNe  STYLIZED WATER
 
 http://leztusi.tumblr.com/post/171924487650/anime-style-lighting-in-unity-part-2-sunset
 https://github.com/keijiro/UnitySkyboxShaders
+
+https://mynameismjp.wordpress.com/2009/03/10/reconstructing-position-from-depth/
+https://www.gamedev.net/forums/topic/679557-retrieving-world-position-in-deferred-rendering/
+
+http://www.geeks3d.com/20110316/shader-library-simple-2d-effects-sphere-and-ripple-in-glsl/
+http://www.geeks3d.com/20110428/shader-library-swirl-post-processing-filter-in-glsl/
+http://www.geeks3d.com/20091009/shader-library-night-vision-post-processing-filter-glsl/
+http://www.geeks3d.com/20091112/shader-library-dream-vision-post-processing-filter-glsl/
+http://www.geeks3d.com/20110408/cross-stitching-post-processing-shader-glsl-filter-geexlab-pixel-bender/
+http://www.geeks3d.com/20101228/shader-library-frosted-glass-post-processing-shader-glsl/
+http://www.geeks3d.com/20160531/mesh-voxelization/
 
 .......................................................
 Biodomes
@@ -92,26 +107,61 @@ https://twitter.com/gabrielpeyre/status/983227642974494720  Cell like Interpolat
 
 http://vallandingham.me/becoming_datavis_practitioner.html
 
+https://discourse.threejs.org/t/how-to-create-a-new-file-and-save-it-with-arraybuffer-content/628/2  //Save Binary to file.
+
+https://code.google.com/archive/p/kri/wikis/SpatialHierarchy.wiki
+
+https://twitter.com/gszauer/status/989043275045785600  Rotation Gizmo 
+
+.......................................................
+Armature
+http://physicsforgames.blogspot.com/2010/06/blending-walkrun-cycle.html
+
 .......................................................
 PHYSICS
 http://codeflow.org/entries/2010/nov/29/verlet-collision-with-impulse-preservation/
 
+https://www.alanzucconi.com/2017/04/17/procedural-animations/
 https://www.alanzucconi.com/2017/04/12/tentacles/ Inverse Kinematics with TENTACLES, also spiders
 
 https://www.youtube.com/watch?v=WHn2ouKKSfs  Coding Math Kinematics and Inverse 
 
 https://www.youtube.com/watch?v=xXjRlEr7AGk Kinematics CodingTrain
 https://www.youtube.com/watch?v=UNoX65PRehA
+https://www.youtube.com/watch?v=hbgDqyy8bIw
 
 https://www.youtube.com/watch?v=E67e0RX-7Ew  Coding Train - Verlet Physics
 
+http://www.euclideanspace.com/physics/kinematics/joints/ik/index.htm
 
 http://nbodyphysics.com/blog/2016/05/29/planetary-orbits-in-javascript/
+
+http://physicsforgames.blogspot.com/2010/03/collision-overview.html
+
+https://github.com/gamephysicscookbook/GamePhysicsCookbook
+
+.......................................................
+MATH
+https://www.youtube.com/watch?v=8fm8wXa2x5k
+https://www.algorithm-archive.org/chapters/convolutions/convolutions.html
+
+
+https://github.com/mattatz/ShibuyaCrowd/blob/master/source/shaders/common/quaternion.glsl
+
+http://physicsforgames.blogspot.com/2010/02/quaternions-why.html
+
+http://physicsforgames.blogspot.com/2010/02/quaternions.html
+
+.......................................................
+RAY MARCHING
+http://iquilezles.org/www/articles/distfunctions/distfunctions.htm  DISTANCE FORMULAS
+http://jamie-wong.com/2016/07/15/ray-marching-signed-distance-functions/
 
 .......................................................
 Voxels
 http://www.gedge.ca/dev/2014/08/17/greedy-voxel-meshing   Improvements to Rendering
 
+https://sites.google.com/site/letsmakeavoxelengine/
 
 .......................................................
 Vector Field Textures
@@ -132,6 +182,8 @@ https://www.raywenderlich.com/177695/procedural-generation-mazes (Dungeon Rooms)
 http://allenchou.net/2013/07/bending-solid-geometry-in-planetary-annihilation/ BENDING MESHES
 
 http://learningthreejs.com/blog/2013/09/16/how-to-make-the-earth-in-webgl/  CREATE PLANET WITH CLOUDS
+
+http://amietia.com/slashmaze.html   MAZE LIKE SHADER
 
 .......................................................
 Build Sphere
