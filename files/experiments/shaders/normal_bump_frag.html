@@ -174,6 +174,7 @@
 	out vec4 oFragColor;
 
 	//http://www.thetenthplanet.de/archives/1180
+	/*
 	mat3 cotangent_frame(vec3 N, vec3 p, vec2 uv){
 		vec2 duv1	= dFdx( uv ),
 			duv2	= dFdy( uv );
@@ -190,7 +191,6 @@
 		return mat3( T * invmax, B * invmax, N );
 	}
 
-
 	vec3 perturb_normal(vec3 N, vec3 V, vec2 texcoord, sampler2D tex){
 		// assume N, the interpolated vertex normal and 
 		// V, the view vector (vertex to eye)
@@ -203,17 +203,34 @@
 		mat3 TBN = cotangent_frame( N, -V, texcoord );
 		return normalize( TBN * map );
 	}
+	*/
+
+	//http://pocket.gl/normal-maps/
+	vec3 perturbNormal( vec3 eye_pos, vec3 surf_norm, vec2 uv_coords, sampler2D tex){
+		vec3 pNorm	= texture( tex, uv_coords ).rgb * 2.0 - 1.0;
+
+		vec2 st0	= dFdx( uv_coords.st ),
+			 st1	= dFdy( uv_coords.st );
+		vec3 q0		= dFdx( eye_pos.xyz ),
+			 q1		= dFdy( eye_pos.xyz ),
+			 S		= normalize(  q0 * st1.t - q1 * st0.t ),
+			 T		= normalize( -q0 * st1.s + q1 * st0.s ),
+			 N		= normalize( surf_norm );
+
+		return normalize( mat3( S, T, N ) * pNorm );
+	}
 
 	void main(void){
 		//vec3 fragToCamera	= normalize(v_vertToCamera);
 		vec3 fragToLight 	= normalize(v_vertToLight);
 		vec3 fragNormal		= normalize(v_normal);
-		vec3 bumpNormal		= perturb_normal(fragNormal, -v_worldPos, v_uv, u_normTex);
+		//vec3 bumpNormal		= perturb_normal(fragNormal, -v_worldPos, v_uv, u_normTex);
+		vec3 bumpNormal		= perturbNormal(v_worldPos, fragNormal, v_uv, u_normTex);
 
 		float fragToLightAngle	= clamp(dot( bumpNormal, fragToLight), 0.0, 1.0);
 		float diffuse			= fragToLightAngle * 1.0;
 
-		oFragColor = vec4(vec3(0.5) * diffuse, 1.0);
+		oFragColor = vec4(vec3(0.5) * diffuse, 1.0);		
 	}	
 <\fragment>
 </script>
