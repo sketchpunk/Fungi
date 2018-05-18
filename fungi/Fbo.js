@@ -76,7 +76,7 @@ class Fbo{
 			return this;
 		}
 
-		multiSampleColorBuffer(name, cAttachNum, sampleSize=4){ //NOTE, Only sampleSize of 4 works, any other value crashes.
+		multiSampleColorBuffer(name="bColor", cAttachNum=0, sampleSize=4){ //NOTE, Only sampleSize of 4 works, any other value crashes.
 			var buf = { id: gl.ctx.createRenderbuffer() };
 
 			gl.ctx.bindRenderbuffer(gl.ctx.RENDERBUFFER, buf.id); //Bind Buffer
@@ -100,7 +100,7 @@ class Fbo{
 	//-------------------------------------------------
 		depthBuffer(isMultiSample = false){
 			this.fbo.bDepth = gl.ctx.createRenderbuffer();
-			gl.ctx.bindRenderbuffer(ctx.RENDERBUFFER, this.fbo.bDepth);
+			gl.ctx.bindRenderbuffer(gl.ctx.RENDERBUFFER, this.fbo.bDepth);
 			
 			//Regular render Buffer
 			if(!isMultiSample){

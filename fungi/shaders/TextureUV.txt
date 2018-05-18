@@ -3,14 +3,16 @@
 	"ubo":[ "UBOTransform" ],
 	"options": { "modelMatrix":true },
 	"uniforms":[
-		{ "name":"u_tex01", "type":"sample2D" }
+		{ "name":"u_tex01", "type":"sample2D" },
+		{ "name":"u_texScale", "type":"vec2" }
 	]
 }<\shader>
 	
 <materials>[
 	{ "name":"TextureUV","useBlending":true,"useSampleAlphaCoverage":false, 
 		"uniforms":[ 
-			{ "name":"u_tex01", "type":"tex", "value":"tex01" }
+			{ "name":"u_tex01",		"value":"tex01", "type":"tex" },
+			{ "name":"u_texScale",	"value":[1,1] }
 		]
 	}
 ]<\materials>
@@ -28,11 +30,12 @@
 	};
 
 	uniform mat4 u_modelMatrix;
+	uniform vec2 u_texScale;
 
 	out vec2 v_uv;
 
 	void main(void){
-		v_uv		= a_uv;
+		v_uv		= a_uv * u_texScale;
 		gl_Position	= projViewMatrix * u_modelMatrix * vec4(a_position, 1.0);
 	}
 <\vertex>

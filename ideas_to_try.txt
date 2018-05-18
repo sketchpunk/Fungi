@@ -48,7 +48,6 @@ http://apoorvaj.io/exploring-bump-mapping-with-webgl.html#toc2 NORMAL and PARALA
 
 https://thebookofshaders.com/07/  SHAPES
 
-
 https://twitter.com/Ed_dV/status/876958877446676480  TOON FIRE VERY COOL
 https://twitter.com/Ed_dV/status/873063629666435072
 https://simonschreibt.de/gat/stylized-vfx-in-rime/
@@ -73,6 +72,13 @@ http://www.geeks3d.com/20160531/mesh-voxelization/
 Biodomes
 http://procworld.blogspot.ca/2016/04/geometry-is-destiny.html
 http://procworld.blogspot.com/2016/07/geometry-is-destiny-part-2.html
+
+.......................................................
+Decal
+https://threejs.org/examples/webgl_decals.html
+https://github.com/benpurdy/threejs-decals
+http://blog.wolfire.com/2009/06/how-to-project-decals/
+
 
 .......................................................
 Modelling
