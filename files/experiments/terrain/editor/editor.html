@@ -43,10 +43,8 @@
 				// Start Loading things up for Fungi
 				System.beginWithResources([
 					{ type:"shader", file:"/fungi/shaders/VecWColor.txt" },
-					{ type:"shader", file:"/fungi/shaders/LowPolyPhong.txt" },
 					{ type:"shader", file:"HeightmapEditor.txt" },
 					{ type:"shader", file:"/fungi.mod/postEffects/shaders/PostBasic.txt" },
-					{ type:"image", name:"tex01", file:"/files/images/Heightmap.png", doYFlip:true, useMips:false },
 				])	.then( async()=>{ 
 						await System.startUp(onRender);
 						System.darkScene();
@@ -107,7 +105,7 @@
 				//........................
 				// Create gl texture and set it on the material for rendering the terrain
 				hpTexture 	= gl.loadTexture("hightMap", hpCanvas.canvas, true);
-				matTerrain 	= Fungi.getMaterial("HeightmapEditor").updateUniform("u_tex01", hpTexture);
+				matTerrain 	= Fungi.getMaterial("HeightmapEditor").addUniform("u_tex01", "tex", hpTexture);
 				matTerrain 	= matTerrain.updateUniform("u_worldMouse", worldMouse);
 
 				//........................

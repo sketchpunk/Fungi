@@ -12,12 +12,11 @@
 <materials>[
 	{ "name":"HeightmapEditor",
 		"uniforms":[ 
-			{ "name":"u_tex01",			"value":"tex01", "type":"tex" },
 			{ "name":"u_texScale",		"value":[1,1] },
 			{ "name":"u_worldMouse",	"value":[2,2] }
 		]
 	}
-]<\materials>
+]<\materials>			{ "name":"u_tex01",			"value":"tex01", "type":"tex" },
 	
 <vertex>
 	#version 300 es
