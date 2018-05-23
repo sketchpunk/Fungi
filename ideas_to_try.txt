@@ -23,6 +23,14 @@ https://demo.marpi.pl/biomes/
 
 https://www.youtube.com/watch?v=ELpZW62HGVs  Coding Train
 
+https://www.youtube.com/watch?v=wbpMiKiSKm8
+
+.......................................................
+Marching Squares
+
+https://www.youtube.com/watch?v=yOgIncKp0BE  caves using marching squares
+https://www.youtube.com/watch?v=6M-BnuJMuQE
+
 .......................................................
 Effects
 https://twitter.com/etiennepov/status/969703381471256576?s=03
@@ -30,6 +38,20 @@ https://twitter.com/etiennepov/status/969703381471256576?s=03
 http://joostdevblog.blogspot.com/2016/09/creating-crisper-special-effects-with.html  STYLIZED TRAILS, MESH EFFECTS, ETC VERY COOL
 
 https://www.youtube.com/watch?v=X0kjv0MozuY  coding train fire
+
+.......................................................
+Maze
+
+https://www.codingblocks.net/videos/generating-mazes-with-js/
+https://codepen.io/neeraj08/pen/NbzPmE
+
+.......................................................
+Collision
+https://www.youtube.com/watch?v=_3dRFu3k8Nw
+https://www.youtube.com/watch?v=-UJpgZucQGs&list=PL9ZqDLjDY8PmY7rUNIniwxvTqxrQwMtzc
+
+
+
 
 .......................................................
 Shaders
@@ -67,6 +89,16 @@ http://www.geeks3d.com/20091112/shader-library-dream-vision-post-processing-filt
 http://www.geeks3d.com/20110408/cross-stitching-post-processing-shader-glsl-filter-geexlab-pixel-bender/
 http://www.geeks3d.com/20101228/shader-library-frosted-glass-post-processing-shader-glsl/
 http://www.geeks3d.com/20160531/mesh-voxelization/
+
+http://www.numb3r23.net/2015/08/17/using-fwidth-for-distance-based-anti-aliasing/  DIAMOND SHADER
+
+https://gamedev.stackexchange.com/questions/153786/how-can-i-round-out-the-corners-of-a-quad-in-opengl ROUNDED CORNERS
+
+https://mattdesl.svbtle.com/drawing-lines-is-hard  DRAW LINES
+
+https://www.shadertoy.com/view/ldfGWn 
+
+http://prideout.net/blog/?p=22 TOON SHADING VERY GOOD
 
 .......................................................
 Biodomes
@@ -119,6 +151,11 @@ https://code.google.com/archive/p/kri/wikis/SpatialHierarchy.wiki
 
 https://twitter.com/gszauer/status/989043275045785600  Rotation Gizmo 
 
+https://www.youtube.com/watch?v=5TUSVj8yka8  Horizon Bending
+https://www.youtube.com/watch?v=AxE77Z4EeIk
+
+https://www.youtube.com/watch?v=vZp0ETdD37E
+
 .......................................................
 Armature
 http://physicsforgames.blogspot.com/2010/06/blending-walkrun-cycle.html
@@ -145,6 +182,9 @@ http://nbodyphysics.com/blog/2016/05/29/planetary-orbits-in-javascript/
 http://physicsforgames.blogspot.com/2010/03/collision-overview.html
 
 https://github.com/gamephysicscookbook/GamePhysicsCookbook
+
+https://www.youtube.com/watch?v=gHeQ8Hr92P4   //Walk on planet like Mario World. PLANET ATTRACTOR
+https://www.youtube.com/watch?v=cH4oBoXkE00
 
 .......................................................
 MATH

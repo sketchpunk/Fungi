@@ -65,3 +65,27 @@ vec4 v = matModel * a_v;
 v = matView * v
 gl_position = matProj * v;
 	http://www.geeks3d.com/20111028/how-to-compute-the-position-in-a-glsl-vertex-shader-opengl-matrix-gpu-shaderanalyzer-part-2/
+
+
+
+RANDOM NUMBER GENERATOR FOR GLSL
+//https://www.shadertoy.com/view/4dtBDX
+//https://www.csee.umbc.edu/~olano/papers/GPUTEA.pdf
+uvec2 encrypt(uvec2 v)
+{
+    uint k[4], sum = 0U, delta = 0x9e3779b9U;
+    
+    k[0] = 0xA341316CU;
+    k[1] = 0xC8013EA4U;
+    k[2] = 0xAD90777DU;
+    k[3] = 0x7E95761EU;
+    
+    for(uint i = 0U; i < 4U; ++i)
+    {
+        sum += delta;
+        v.x += ((v.y << 4) + k[0]) ^ (v.y + sum) ^ ((v.y >> 5) + k[1]);
+        v.y += ((v.x << 4) + k[2]) ^ (v.x + sum) ^ ((v.x >> 5) + k[3]);
+    }
+
+    return v;
+}
