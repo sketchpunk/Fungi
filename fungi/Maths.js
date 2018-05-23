@@ -21,11 +21,16 @@ var Maths = {
 
 	lerp 	: function(a, b, t){ return (1 - t) * a + t * b; },  //return a + t * (b-a); 
 
+	fract	: function(f){ return f - Math.floor(f); },
+	step 	: function(edge, x){ return (x < edge)? 0 : 1; },
+
 	nearZero	: function(v){ return (Math.abs(v) <= this.EPSILON)? 0 : v; },
 	smoothStep 	: function(edge1, edge2, val){ //https://en.wikipedia.org/wiki/Smoothstep
 		var x = Math.max(0, Math.min(1, (val-edge1)/(edge2-edge1)));
 		return x*x*(3-2*x);
 	},
+
+
 
 	rnd(min,max){ return Math.random() * (max - min) + min; },
 

@@ -161,6 +161,13 @@ class Vec2 extends Float32Array{
 			out[1] = (this[1] != 0)? v / this[1] : 0;
 			return out;
 		}
+
+		floor(out=null){
+			out = out || this;
+			out[0] = Math.floor( this[0] );
+			out[1] = Math.floor( this[1] );
+			return out;
+		}
 	//endregion
 
 
@@ -188,6 +195,20 @@ class Vec2 extends Float32Array{
 		}
 
 		static dot(a,b){ return a[0] * b[0] + a[1] * b[1]; }
+
+		static floor(v, out=null){
+			out = out || new Vec2();
+			out[0] = Math.floor( v[0] );
+			out[1] = Math.floor( v[1] );
+			return out;
+		}
+
+		static fract(v, out=null){
+			out = out || new Vec2();
+			out[0] = v[0] - Math.floor( v[0] );
+			out[1] = v[1] - Math.floor( v[1] );
+			return out;
+		}
 	//endregion
 }
 
