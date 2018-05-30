@@ -189,7 +189,7 @@ class Quaternion extends Float32Array{
 
 		//Ported to JS from C# example at https://pastebin.com/ubATCxJY
 		//Note, if Dir and Up are equal, a roll happends. Need to find a way to fix this.
-		static lookRotation(vDir, vUp, out){
+		static lookRotation(vDir, vUp, out = null){
 			var zAxis	= new Vec3(vDir),	//Forward
 				up		= new Vec3(vUp),
 				xAxis	= new Vec3(),		//Right

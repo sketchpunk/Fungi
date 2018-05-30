@@ -23,7 +23,13 @@ class Fbo{
 
 		finalize(name){
 			//Assign which buffers are going to be written too
-			gl.ctx.drawBuffers(this.aryDrawBuf);
+			//https://developer.mozilla.org/en-US/docs/Web/API/WebGL2RenderingContext/drawBuffers
+			//https://developer.mozilla.org/en-US/docs/Web/API/WebGL2RenderingContext/readBuffer
+			if(this.aryDrawBuf.length > 0)	gl.ctx.drawBuffers(this.aryDrawBuf);
+			else{
+				gl.ctx.drawBuffers([gl.ctx.NONE]);	//No Color Buffers Available to Draw into
+				gl.ctx.readBuffer(gl.ctx.NONE);
+			}
 
 			//Check if the Frame has been setup Correctly.
 			switch(gl.ctx.checkFramebufferStatus(gl.ctx.FRAMEBUFFER)){
@@ -54,19 +60,35 @@ class Fbo{
 	//-------------------------------------------------
 	// COLOR BUFFERS
 	//-------------------------------------------------
-		texColorBuffer(name="bColor",cAttachNum=0){
+		texColorBuffer(name="bColor",cAttachNum=0, config=0){
 			//Up to 16 texture attachments 0 to 15
-			var buf = { id: gl.ctx.createTexture() };
+			let buf = { id: gl.ctx.createTexture() };
+			let c = Fbo[config];
 			
 			gl.ctx.bindTexture(gl.ctx.TEXTURE_2D, buf.id);
-			gl.ctx.texImage2D(gl.ctx.TEXTURE_2D, 0, gl.ctx.RGBA, this.fbo.frameWidth, this.fbo.frameHeight, 0, gl.ctx.RGBA, gl.ctx.UNSIGNED_BYTE, null);
-			gl.ctx.texParameteri(gl.ctx.TEXTURE_2D, gl.ctx.TEXTURE_MAG_FILTER, gl.ctx.LINEAR); //NEAREST
-			gl.ctx.texParameteri(gl.ctx.TEXTURE_2D, gl.ctx.TEXTURE_MIN_FILTER, gl.ctx.LINEAR); //NEAREST
 
-			//ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_MIN_FILTER, ctx.LINEAR);
-			//ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_MAG_FILTER, ctx.LINEAR);
-			//ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_WRAP_S, ctx.CLAMP_TO_EDGE);	//Stretch image to X position
-			//ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_WRAP_T, ctx.CLAMP_TO_EDGE);	//Stretch image to Y position
+			switch(config){
+				case Fbo.RGBA_UBYTE : 
+					gl.ctx.texImage2D(gl.ctx.TEXTURE_2D, 0, gl.ctx.RGBA, this.fbo.frameWidth, this.fbo.frameHeight, 0, gl.ctx.RGBA, gl.ctx.UNSIGNED_BYTE, null);
+					break;
+
+				case Fbo.RGBA_F16 : 
+					gl.ctx.texImage2D(gl.ctx.TEXTURE_2D, 0, gl.ctx.RGBA16F, this.fbo.frameWidth, this.fbo.frameHeight, 0, gl.ctx.RGBA, gl.ctx.FLOAT, null);
+					break;
+
+				case Fbo.RGBA_F32 : 
+					gl.ctx.texImage2D(gl.ctx.TEXTURE_2D, 0, gl.ctx.RGBA32F, this.fbo.frameWidth, this.fbo.frameHeight, 0, gl.ctx.RGBA, gl.ctx.FLOAT, null);
+					break;
+
+				case Fbo.RGB_F16 : //TODO, Does not work, cant figure out why
+					gl.ctx.texImage2D(gl.ctx.TEXTURE_2D, 0, gl.ctx.RGB16F, this.fbo.frameWidth, this.fbo.frameHeight, 0, gl.ctx.RGB, gl.ctx.FLOAT, null);
+					break;
+			}
+
+			gl.ctx.texParameteri(gl.ctx.TEXTURE_2D, gl.ctx.TEXTURE_MAG_FILTER, gl.ctx.NEAREST);
+			gl.ctx.texParameteri(gl.ctx.TEXTURE_2D, gl.ctx.TEXTURE_MIN_FILTER, gl.ctx.NEAREST);
+			gl.ctx.texParameteri(gl.ctx.TEXTURE_2D, gl.ctx.TEXTURE_WRAP_S, gl.ctx.CLAMP_TO_EDGE);
+			gl.ctx.texParameteri(gl.ctx.TEXTURE_2D, gl.ctx.TEXTURE_WRAP_T, gl.ctx.CLAMP_TO_EDGE);
 
 			gl.ctx.framebufferTexture2D(gl.ctx.FRAMEBUFFER, gl.ctx.COLOR_ATTACHMENT0 + cAttachNum, gl.ctx.TEXTURE_2D, buf.id, 0);
 
@@ -125,11 +147,12 @@ class Fbo{
 			
 			gl.ctx.bindTexture(gl.ctx.TEXTURE_2D, buf.id);
 			//ctx.pixelStorei(ctx.UNPACK_FLIP_Y_WEBGL, false);
+			gl.ctx.texStorage2D(gl.ctx.TEXTURE_2D, 1, gl.ctx.DEPTH_COMPONENT16, this.fbo.frameWidth, this.fbo.frameHeight);
 			gl.ctx.texParameteri(gl.ctx.TEXTURE_2D, gl.ctx.TEXTURE_MAG_FILTER, gl.ctx.NEAREST);
 			gl.ctx.texParameteri(gl.ctx.TEXTURE_2D, gl.ctx.TEXTURE_MIN_FILTER, gl.ctx.NEAREST);
 			gl.ctx.texParameteri(gl.ctx.TEXTURE_2D, gl.ctx.TEXTURE_WRAP_S, gl.ctx.CLAMP_TO_EDGE);
 			gl.ctx.texParameteri(gl.ctx.TEXTURE_2D, gl.ctx.TEXTURE_WRAP_T, gl.ctx.CLAMP_TO_EDGE);
-			gl.ctx.texStorage2D(gl.ctx.TEXTURE_2D, 1, gl.ctx.DEPTH_COMPONENT16, this.fbo.frameWidth, this.fbo.frameHeight);
+			
 
 			gl.ctx.framebufferTexture2D(gl.ctx.FRAMEBUFFER, gl.ctx.DEPTH_ATTACHMENT, gl.ctx.TEXTURE_2D, buf.id, 0);
 
@@ -142,6 +165,9 @@ class Fbo{
 	//-------------------------------------------------
 	// STATIC FUNCTIONS
 	//-------------------------------------------------
+		static screenFBO(){ return { frameWidth:gl.width, frameHeight:gl.height, id:null }; }
+
+
 		static readPixel(fbo,x,y,cAttachNum){
 			var p = new Uint8Array(4);
 			gl.ctx.bindFramebuffer(gl.ctx.READ_FRAMEBUFFER, fbo.id);
@@ -154,30 +180,58 @@ class Fbo{
 		static activate(fbo){ gl.ctx.bindFramebuffer(gl.ctx.FRAMEBUFFER,fbo.id); return this; }
 		static deactivate(){ gl.ctx.bindFramebuffer(gl.ctx.FRAMEBUFFER,null); return this; }
 		static clear(fbo, unbind = true){
-			gl.ctx.bindFramebuffer(ctx.FRAMEBUFFER,fbo.id);
-			gl.ctx.clear(ctx.COLOR_BUFFER_BIT | gl.ctx.DEPTH_BUFFER_BIT); 
+			gl.ctx.bindFramebuffer(gl.ctx.FRAMEBUFFER,fbo.id);
+			gl.ctx.clear(gl.ctx.COLOR_BUFFER_BIT | gl.ctx.DEPTH_BUFFER_BIT); 
 			if(unbind) gl.ctx.bindFramebuffer(gl.ctx.FRAMEBUFFER,null);
 		}
 
 
-		static blit(fboRead,fboWrite){
+		static blit(fboRead, fboWrite){
 			//bind the two Frame Buffers
 			gl.ctx.bindFramebuffer(gl.ctx.READ_FRAMEBUFFER, fboRead.id);
 			gl.ctx.bindFramebuffer(gl.ctx.DRAW_FRAMEBUFFER, fboWrite.id);
 
 			//Clear Frame buffer being copied to.
-			gl.ctx.clearBufferfv(ctx.COLOR, 0, [0.0, 0.0, 0.0, 1.0]); 
+			gl.ctx.clearBufferfv(gl.ctx.COLOR, 0, [0.0, 0.0, 0.0, 1.0]); 
 
 			//Transfer Pixels from one FrameBuffer to the Next
 			gl.ctx.blitFramebuffer(
 				0, 0, fboRead.frameWidth, fboRead.frameHeight,
 				0, 0, fboWrite.frameWidth, fboWrite.frameHeight,
-				ctx.COLOR_BUFFER_BIT, gl.ctx.NEAREST);
+				gl.ctx.COLOR_BUFFER_BIT, gl.ctx.NEAREST);
 
 			//Unbind
 			gl.ctx.bindFramebuffer(gl.ctx.READ_FRAMEBUFFER, null);
 			gl.ctx.bindFramebuffer(gl.ctx.DRAW_FRAMEBUFFER, null);
 		}
+
+		static blitDepth(fboRead, fboWrite){
+			//bind the two Frame Buffers
+			gl.ctx.bindFramebuffer(gl.ctx.READ_FRAMEBUFFER, fboRead.id);
+			gl.ctx.bindFramebuffer(gl.ctx.DRAW_FRAMEBUFFER, fboWrite.id);
+
+			//Clear Frame buffer being copied to.
+			gl.ctx.clearBufferfv(gl.ctx.DEPTH, 0, [0.0, 0.0, 0.0, 0.0]); 
+
+			//Transfer Pixels from one FrameBuffer to the Next
+			gl.ctx.blitFramebuffer(
+				0, 0, fboRead.frameWidth, fboRead.frameHeight,
+				0, 0, fboWrite.frameWidth, fboWrite.frameHeight,
+				gl.ctx.DEPTH_BUFFER_BIT, gl.ctx.NEAREST);
+
+			//Unbind
+			gl.ctx.bindFramebuffer(gl.ctx.READ_FRAMEBUFFER, null);
+			gl.ctx.bindFramebuffer(gl.ctx.DRAW_FRAMEBUFFER, null);
+		}
+
+		/* BLIT Depth Buffer
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0); // write to default framebuffer
+		glBlitFramebuffer(
+		  0, 0, SCR_WIDTH, SCR_HEIGHT, 0, 0, SCR_WIDTH, SCR_HEIGHT, GL_DEPTH_BUFFER_BIT, GL_NEAREST
+		);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		*/
 
 		static basicTextureFrameBuffer(){
 			var oFbo = new Fbo();
@@ -202,5 +256,10 @@ class Fbo{
 
 	*/
 }
+
+Fbo.RGBA_UBYTE	= 0;
+Fbo.RGBA_F16	= 1;
+Fbo.RGBA_F32	= 2;
+Fbo.RGB_F16		= 3;
 
 export default Fbo;

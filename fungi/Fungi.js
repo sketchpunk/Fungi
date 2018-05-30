@@ -21,6 +21,12 @@ export default {
 	textures	: new Map(),
 	tempCache	: new Map(),
 
+	getShader	: function(key){
+		var m = this.shaders.get(key);
+		if(!m){ console.log("Shader Not Found %s", key); return null; }
+		return m;
+	},
+
 	getMaterial	: function(key){
 		var m = this.materials.get(key);
 		if(!m){ console.log("Material Not Found %s", key); return null; }

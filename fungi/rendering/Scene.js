@@ -5,7 +5,10 @@ class Scene{
 		this.updateItems	= null;
 	}
 
-	add(itm){ this.items.push(itm); return this; }
+	add(itm){ 
+		for(var a of arguments) this.items.push(a);
+		return this;
+	}
 
 	prepareItems(){
 		//.........................

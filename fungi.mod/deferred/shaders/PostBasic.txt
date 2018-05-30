@@ -9,7 +9,10 @@
 }<\shader>
 	
 <materials>[
-	{ "name":"PostBasic", "options": { "depthTest":false } }
+	{ 	"name"		: "PostBasic", 
+		"options"	: { "blend":true, "depthTest":false },
+		"uniforms"	: [ { "name":"u_colorTex", "value":null } ] 
+	}
 ]<\materials>
 	
 <vertex>

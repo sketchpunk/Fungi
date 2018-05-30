@@ -3,6 +3,12 @@ import Fungi	from "./Fungi.js";
 
 //http://www.geeks3d.com/20140704/gpu-buffers-introduction-to-opengl-3-1-uniform-buffers-objects/
 
+/*
+TODO:
+	Create a new UBO that stores a binary array of whats on the GPU, then have the object update the local array
+	then send the whole thing up. This allows for a single GPU call instead of several.
+*/
+
 class Ubo{
 	constructor(bName, bPoint){
 		this.name	= bName;
@@ -30,6 +36,13 @@ class Ubo{
 
 	addItem(iName, iType){ 
 		this.items.set(iName, {type:iType, offset: 0, chunkLen: 0, dataLen: 0 });
+		return this;
+	}
+
+	addItems(iName, iType){
+		for(var i=0; i < arguments.length;i+=2){
+			this.items.set(arguments[i], {type:arguments[i+1], offset: 0, chunkLen: 0, dataLen: 0 });
+		}
 		return this;
 	}
 
@@ -69,7 +82,8 @@ class Ubo{
 			//Chunk has been overdrawn when it already has some data resurved for it.
 			if(tsize < 0 && chunk < 16){
 				offset += chunk;						//Add Remaining Chunk to offset...
-				if(i > 0) prevItm.chunkLen += chunk;	//So the remaining chunk can be used by the last variable
+				//if(i > 0) prevItm.chunkLen += chunk;	//So the remaining chunk can be used by the last variable
+				if(prevItm) prevItm.chunkLen += chunk;	//So the remaining chunk can be used by the last variable
 				chunk = 16;								//Reset Chunk
 			}else if(tsize < 0 && chunk == 16){
 				//Do nothing incase data length is >= to unused chunk size.

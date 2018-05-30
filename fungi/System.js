@@ -18,12 +18,21 @@ class System{
 		//.........................................
 		//Build UBOs
 		System.UBOTransform = new Ubo("UBOTransform", 0)
-			.addItem("projViewMatrix", "mat4")
-			.addItem("cameraPos", "vec3")
-			.addItem("globalTime", "float")
-			.addItem("screenSize","vec2")
+			.addItems(
+				"projViewMatrix",	"mat4",
+				"cameraPos",		"vec3",
+				"globalTime",		"float",
+				"screenSize",		"vec2"
+			)
 			.finalize(false)
 			.updateItem("screenSize", new Float32Array( [ gl.width, gl.height ] ) )
+			.unbind();
+
+		System.UBOLighting = new Ubo("UBOLighting", 1)
+			.addItems( "lightPosition","vec3",	"lightColor","vec3" )
+			.finalize(false)
+			.updateItem("lightPosition",	new Float32Array([ 8.0, 4.0, 1.0 ]) )
+			.updateItem("lightColor",		new Float32Array([ 1.0, 1.0, 1.0 ]) )
 			.unbind();
 	}
 
@@ -113,16 +122,12 @@ class System{
 	static update(){
 		//..............................................
 		// Step : Update Camera and UBO
-		Fungi.camera.updateMatrix();
 		System.GlobalTime[0] = Fungi.sinceStart;
 
-		var matProjView = new Mat4();
-		Mat4.mult(matProjView, Fungi.camera.projectionMatrix, Fungi.camera.invertedWorldMatrix);
-
 		System.UBOTransform.bind()
-			.updateItem("projViewMatrix", matProjView)
-			.updateItem("cameraPos", Fungi.camera._position)
-			.updateItem("globalTime", System.GlobalTime ) //new Float32Array([Fungi.sinceStart])
+			.updateItem("projViewMatrix",	Fungi.camera.getProjectionViewMatrix() )
+			.updateItem("cameraPos",		Fungi.camera._position)
+			.updateItem("globalTime",		System.GlobalTime )
 			.unbind();
 
 		//..............................................
@@ -131,15 +136,19 @@ class System{
 			for(var i of Fungi.scene.updateItems) i.update(Fungi.deltaTime, Fungi.sinceStart);
 		}
 
-		//..............................................
-		// Step : Perform Drawing
+		return this;
+	}
+
+	static renderScene(){
 		if( !Fungi.scene.renderItems )	Fungi.render.drawScene( Fungi.scene.items );
 		else							Fungi.render.drawScene( Fungi.scene.renderItems );
+		return this;
 	}
 
 };
 
 System.UBOTransform = null; //Save reference, so no need to request it from Fungi in render loop
+System.UBOLighting	= null;
 System.GlobalTime 	= new Float32Array([0]); //Allocate this once for UBO and reuse for renderloop
 
 export default System;

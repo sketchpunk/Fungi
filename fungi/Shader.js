@@ -257,6 +257,8 @@ class Shader{
 		return this;
 	}
 
+	hasUniform(uName){ return this.uniforms.has( uName ); }
+
 	setUniform(uName, uValue){
 		var itm	= this.uniforms.get( uName );
 		if(!itm){ console.log("uniform not found %s in %s",uName, this.name); return this; }
@@ -284,13 +286,15 @@ class Shader{
 	}
 
 
+
+
 	//---------------------------------------------------
 	// Methods
 	//---------------------------------------------------
 	bind(){		gl.ctx.useProgram(this.program);	return this; }
 	unbind(){	gl.ctx.useProgram(null);			return this; }
 
-	resetTextureSlot(){ this.texSlot = 0; }
+	resetTextureSlot(){ this.texSlot = 0; return this; }
 
 	//function helps clean up resources when shader is no longer needed.
 	dispose(){

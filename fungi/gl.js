@@ -9,6 +9,10 @@ class gl{
 		gl.ctx = canvas.getContext("webgl2");
 		if(!gl.ctx){ console.error("WebGL context is not available."); return false; }
 
+		//........................................
+		//Load Extension
+		gl.ctx.getExtension("EXT_color_buffer_float");	//Needed for Deferred Lighting
+		//gl.ctx.getExtension("OES_texture_float_linear");
 
 		//........................................
 		//Setup some defaults
@@ -20,7 +24,7 @@ class gl{
 		c.depthFunc( 	c.LEQUAL );			// Near things obscure far things
 		c.blendFunc( 	c.SRC_ALPHA,		// Setup default alpha blending
 						c.ONE_MINUS_SRC_ALPHA);
-	
+
 		gl.fitScreen()						// Set the size of the canvas to a percent of the screen
 			.setClearColor("#ffffff")		// Set clear color
 		return true;
@@ -39,6 +43,7 @@ class gl{
 				case gl.BLEND_ALPHA: 			gl.ctx.blendFunc(gl.ctx.SRC_ALPHA, gl.ctx.ONE_MINUS_SRC_ALPHA); break;
 				case gl.BLEND_ADDITIVE: 		gl.ctx.blendFunc(gl.ctx.ONE, gl.ctx.ONE); break;
 				case gl.BLEND_ALPHA_ADDITIVE:	gl.ctx.blendFunc(gl.ctx.SRC_ALPHA, gl.ctx.ONE); break;
+				case gl.BLEND_OVERRIDE: 		gl.ctx.blendFunc(gl.ctx.ONE, gl.ctx.ZERO); break;
 			}
 			return gl;
 		}
@@ -285,5 +290,6 @@ gl.height	= 0;
 gl.BLEND_ALPHA 				= 0;
 gl.BLEND_ADDITIVE 			= 1;
 gl.BLEND_ALPHA_ADDITIVE 	= 2;
+gl.BLEND_OVERRIDE			= 3;
 
 export default gl;

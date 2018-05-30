@@ -5,7 +5,7 @@ import Shader	from "../Shader.js"
 class Renderer{
 	constructor(){
 		//Render Objects
-		this.frameBuffer 	= null;
+		//this.frameBuffer 	= null;
 		this.material		= null;
 		this.shader			= null;
 		//this.vao			= null;
@@ -15,16 +15,20 @@ class Renderer{
 			blend 					: { state : false,	id : gl.ctx.BLEND },
 			sampleAlphaCoverage 	: { state : false,	id : gl.ctx.SAMPLE_ALPHA_TO_COVERAGE },
 			cullFace				: { state : true,	id : gl.ctx.CULL_FACE },
-			depthTest				: { state : true,	id : gl.ctx.DEPTH_TEST }
+			depthTest				: { state : true,	id : gl.ctx.DEPTH_TEST },
+			blendMode				: { state : gl.BLEND_ALPHA },
+			depthMask				: { state : true }
 		}
 	}
 
-	useCustomBuffer(fb){ this.frameBuffer = fb; return this; }
+	//useCustomBuffer(fb){ this.frameBuffer = fb; return this; }
 	setFrameBuffer(fb = null){ gl.ctx.bindFramebuffer(gl.ctx.FRAMEBUFFER, fb); return this; }
+	clearActiveFrame(){ gl.ctx.clear( gl.ctx.COLOR_BUFFER_BIT | gl.ctx.DEPTH_BUFFER_BIT ); return this; }
 
 	//----------------------------------------------
 	//region Clear and Loading
 		clearMaterial(){ this.material = null; return this; }
+		clearShader(){ this.shader = null; gl.ctx.useProgram(null); return this; }
 
 		//Load up a shader
 		loadShader(s){
@@ -35,7 +39,6 @@ class Renderer{
 		}
 
 		//Load Material and its shader
-		
 		loadMaterial(mat){
 			//...............................
 			//If material is the same, exit.
@@ -50,37 +53,44 @@ class Renderer{
 			}
 
 			//...............................
-			//Push any saved uniform values to shader.
-			mat.applyUniforms();
+			mat.applyUniforms();			//Push any saved uniform values to shader.
+			this.loadOptions(mat.options);	//Enabled/Disable GL Options
 
-			//...............................
-			//Enabled/Disable GL Options
-			var o;
-			for(o in mat.options){
-				if(this.options[o].state != mat.options[o]){
-					this.options[o].state = mat.options[o];
-					gl.ctx[ (this.options[o].state)? "enable" : "disable" ]( this.options[o].id );
-				}
-			}
-
-			//...............................
 			return this;
 		}
 
 		loadRenderable(r){
 			//if shader require special uniforms from model, apply
 			r.updateMatrix();
+
 			if(this.shader.options.modelMatrix)		this.shader.setUniform(Shader.UNIFORM_MODELMAT, r.worldMatrix);
 			if(this.shader.options.normalMatrix)	this.shader.setUniform(Shader.UNIFORM_NORMALMAT, r.normalMatrix);
 
 			//Apply GL Options
-			var o;
-			for(o in r.options){
-				if(this.options[o] && this.options[o].state != r.options[o]){
-					this.options[o].state = r.options[o];
-					gl.ctx[ (this.options[o].state)? "enable" : "disable" ]( this.options[o].id );
+			if(r.options) this.loadOptions(r.options);
+
+			return this;
+		}
+
+		loadOptions(aryOption){
+			var k, v;
+			for(k in aryOption){
+				v = aryOption[k];
+
+				if(this.options[k] && this.options[k].state != v){
+					this.options[k].state = v;
+
+					switch(k){
+						case "blendMode": gl.blendMode( v ); break;
+						case "depthMask": gl.ctx.depthMask( v ); break;
+						default:
+							gl.ctx[ (this.options[k].state)? "enable" : "disable" ]( this.options[k].id );
+						break;
+					}
+					
 				}
 			}
+
 			return this;
 		}
 
@@ -116,10 +126,17 @@ class Renderer{
 			return this;
 		}
 
+		drawItem(r, mat = null, fboID){
+			if(fboID !== undefined) this.setFrameBuffer(fboID);
+			if(mat) this.loadMaterial(mat);
+			this.drawRenderable(r); 
+			return this;
+		}
+
 		//Handle Drawing a Scene
 		drawScene(ary){
 			//Set custom framebuffer if it has been set;
-			if(this.frameBuffer) gl.ctx.bindFramebuffer(gl.ctx.FRAMEBUFFER, this.frameBuffer.id);
+			//if(this.frameBuffer) gl.ctx.bindFramebuffer(gl.ctx.FRAMEBUFFER, this.frameBuffer.id);
 		
 			//Reset current framebuffer
 			gl.clear();
