@@ -54,6 +54,7 @@
 
 	uniform UBOLighting{
 		vec3 lightPosition;
+		vec3 lightDirection;
 		vec3 lightColor;
 	};
 

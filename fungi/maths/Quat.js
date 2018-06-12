@@ -64,9 +64,9 @@ class Quaternion extends Float32Array{
 		get z(){ return this[2]; }	set z(val){ this[2] = val; }
 		get w(){ return this[3]; }	set w(val){ this[3] = val; }
 
-		rx(rad){ Quaternion.rotateX(this,this,rad); return this; }
-		ry(rad){ Quaternion.rotateY(this,this,rad); return this; }
-		rz(rad){ Quaternion.rotateZ(this,this,rad); return this; }
+		rx(rad){ Quaternion.rotateX(this, rad); return this; }
+		ry(rad){ Quaternion.rotateY(this, rad); return this; }
+		rz(rad){ Quaternion.rotateZ(this, rad); return this; }
 		
 		setAxisAngle(axis, angle){ //AXIS MUST BE NORMALIZED.
 			var halfAngle = angle * .5;
@@ -78,6 +78,17 @@ class Quaternion extends Float32Array{
 			this[3] = Math.cos(halfAngle);
 
 			return this;
+		}
+
+		getAxisAngle(){
+			if(this[3] > 1) this.normalize();
+
+			let angle 	= 2 * Math.acos(this[3]),
+				s		= Math.sqrt(1 - this[3] * this[3]);
+
+			if(s < 0.001)  return [ 1 , 0 , 0, 0];
+
+			return [ this[0] / s, this[1] / s, this[2] / s, angle ];
 		}
 
 		copy(q){
@@ -287,10 +298,11 @@ class Quaternion extends Float32Array{
 		}
 
 		//https://github.com/toji/gl-matrix/blob/master/src/gl-matrix/quat.js
-		static rotateX(out, a, rad){
+		static rotateX(q, rad, out = null){
+			out = out || q;
 			rad *= 0.5; 
 
-			var ax = a[0], ay = a[1], az = a[2], aw = a[3],
+			var ax = q[0], ay = q[1], az = q[2], aw = q[3],
 				bx = Math.sin(rad), bw = Math.cos(rad);
 
 			out[0] = ax * bw + aw * bx;
@@ -300,10 +312,11 @@ class Quaternion extends Float32Array{
 			return out;
 		}
 
-		static rotateY(out, a, rad) {
+		static rotateY(q, rad, out = null) {
+			out = out || q;
 			rad *= 0.5; 
 
-			var ax = a[0], ay = a[1], az = a[2], aw = a[3],
+			var ax = q[0], ay = q[1], az = q[2], aw = q[3],
 				by = Math.sin(rad), bw = Math.cos(rad);
 
 			out[0] = ax * bw - az * by;
@@ -313,10 +326,11 @@ class Quaternion extends Float32Array{
 			return out;
 		}
 
-		static rotateZ(out, a, rad){
+		static rotateZ(q, rad, out = null){
+			out = out || q;
 			rad *= 0.5; 
 
-			var ax = a[0], ay = a[1], az = a[2], aw = a[3],
+			var ax = q[0], ay = q[1], az = q[2], aw = q[3],
 				bz = Math.sin(rad),
 				bw = Math.cos(rad);
 

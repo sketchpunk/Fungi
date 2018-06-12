@@ -14,6 +14,11 @@
 			import Fungi		from "/fungi/Fungi.js";
 			import System		from "/fungi/System.js";
 
+			import { Vec3 }		from "/fungi/Maths.js";
+			import Points		from "/fungi/primitives/Points.js";
+			import Lines		from "/fungi/primitives/Lines.js";
+			import LineBoxes	from "/fungi/primitives/LineBoxes.js";
+
 			window.addEventListener("load",function(){
 				System.beginWithResources([
 					{ type:"shader", file:"/fungi/shaders/VecWColor.txt" }
@@ -22,13 +27,29 @@
 					.catch( err=>console.log("Catch",err) );
 			});
 
+			let dPoint, dLine, dBox;
 			function onRender(dt, ss){ System.update().renderScene(); }
 			function onInit(){
 				//........................				
 				Fungi.camera.setPosition(0,1,2).setDegrees(-20,"x");
 
 				//........................
-				//Fungi.scene.add();
+				dPoint = new Points()
+					.addVec( new Vec3(0,0,0), 0 )
+					.addRaw(0, 1, 0, 1)
+					.update();
+
+				dLine = new Lines()
+					.addVec( new Vec3(0,0,0), new Vec3(0,0.5,0), 0 )
+					.addRaw( 0,0.5,0, 0,1,0, 1 )
+					.update();
+
+				dBox = new LineBoxes()
+					.addVec( new Vec3(-0.1,-0.1,-0.1), new Vec3(0.1,0.1,0.1), 0 )
+					.addRaw( -0.2,-0.2,-0.2,  0.2,0.2,0.2,  2 )
+					.update();
+ 
+				Fungi.scene.add( dPoint, dLine, dBox );
 
 				//........................
 				Fungi.loop.start();

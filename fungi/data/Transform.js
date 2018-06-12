@@ -58,6 +58,14 @@ class Transform{
 			var child;
 			for(child of this.children) child.visible = v;
 		}
+
+		copyTransform(t){
+			this.position		= t._position;
+			this.rotation		= t._rotation;
+			this.scale			= t._scale;
+			this._isModified 	= true;
+			return this;
+		}
 	//endregion
 
 
@@ -86,6 +94,7 @@ class Transform{
 	//region Rotation
 		set rotation(v){ this._isModified = true; this._rotation.copy(v); }
 
+		setAxisAngle(v, a){ this._isModified = true; this._rotation.setAxisAngle(v,a); return this; }
 		setDegrees(deg, axis="y"){ this._isModified = true; this._rotation["r"+axis](deg * Maths.DEG2RAD); return this;}
 		getRotation(out=null){ return (out != null)? out.copy(this._rotation) : new Quat(this._rotation); }
 

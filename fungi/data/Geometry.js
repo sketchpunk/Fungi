@@ -8,6 +8,7 @@ class Geometry{
 		this.faces = new Array();
 	}
 
+	//...................................................
 	addVert(x,y,z){
 		var v = new Vertex(x, y, z);
 		this.verts.push(v)
@@ -44,11 +45,52 @@ class Geometry{
 	}
 
 	cloneVert(idx,save=true){
-		var v = this.verts[idx].clone();
+		let v = this.verts[idx].clone();
 		if(save) this.verts.push(v);
 		return v;
 	}
 
+	//...................................................
+	extrude(idxAry, vDir){
+		let len = idxAry.length,
+			out = new Array( len ),
+			idx = this.verts.length,
+			i,v;
+
+		for(i=0; i < len; i++){
+			this.verts.push( v = this.verts[ idxAry[i] ].clone().add(vDir) );
+			out[i] = idx + i;
+		}
+
+		return out;
+	}
+
+	//using two index arrays, if built counter clockwise, create triangles out of the quads that make up the wall.
+	triangleWallLoop(iAryA,iAryB){
+		let i, a, b, c, d, p,
+			len = iAryA.length;
+
+		for(i=0; i < len; i++){
+			p = (i+1)%len;
+			a = iAryB[i],
+			b = iAryA[i],
+			c = iAryA[p],
+			d = iAryB[p];
+			this.addFace(a,b,c,c,d,a);
+		}
+	}
+
+	triangleCircle(cIdx, cAry){
+		let len	= cAry.length,
+			i, ii;
+
+		for(i=0; i < len; i++){
+			ii = (i + 1) % len;
+			this.addFace( cAry[i], cIdx, cAry[ii] );
+		}
+	}
+
+	//...................................................
 	vertexArray(){	return this.compileArray(this.verts, Float32Array, 3); }
 	faceArray(){	return this.compileArray(this.faces, Uint16Array, 3); }
 	uvArray(){		return this.compileArray(this.verts, Float32Array, 2, "uv"); }
@@ -69,6 +111,12 @@ class Geometry{
 			for(j=0; j < size; j++) out[ii + j] = itm[j];
 		}
 		return out;
+	}
+
+	//...................................................
+	debugPoints(dPoint, color = 0){
+		for(let i of this.verts) dPoint.addVec(i, color);
+		return this;
 	}
 }
 

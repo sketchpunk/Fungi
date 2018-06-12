@@ -14,16 +14,23 @@ class Renderer{
 		this.options	= {
 			blend 					: { state : false,	id : gl.ctx.BLEND },
 			sampleAlphaCoverage 	: { state : false,	id : gl.ctx.SAMPLE_ALPHA_TO_COVERAGE },
-			cullFace				: { state : true,	id : gl.ctx.CULL_FACE },
 			depthTest				: { state : true,	id : gl.ctx.DEPTH_TEST },
+			depthMask				: { state : true },
+			cullFace				: { state : true,	id : gl.ctx.CULL_FACE },
+			cullDir					: { state : gl.ctx.BACK },
 			blendMode				: { state : gl.BLEND_ALPHA },
-			depthMask				: { state : true }
 		}
 	}
 
 	//useCustomBuffer(fb){ this.frameBuffer = fb; return this; }
 	setFrameBuffer(fb = null){ gl.ctx.bindFramebuffer(gl.ctx.FRAMEBUFFER, fb); return this; }
 	clearActiveFrame(){ gl.ctx.clear( gl.ctx.COLOR_BUFFER_BIT | gl.ctx.DEPTH_BUFFER_BIT ); return this; }
+	clearDepth(){ gl.ctx.clear( gl.ctx.DEPTH_BUFFER_BIT ); return this; }
+	
+	setViewPort(w = null, h = null){
+		gl.ctx.viewport(0, 0, w || gl.width, h || gl.height);
+		return this;
+	}
 
 	//----------------------------------------------
 	//region Clear and Loading
@@ -81,8 +88,9 @@ class Renderer{
 					this.options[k].state = v;
 
 					switch(k){
-						case "blendMode": gl.blendMode( v ); break;
-						case "depthMask": gl.ctx.depthMask( v ); break;
+						case "blendMode":	gl.blendMode( v ); break;
+						case "depthMask":	gl.ctx.depthMask( v ); break;
+						case "cullDir":		gl.ctx.cullFace( v ); break;
 						default:
 							gl.ctx[ (this.options[k].state)? "enable" : "disable" ]( this.options[k].id );
 						break;

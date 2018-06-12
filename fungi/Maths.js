@@ -52,9 +52,64 @@ var Maths = {
   			length 	= Math.sqrt( v[0] * v[0] + v[2] * v[2] ),
   			lat 	= Math.atan2( v[1], length ) * this.RAD2DEG;
   		return [ lon, lat ]
-	}
+	},
+
+	//https://github.com/nodebox/g.js/blob/master/src/libraries/math.js
+	sawtoothWave(time, min=0, max=1, period=1){
+		var amplitude	= (max - min) * 0.5,
+			frequency	= this.PI_2 / period,
+			phase		= 0;
+
+		if(time % period !== 0)	phase = (time * frequency) % this.PI_2;
+		if(phase < 0)			phase += this.PI_2;
+
+		//return 2 * (phase / this.PI_2) * amplitude + min;
+		return 2 * (phase * 0.15915494309) * amplitude + min; //Change Div to Mul
+	},
 
 };
+
+
+/*
+g.sineWave = function (v, min, max, period, offset) {
+    if (min === undefined) min = -1;
+    if (max === undefined) max = 1;
+    if (period === undefined) period = 1;
+    if (offset === undefined) offset = 0;
+    var amplitude = (max - min) / 2;
+    return (min + amplitude) + Math.sin((offset + v) * TWO_PI / period) * amplitude;
+};
+
+g.squareWave = function (v, min, max, period, offset) {
+    if (min === undefined) min = -1;
+    if (max === undefined) max = 1;
+    if (period === undefined) period = 1;
+    if (offset === undefined) offset = 0;
+    var halfPeriod = period / 2;
+    var d = (v + offset) % period;
+    if (d < halfPeriod) {
+        return max;
+    } else {
+        return min;
+    }
+};
+
+g.triangleWave = function (v, min, max, period, offset) {
+    if (min === undefined) min = -1;
+    if (max === undefined) max = 1;
+    if (period === undefined) period = 1;
+    if (offset === undefined) offset = 0;
+    var amplitude = (max - min) / 2,
+        frequency = TWO_PI / period,
+        phase = 0,
+        time = v + offset + period / 4;
+    if (time % period !== 0) {
+        phase = (time * frequency) % TWO_PI;
+    }
+    if (phase < 0) { phase += TWO_PI; }
+    return 2 * amplitude * (1 + -Math.abs((phase / TWO_PI) * 2 - 1)) + min;
+};
+*/
 
 
 /*

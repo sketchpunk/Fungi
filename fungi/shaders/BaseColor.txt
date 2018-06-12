@@ -9,7 +9,8 @@
 	
 <materials>[
 	{ "name":"BaseColorRed",	"uniforms":[{ "name":"u_color", "type":"rgb", "value":"ff0000" }] },
-	{ "name":"BaseColorGreen",	"uniforms":[{ "name":"u_color", "type":"rgb", "value":"00ff00" }] }
+	{ "name":"BaseColorGreen",	"uniforms":[{ "name":"u_color", "type":"rgb", "value":"00ff00" }] },
+	{ "name":"BaseColorGray",	"uniforms":[{ "name":"u_color", "type":"rgb", "value":"a0a0a0" }] }
 ]<\materials>
 	
 <vertex>

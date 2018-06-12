@@ -10,6 +10,10 @@
 <materials>[
 	{ "name":"LowPolyPhong",	"uniforms":[
 		{ "name":"u_basecolor", "type":"rgb", "value": "ff7f7f" }
+	]},
+
+	{ "name":"LowPolyPhong_green",	"uniforms":[
+		{ "name":"u_basecolor", "type":"rgb", "value": "00ff00" }
 	]}
 ]<\materials>
 	

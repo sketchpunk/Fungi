@@ -22,6 +22,8 @@ class Vec3 extends Float32Array{
 		
 		copy(v){ this[0] = v[0]; this[1] = v[1]; this[2] = v[2]; return this; }
 
+		setLength(len){ return this.normalize().scale(len); }
+
 		length(v){
 			//Only get the magnitude of this vector
 			if(v === undefined) return Math.sqrt( this[0]*this[0] + this[1]*this[1] + this[2]*this[2] );
@@ -68,6 +70,14 @@ class Vec3 extends Float32Array{
 
 			return out;
 		}
+
+		invert(out){
+			out = out || this;
+			out[0] = -this[0];
+			out[1] = -this[1];
+			out[2] = -this[2];
+			return out;
+		}
 	//endregion
 
 	//----------------------------------------------
@@ -77,7 +87,14 @@ class Vec3 extends Float32Array{
 			out[0] = this[0] * v;
 			out[1] = this[1] * v;
 			out[2] = this[2] * v;
+			return out;
+		}
 
+		divScale(v,out){
+			out = out || this;
+			out[0] = this[0] / v;
+			out[1] = this[1] / v;
+			out[2] = this[2] / v;
 			return out;
 		}
 
@@ -155,7 +172,7 @@ class Vec3 extends Float32Array{
 
 		//https://www.siggraph.org/education/materials/HyperGraph/modeling/mod_tran/3drota.htm
 		rotate(rad, axis = "x", out = null){
-			if(out == null) out = this;
+			out = out || this;
 
 			var sin = Math.sin(rad),
 				cos = Math.cos(rad),
@@ -232,6 +249,15 @@ class Vec3 extends Float32Array{
 			out[2] = v[2] * s;
 			return out;
 		}
+
+		static invert(v,out){
+			out	= out || new Vec3();
+			out[0] = -v[0];
+			out[1] = -v[1];
+			out[2] = -v[2];
+			return out;
+		}
+
 		static abs(v,out){
 			out = out || new Vec3();
 			out[0] = Math.abs( v[0] );
@@ -298,8 +324,12 @@ class Vec3 extends Float32Array{
 
 //..........................................
 Vec3.UP			= [0,1,0];
+Vec3.DOWN		= [0,-1,0];
 Vec3.LEFT		= [1,0,0];
+Vec3.RIGHT		= [-1,0,0];
 Vec3.FORWARD	= [0,0,1];
+Vec3.BACK		= [0,0,-1];
+Vec3.ZERO		= [0,0,0];
 
 
 //..........................................

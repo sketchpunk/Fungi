@@ -9,6 +9,8 @@ import Quad			from "/fungi/primitives/Quad.js";
 
 class DeferredRendering{
 	constructor(matName = "PostBasic"){
+		this.shadowMap = null;
+
 		//......................................
 		let oFbo = new Fbo();
 
@@ -35,15 +37,29 @@ class DeferredRendering{
 		if(mat.shader.hasUniform("u_depthTex"))		mat.addUniform("u_depthTex",	"tex", this.fbo.bDepth.id);
 	}
 
+	addShadowMap( m ){
+		this.shadowMap = m;
+		this.quad.material.addUniform("u_shadowTex", "tex", m.fbo.bDepth.id); //Apply Shadow
+		this.quad.material.addUniform("u_lightProjMatrix", "mat4", m.camera.getProjectionViewMatrix()); //Need Light Space Projection View Matrix
+		return this;
+	}
+
 	activate(){ gl.ctx.bindFramebuffer(gl.ctx.FRAMEBUFFER, this.fbo.id); }
 
 	render(fbo = null){
 		//TODO, May need to disable Depth Testing and Writing.
-		Fungi.render
-			.setFrameBuffer(fbo)				// Set FrameBuffer to Render To
-			.clearActiveFrame()					// Clear Frame Buffer
-			.loadMaterial(this.quad.material)	// Load Material & Shader, Apply Uniform
-			.drawRenderable(this.quad);			// Draw Quad with scene as a Texture.
+
+		//................................
+		//Send Light Space Matrix which is needed to read the shadow map.
+		if(this.shadowMap){
+			this.quad.material.updateUniform("u_lightProjMatrix", this.shadowMap.camera.getProjectionViewMatrix());
+		}
+
+		//................................
+		Fungi.render.setFrameBuffer(fbo);				// Set FrameBuffer to Render To
+		Fungi.render.clearActiveFrame();				// Clear Frame Buffer
+		Fungi.render.loadMaterial(this.quad.material);	// Load Material & Shader, Apply Uniform
+		Fungi.render.drawRenderable(this.quad);			// Draw Quad with scene as a Texture.
 	}
 }
 

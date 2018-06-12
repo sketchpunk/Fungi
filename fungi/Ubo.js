@@ -35,13 +35,13 @@ class Ubo{
 	}
 
 	addItem(iName, iType){ 
-		this.items.set(iName, {type:iType, offset: 0, chunkLen: 0, dataLen: 0 });
+		this.items.set(iName, {type:iType, offset: 0, blockSize: 0, dataSize: 0 });
 		return this;
 	}
 
 	addItems(iName, iType){
 		for(var i=0; i < arguments.length;i+=2){
-			this.items.set(arguments[i], {type:arguments[i+1], offset: 0, chunkLen: 0, dataLen: 0 });
+			this.items.set(arguments[i], {type:arguments[i+1], offset: 0, blockSize: 0, dataSize: 0 });
 		}
 		return this;
 	}
@@ -66,49 +66,43 @@ class Ubo{
 	}
 
 	static calculate(m){
-		var chunk	= 16,	//Data size in Bytes, UBO using layout std140 needs to build out the struct in chunks of 16 bytes.
-			tsize 	= 0,	//Temp Size, How much of the chunk is available after removing the data size from it
-			offset	= 0,	//Offset in the buffer allocation
-			size,			//Data Size of the current type
-			key,itm, prevItm = null;
-		
-		for( [key,itm] of m){
-			//When dealing with arrays, Each element takes up 16 bytes regardless of type.
-			if(!itm.arylen || itm.arylen == 0) size = Ubo.getSize(itm.type);
-			else size = [itm.arylen * 16, itm.arylen * 16];
+		let blockSpace	= 16,	//Data size in Bytes, UBO using layout std140 needs to build out the struct in blocks of 16 bytes.
+			offset		= 0,	//Offset in the buffer allocation
+			size,				//Data Size of the current type
+			prevItem	= null,
+			key,itm;
 
-			tsize = chunk - size[0];	//How much of the chunk exists after taking the size of the data.
+		for( [key,itm] of m ){
+			//.....................................
+			// When dealing with arrays, Each element takes up 16 bytes regardless of type.
+			size = (!itm.arylen || itm.arylen == 0)?
+					Ubo.getSize(itm.type) :
+					[itm.arylen * 16, itm.arylen * 16] ;
 
-			//Chunk has been overdrawn when it already has some data resurved for it.
-			if(tsize < 0 && chunk < 16){
-				offset += chunk;						//Add Remaining Chunk to offset...
-				//if(i > 0) prevItm.chunkLen += chunk;	//So the remaining chunk can be used by the last variable
-				if(prevItm) prevItm.chunkLen += chunk;	//So the remaining chunk can be used by the last variable
-				chunk = 16;								//Reset Chunk
-			}else if(tsize < 0 && chunk == 16){
-				//Do nothing incase data length is >= to unused chunk size.
-				//Do not want to change the chunk size at all when this happens.
-			}else if(tsize == 0){ //If evenly closes out the chunk, reset
-				
-				if(itm.type == "vec3" && chunk == 16) chunk -= size[1];	//If Vec3 is the first var in the chunk, subtract size since size and alignment is different.
-				else chunk = 16;
+			//.....................................
+			// Check if there is enough block space, if not 
+			// give previous item the remainder block space
+			if(blockSpace >= size[0]) blockSpace -= size[1];
+			else if(blockSpace > 0 && prevItem){
+				prevItem.blockSize += blockSpace;
+				offset 		+= blockSpace;
+				blockSpace	= 16 - size[1];
+			}
 
-			}else chunk -= size[1];	//Chunk isn't filled, just remove a piece
-
-			//Add some data of how the chunk will exist in the buffer.
+			//.....................................
+			// Save data about the item
 			itm.offset		= offset;
-			itm.chunkLen	= size[1];
-			itm.dataLen		= size[1];
+			itm.blockSize	= size[1];
+			itm.dataSize	= size[1];
+			
+			//.....................................
+			// Cleanup
+			offset			+= size[1];
+			prevItem		= itm;
 
-			offset	+= size[1];
-			prevItm	= itm;
+			if(blockSpace <= 0) blockSpace = 16; //Reset
 		}
 
-		//Check if the final offset is divisiable by 16, if not add remaining chunk space to last element.
-		//if(offset % 16 != 0){
-			//ary[ary.length-1].chunkLen += 16 - offset % 16;
-			//offset += 16 - offset % 16;
-		//}
 		return offset;
 	}
 
@@ -122,8 +116,8 @@ class Ubo{
 		console.log("======================================vDEBUG");
 		console.log("Buffer Size : %d", ubo.bufferSize);
 		for( [key,itm] of ubo.items ){
-			console.log("Item %d : %s",i, key);
-			chunk = itm.chunkLen / 4;
+			console.log("Item %d : %s",i, key, itm);
+			chunk = itm.blockSize / 4;
 			for(x = 0; x < chunk; x++){
 				str += (x == 0 || x == chunk-1)? "|."+i+"." : "|...";	//Display the index
 				tchunk++;

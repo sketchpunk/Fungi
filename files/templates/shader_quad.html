@@ -25,7 +25,7 @@
 			}).catch( err=>console.log("Catch",err) );
 		});
 
-		function onRender(dt, ss){ System.update(); }
+		function onRender(dt, ss){ System.update().renderScene(); }
 		function onInit(){
 			Fungi.camera.setPosition(0,1,1.9).setDegrees(-0,"x");
 			Fungi.scene.add( Quad("MatShader").setPosition(0,1,0) );

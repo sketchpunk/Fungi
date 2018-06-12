@@ -245,8 +245,14 @@ class CameraController{
 	
 	onKeyDown(e, ctrl, keyCode){
 		var ss = (e.shiftKey)? 5.0 : 1.0;
-
 		switch(keyCode){
+			case 67: //C Output Camera Position and Rotation
+				var axis = Fungi.camera._rotation.getAxisAngle();
+				console.log(".setPosition(%f, %f, %f)\n.setAxisAngle([%f,%f,%f], %f);", 
+					Fungi.camera._position.x, Fungi.camera._position.y, Fungi.camera._position.z,
+					axis[0], axis[1], axis[2], axis[3]
+				);
+				console.log("Camera Length: %f", Fungi.camera._position.length());
 			//..................................... Forward / Backwards
 			case 87: //W
 			case 83: //S

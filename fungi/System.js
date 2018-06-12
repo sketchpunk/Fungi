@@ -1,7 +1,7 @@
 import gl			from "./gl.js";
 import Ubo			from "./Ubo.js";
 import Fungi		from "./Fungi.js";
-import Camera		from "./data/Camera.js";
+import Camera		from "./data/Camera_Perspective.js";
 import Renderer 	from "./rendering/Renderer.js";
 import RenderLoop 	from "./rendering/RenderLoop.js";
 import Scene 		from "./rendering/Scene.js";
@@ -29,9 +29,10 @@ class System{
 			.unbind();
 
 		System.UBOLighting = new Ubo("UBOLighting", 1)
-			.addItems( "lightPosition","vec3",	"lightColor","vec3" )
+			.addItems( "lightPosition","vec3", "lightDirection", "vec3",  "lightColor","vec3" )
 			.finalize(false)
 			.updateItem("lightPosition",	new Float32Array([ 8.0, 4.0, 1.0 ]) )
+			.updateItem("lightDirection",	new Float32Array([ -8.0, -4.0, -1.0 ]) )
 			.updateItem("lightColor",		new Float32Array([ 1.0, 1.0, 1.0 ]) )
 			.unbind();
 	}
@@ -93,7 +94,7 @@ class System{
 		if(gl.ctx == null) System.gl_init();
 
 		//.........................................
-		Fungi.camera	= new Camera().setPerspective();
+		Fungi.camera	= new Camera();
 		Fungi.render	= new Renderer();
 		Fungi.scene		= new Scene();
 

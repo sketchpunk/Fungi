@@ -132,7 +132,8 @@ class Material{
 
 	addUniform(uName, uType, uValue){
 		if(this.uniforms.has(uName)){
-			console.log("Uniform already exists : %s", uName);
+			this.updateUniform(uName, uValue);
+			//console.log("Uniform already exists : %s", uName);
 			return this;
 		}
 		//..........................

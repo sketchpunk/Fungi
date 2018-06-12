@@ -10,7 +10,7 @@
 	
 <materials>[
 	{ 	"name"		: "PostBasic", 
-		"options"	: { "blend":true, "depthTest":false },
+		"options"	: { "blend":false, "depthTest":true },
 		"uniforms"	: [ { "name":"u_colorTex", "value":null } ] 
 	}
 ]<\materials>
