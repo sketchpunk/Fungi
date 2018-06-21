@@ -8,10 +8,17 @@ class Geometry{
 		this.faces = new Array();
 	}
 
+	reset(){
+		this.verts.length = 0;
+		this.faces.length = 0;
+		return this;
+	}
+
 	//...................................................
-	addVert(x,y,z){
+	addVert(x,y,z, toEnd=true){
 		var v = new Vertex(x, y, z);
-		this.verts.push(v)
+		if(toEnd)	this.verts.push(v);
+		else		this.verts.unshift(v);
 		return v;
 	}
 
@@ -44,9 +51,12 @@ class Geometry{
 		return this.verts[ face[v] ];
 	}
 
-	cloneVert(idx,save=true){
+	cloneVert(idx, save=true, toEnd=true){
 		let v = this.verts[idx].clone();
-		if(save) this.verts.push(v);
+		if(save){
+			if(toEnd)	this.verts.push(v);
+			else		this.verts.unshift(v);
+		}
 		return v;
 	}
 
@@ -65,6 +75,49 @@ class Geometry{
 		return out;
 	}
 
+	scale(idxAry, vDir){
+		let i;
+		for(i of idxAry) this.verts[ i ].mul(vDir);
+		return this;
+	}
+
+
+	translate(idxAry, vDir){
+		let i;
+		for(i of idxAry) this.verts[ i ].add(vDir);
+		return this;
+	}
+
+
+	lathe(pathAry, steps, rotAxis = "y"){
+		var plen	= pathAry.length,
+			inc		= Math.PI * 2 / -steps,
+			rad, 
+			cos, sin, 
+			i, p, v, 
+			rx, ry, rz;
+
+		for(i=1; i < steps; i++){
+			rad = i * inc;
+			cos = Math.cos(rad);
+			sin = Math.sin(rad);
+
+			for(p of pathAry){
+				v = this.cloneVert( p );
+
+				switch(rotAxis){ // https://www.siggraph.org/education/materials/HyperGraph/modeling/mod_tran/3drota.htm#Y-Axis%20Rotation
+					case "y": ry = v.y;		rx = v.z*sin + v.x*cos;		rz = v.z*cos - v.x*sin; break;
+					case "x": rx = v.x; 	ry = v.y*cos - v.z*sin;		rz = v.y*sin + v.z*cos; break;
+					case "z": rz = v.z;		rx = v.x*cos - v.y*sin;		ry = v.x*sin + v.y*cos; break;
+				}
+
+				v.set(rx, ry, rz);
+			}
+		}
+	}
+
+
+	//...................................................
 	//using two index arrays, if built counter clockwise, create triangles out of the quads that make up the wall.
 	triangleWallLoop(iAryA,iAryB){
 		let i, a, b, c, d, p,
@@ -80,6 +133,7 @@ class Geometry{
 		}
 	}
 
+	//Triangles in a fan way, With a center point connecting to circle of points
 	triangleCircle(cIdx, cAry){
 		let len	= cAry.length,
 			i, ii;
@@ -87,6 +141,81 @@ class Geometry{
 		for(i=0; i < len; i++){
 			ii = (i + 1) % len;
 			this.addFace( cAry[i], cIdx, cAry[ii] );
+		}
+	}
+
+	triangleGrid(cLen, rLen){
+		var cc, rr, rA, rB, 
+			a, b, c, d;
+
+		for(rr=0; rr < rLen-1; rr++){
+			rA = rr * cLen;
+			rB = (rr+1) * cLen;
+			for(cc=0; cc < cLen-1; cc++){
+				a = rA + cc;	//Defined Quad
+				b = rB + cc;
+				c = b + 1;
+				d = a + 1;
+				this.addFace(a,b,c,c,d,a);
+			}
+		}
+		return this;
+	}
+
+	triangleLathe(cLen, rLen, triStart = false, isLoop=true){
+		var cc, rr, rA, rB,
+			a, b, c, d,
+			rEnd = (isLoop)? rLen : rLen-1;
+
+		for(rr=0; rr < rEnd; rr++){
+			rA = rr * cLen;
+			rB = (rr+1) % rLen * cLen;
+
+			for(cc=0; cc < cLen-1; cc++){
+				a = rA + cc;	//Defined Quad
+				b = rB + cc;
+				c = b + 1;
+				d = a + 1;
+
+				if(triStart && cc == 0)	this.addFace(c,d,a);
+				else 					this.addFace(a,b,c,c,d,a);
+			}
+		}
+	}
+
+
+	//Create index that will work for TRIANGLE_TRIP draw mode
+	static triangleStrip(indAry,rLen,cLen,isLoop=false,doClose=false){ 
+		// isLoop :: ties the left to the right
+		// doClose :: is for paths that are closed shapes like a square
+		var iLen = (rLen-1) * cLen,		//How many indexes do we need
+			iEnd = (cLen*(rLen-1))-1,	//What the final index for triangle strip
+			iCol = cLen - 1,			//Index of Last col
+			posA = 0,					//Top Index
+			posB = posA + cLen,			//Bottom Index
+			c = 0;						//Current Column : 0 to iCol
+
+		for(var i=0; i < iLen; i++){
+			c = i % cLen;
+			indAry.push(posA+c,posB+c);
+
+			//Create degenerate triangles, The last then the first index of the current bottom row.
+			if(c == iCol){
+				if(i == iEnd && isLoop == true){
+					if(doClose == true) indAry.push(posA,posB);
+					indAry.push(posB+cLen-1,posB);
+					iLen += cLen; //Make loop go overtime for one more row that connects the final row to the first.
+					posA += cLen;
+					posB = 0;
+				}else if(i >= iEnd && doClose == true){
+					indAry.push(posA,posB);
+				}else if(i < iEnd){ //if not the end, then skip to next row
+					if(doClose == true) indAry.push(posA,posB);
+					indAry.push(posB+cLen-1, posB);
+					posA += cLen;
+					posB += cLen;
+				}
+			}
 		}
 	}
 
@@ -272,6 +401,18 @@ class Face extends Array{
 //}
 
 
+//#################################################################
+	import Vao 			from "../Vao.js";
+	import Renderable	from "../rendering/Renderable.js";
+
+	function GeoRenderable(name, mat, geo, useIdx=false){
+		let vertices	= geo.vertexArray(),
+			index		= (useIdx)? geo.faceArray() : null,
+			vao 		= Vao.standardRenderable(name, 3, vertices, null, null, index);
+
+		return new Renderable(name, vao, mat);
+	}
+
 
 export default Geometry;
-export {Face, Vertex };
+export { Face, Vertex, GeoRenderable };
