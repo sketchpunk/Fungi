@@ -12,44 +12,33 @@
 
 		<script type="module">
 			import Fungi		from "/fungi/Fungi.js";
-			import System		from "/fungi/System.js";
+			import App			from "/fungi/App.js";
+			import Api			from "/fungi/Api.js";
 
-			import { Vec3 }		from "/fungi/Maths.js";
-			import Points		from "/fungi/primitives/Points.js";
-			import Lines		from "/fungi/primitives/Lines.js";
-			import LineBoxes	from "/fungi/primitives/LineBoxes.js";
+			import DVao 		from "/fungi/components/DynamicVao.js";
 
 			window.addEventListener("load",function(){
-				System.beginWithResources([
-					{ type:"shader", file:"/fungi/shaders/VecWColor.txt" }
-				])	.then( async()=>{ await System.startUp(onRender); } )
+				App.launch(onRender, [
+					{ type:"shader", file:"/fungi/shaders/VecWColor.txt" },
+				])	.then( ()=>App.useDynamicVao() )
+					.then( ()=>App.loadScene() )
 					.then( ()=>onInit() )
-					.catch( err=>console.log("Catch",err) );
+					.catch( err=>console.log("err", err) );
 			});
 
-			let dPoint, dLine, dBox;
-			function onRender(dt, ss){ System.update().renderScene(); }
+			var ePoint, eLine;
+
+			function onRender(dt, ss){ Fungi.ecs.updateSystems(); }
 			function onInit(){
 				//........................				
-				Fungi.camera.setPosition(0,1,2).setDegrees(-20,"x");
+				Fungi.camera.com.Transform.setPosition(0,2,5).setDegrees(-20,"x");
 
 				//........................
-				dPoint = new Points()
-					.addVec( new Vec3(0,0,0), 0 )
-					.addRaw(0, 1, 0, 1)
-					.update();
+				eLine = DVao.initLine( Api.newDraw("eLine", "VecWColor") );
+				DVao.rawLine(eLine, 0,0,0, 0,1,0, 6);
 
-				dLine = new Lines()
-					.addVec( new Vec3(0,0,0), new Vec3(0,0.5,0), 0 )
-					.addRaw( 0,0.5,0, 0,1,0, 1 )
-					.update();
-
-				dBox = new LineBoxes()
-					.addVec( new Vec3(-0.1,-0.1,-0.1), new Vec3(0.1,0.1,0.1), 0 )
-					.addRaw( -0.2,-0.2,-0.2,  0.2,0.2,0.2,  2 )
-					.update();
- 
-				Fungi.scene.add( dPoint, dLine, dBox );
+				ePoint = DVao.initPoint( Api.newDraw("ePoint", "VecWColor") );
+				DVao.rawPoint(ePoint, 0,1,0, 0);
 
 				//........................
 				Fungi.loop.start();

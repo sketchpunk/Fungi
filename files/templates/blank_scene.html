@@ -12,23 +12,23 @@
 
 		<script type="module">
 			import Fungi		from "/fungi/Fungi.js";
-			import System		from "/fungi/System.js";
+			import App			from "/fungi/App.js";
 
 			window.addEventListener("load",function(){
-				System.beginWithResources([
-					{ type:"shader", file:"/fungi/shaders/VecWColor.txt" }
-				])	.then( async()=>{ await System.startUp(onRender); } )
+				App.launch(onRender, [
+					{ type:"shader", file:"/fungi/shaders/VecWColor.txt" },
+				])	.then( ()=>App.loadScene() )
 					.then( ()=>onInit() )
-					.catch( err=>console.log("Catch",err) );
+					.catch( err=>console.log("err", err) );
 			});
 
-			function onRender(dt, ss){ System.update().renderScene(); }
+			function onRender(dt, ss){ Fungi.ecs.updateSystems(); }
 			function onInit(){
 				//........................				
-				Fungi.camera.setPosition(0,1,2).setDegrees(-20,"x");
+				Fungi.camera.com.Transform.setPosition(0,2,5).setDegrees(-20,"x");
 
 				//........................
-				//Fungi.scene.add();
+
 
 				//........................
 				Fungi.loop.start();
