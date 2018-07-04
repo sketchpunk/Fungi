@@ -2,10 +2,11 @@ export default {
 	//............................
 	//Main Objects
 	camera		: null,
-	scene		: null,
-	render		: null,
 	loop		: null,
-	controller	: null,
+	ecs			: null,
+	input		: null,
+	components	: null,
+	assemblages	: null,
 
 	//............................
 	//Shared Global Data

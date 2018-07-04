@@ -16,24 +16,31 @@ class Ubo{
 		this.items = new Map();
 		this.bufferID	= null;
 		this.bufferSize	= 0;
+		this.byteBuffer = null;
 	}
 
+	//========================================================================
 	bind(){ gl.ctx.bindBuffer(gl.ctx.UNIFORM_BUFFER, this.bufferID); return this; }
 	unbind(){ gl.ctx.bindBuffer(gl.ctx.UNIFORM_BUFFER, null); return this; }
 
-	finalize(unbind = true){
-		this.bufferSize	= Ubo.calculate(this.items);	// Calc all the Offsets and Lengths
-		this.bufferID 	= gl.ctx.createBuffer();		// Create Standard Buffer
-		
+	finalize(){
+		//Finish Setting up UBO
+		this.bufferSize	= Ubo.calculate( this.items );			// Calc all the Offsets and Lengths
+		this.bufferID 	= gl.ctx.createBuffer();				// Create Standard Buffer
+		this.byteBuffer	= new ByteBuffer( this.bufferSize );
+
+		//GPU Buffer
 		gl.ctx.bindBuffer(gl.ctx.UNIFORM_BUFFER, this.bufferID);						// Bind it for work
 		gl.ctx.bufferData(gl.ctx.UNIFORM_BUFFER, this.bufferSize, gl.ctx.DYNAMIC_DRAW);	// Allocate Space in empty buf
-		if(unbind) gl.ctx.bindBuffer(gl.ctx.UNIFORM_BUFFER, null);						// Unbind
+		gl.ctx.bindBuffer(gl.ctx.UNIFORM_BUFFER, null);									// Unbind
 		gl.ctx.bindBufferBase(gl.ctx.UNIFORM_BUFFER, this.bindPoint, this.bufferID);	// Save Buffer to Uniform Buffer Bind point
 
+		//Save to Resources
 		Fungi.ubos.set(this.name, this);
 		return this;
 	}
 
+	//========================================================================
 	addItem(iName, iType){ 
 		this.items.set(iName, {type:iType, offset: 0, blockSize: 0, dataSize: 0 });
 		return this;
@@ -46,12 +53,39 @@ class Ubo{
 		return this;
 	}
 
+	/*
 	updateItem(name, data){ 
 		gl.ctx.bufferSubData(gl.ctx.UNIFORM_BUFFER, this.items.get(name).offset, data, 0, null);
 		return this;
 	}
+	*/
 
-	
+	updateItem(name, data){
+		var itm = this.items.get(name);
+
+		switch(itm.type){
+			case "float": case "mat3": case "mat4": case "vec2": case "vec3": case "vec4":
+				this.byteBuffer.setFloat( itm.offset, data );
+				break;
+			default: console.log("Ubo Type unknown for item ",name); break;
+		}
+
+		return this;
+	}
+
+	updateGL(){
+		gl.ctx.bindBuffer(gl.ctx.UNIFORM_BUFFER, this.bufferID); 
+		gl.ctx.bufferSubData(gl.ctx.UNIFORM_BUFFER, 0, 
+			this.byteBuffer._bView, 0, 
+			this.byteBuffer._bAry.byteLength
+		);
+		gl.ctx.bindBuffer(gl.ctx.UNIFORM_BUFFER, null);
+
+		return this;
+	}
+
+	//========================================================================
+
 	//Size of types and alignment for calculating offset positions
 	static getSize(type){ 
 		switch(type){ //[Alignment,Size]
@@ -160,6 +194,41 @@ class Ubo{
 		console.log("MAX_UNIFORM_BLOCK_SIZE : %d", gl.ctx.getParameter(gl.ctx.MAX_UNIFORM_BLOCK_SIZE) );
 		console.log("MAX_VERTEX_UNIFORM_BLOCKS : %d", gl.ctx.getParameter(gl.ctx.MAX_VERTEX_UNIFORM_BLOCKS) );
 		console.log("MAX_FRAGMENT_UNIFORM_BLOCKS : %d", gl.ctx.getParameter(gl.ctx.MAX_FRAGMENT_UNIFORM_BLOCKS) );
+	}
+}
+
+
+class ByteBuffer{
+	constructor(size){
+		this._bAry	= new ArrayBuffer(size);
+		this._bView	= new DataView(this._bAry);
+	}
+
+	//===========================================================
+	//Misc
+	get size(){ return this._bAry.byteLength; }
+
+	//===========================================================
+	//Handle Floats
+	getFloat( bPos = 0 ){ return this._bView.getFloat32( bPos ); }
+	setFloat( bPos = 0, n, isLittleEndian = true){
+		if(n instanceof Float32Array){
+			//Test ifthe data will not overflow the buffer
+			let bMax = n.length * 4 + bPos;
+			if(bMax > this._bAry.byteLength){
+				console.log("FloatArray to large for byte buffer at pos ", bPos);
+				return this;
+			}
+
+			//Copy the Data one Float at a Time
+			let f;
+			for(f of n){
+				this._bView.setFloat32( bPos, f, isLittleEndian ); //Need Little Endian to work in WebGL, Big is default which doesnt work.
+				bPos += 4;							
+			}
+		}else this._bView.setFloat32( bPos, n );
+
+		return this;
 	}
 }
 

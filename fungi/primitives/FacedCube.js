@@ -1,14 +1,20 @@
 import gl			from "../gl.js";
 import Vao			from "../Vao.js";
 import Fungi		from "../Fungi.js";
-import Renderable	from "../rendering/Renderable.js";
+
 
 function FacedCube(name ="FaceCube", matName = "VecWColor"){
 	//If the vao exists, create a new renderable using it.
-	let vao = Fungi.vaos.get("FungiFCube");
-	if(vao) return new Renderable(name, vao, matName);
+	//let vao = Fungi.vaos.get(name);
+	//if(!vao) vao = FacedCube.vao(name);
+	//return new Renderable(name, vao, matName);
+}
 
+FacedCube.vao = function(name = "FungiFCube"){
+	let vao = Fungi.vaos.get(name);
+	if(vao) return vao;
 
+	//......................................................
 	let width = 1, height = 1, depth = 1, x = 0, y = 0, z = 0;
 	let w = width*0.5, h = height*0.5, d = depth*0.5;
 	let x0 = x-w, x1 = x+w, y0 = y-h, y1 = y+h, z0 = z-d, z1 = z+d;
@@ -66,8 +72,7 @@ function FacedCube(name ="FaceCube", matName = "VecWColor"){
 		 0, 1, 0,	 0, 1, 0,	 0, 1, 0,	 0, 1, 0		//Top
 	];
 
-	vao = Vao.standardRenderable("FungiFCube", 4, aVert, aNorm, aUV, aIndex);
-	return new Renderable(name, vao, matName);
+	return Vao.standardRenderable(name, 4, aVert, aNorm, aUV, aIndex);
 }
 
 export default FacedCube;

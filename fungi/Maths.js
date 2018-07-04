@@ -30,9 +30,16 @@ var Maths = {
 		return x*x*(3-2*x);
 	},
 
-
-
 	rnd(min,max){ return Math.random() * (max - min) + min; },
+
+	//https://stackoverflow.com/questions/521295/seeding-the-random-number-generator-in-javascript
+	//https://en.wikipedia.org/wiki/Lehmer_random_number_generator
+	rnd_lcg(seed){
+    	function lcg(a) {return a * 48271 % 2147483647}
+    	seed = seed ? lcg(seed) : lcg(Math.random());
+    	return function(){ return (seed = lcg(seed)) / 2147483648; }
+	},
+
 
 	//https://gist.github.com/jhermsmeier/72626d5fd79c5875248fd2c1e8162489
 	polarToCartesian : function(lon, lat, radius, out) {

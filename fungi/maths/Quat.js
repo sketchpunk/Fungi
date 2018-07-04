@@ -160,19 +160,19 @@ class Quaternion extends Float32Array{
 			return out;
 		}
 
-		static mulVec3(out,q,v){
+		/* Doesn't seem to work well to rotate a vector
+		static mulVec3(q, v, out=null){
 			var ax = q[0], ay = q[1], az = q[2], aw = q[3],
 				bx = v[0], by = v[1], bz = v[2];
 
+			out = out || new Vec3();
 			out[0] = ax + aw * bx + ay * bz - az * by;
 			out[1] = ay + aw * by + az * bx - ax * bz;
 			out[2] = az + aw * bz + ax * by - ay * bx;
 			return out;
-		}
+		} */
 
-		static rotateVec3(qa,va,out){
-			out = out || va;
-
+		static rotateVec3(qa, va, out = null){
 			//https://gamedev.stackexchange.com/questions/28395/rotating-vector3-by-a-quaternion
 			//vprime = 2.0f * dot(u, v) * u
 			//			+ (s*s - dot(u, u)) * v
@@ -184,14 +184,11 @@ class Quaternion extends Float32Array{
 				dq = Vec3.dot(q,q),	// U DOT U
 				cqv = Vec3.cross(q,v,[0,0,0]);	// Cross Product for Q,V
 
-			//Vec3.scalarRev(q,2.0 * d,q);
-			//Vec3.scalarRev(v,s*s - dq,v);
-			//Vec3.scalarRev(cqv,2.0 * s,cqv);
-
 			Vec3.scale(q,	2.0 * d,	q);
 			Vec3.scale(v,	s*s - dq,	v);
 			Vec3.scale(cqv,	2.0 * s,	cqv);
 
+			out = out || new Vec3();
 			out[0] = q[0] + v[0] + cqv[0];
 			out[1] = q[1] + v[1] + cqv[1];
 			out[2] = q[2] + v[2] + cqv[2];
@@ -511,6 +508,44 @@ class Quaternion extends Float32Array{
 				out[j]	= ( m[j*3+i] + m[i*3+j] ) * fRoot;
 				out[k]	= ( m[k*3+i] + m[i*3+k] ) * fRoot;
 			}
+			return out;
+		}
+
+		//AXIS MUST BE NORMALIZED.
+		//mult(this, setAxisAngle(axis, angle) )
+		static mulAxisAngle(q, axis, angle, out = null){
+			var ax	= q[0],	
+				ay	= q[1],
+				az	= q[2],
+				aw	= q[3],
+				
+				halfAngle = angle * .5,
+				s	= Math.sin(halfAngle),
+				bx	= axis[0] * s,	//New Quat based on axis and angle
+				by	= axis[1] * s, 
+				bz	= axis[2] * s,
+				bw	= Math.cos(halfAngle);
+
+			//Do quat.mult(a,b);
+			out		= out || q;
+			out[0]	= ax * bw + aw * bx + ay * bz - az * by;
+			out[1]	= ay * bw + aw * by + az * bx - ax * bz;
+			out[2]	= az * bw + aw * bz + ax * by - ay * bx;
+			out[3]	= aw * bw - ax * bx - ay * by - az * bz;
+			return out;
+		}
+
+
+		static axisAngle(axis, angle, out=null){ //AXIS MUST BE NORMALIZED.
+			let halfAngle	= angle * .5,
+				s			= Math.sin(halfAngle);
+
+			out = out || new Quaternion();
+			out[0] = axis[0] * s;
+			out[1] = axis[1] * s;
+			out[2] = axis[2] * s;
+			out[3] = Math.cos(halfAngle);
+
 			return out;
 		}
 	//endregion

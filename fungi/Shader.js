@@ -72,9 +72,6 @@ import Fungi	from "./Fungi.js";
 		//Setup Shader Options
 		if(js.shader.options){
 			for(var o in js.shader.options) shader.options[o] = js.shader.options[o];
-
-			if(shader.options.modelMatrix)	shader.prepareUniform(Shader.UNIFORM_MODELMAT, "mat4");
-			if(shader.options.normalMatrix)	shader.prepareUniform(Shader.UNIFORM_NORMALMAT, "mat3");
 		}
 
 		gl.ctx.useProgram(null);
@@ -100,7 +97,7 @@ import Fungi	from "./Fungi.js";
 //##################################################################
 // Material
 class Material{
-	constructor(name, shader=null){
+	constructor(name=null, shader=null){
 		//..................................../
 		//If the shader is just the name, search resources for it.
 		if(shader && typeof shader == "string"){
@@ -150,6 +147,20 @@ class Material{
 
 		itm.value = Material.checkData(uValue, itm.type);
 		return this;
+	}
+
+	clone(name = null){
+		let m		= new Material(name, null);
+		m.shader	= this.shader;
+
+		m.options.blend					= this.options.blend;
+		m.options.depthTest				= this.options.depthTest;
+		m.options.sampleAlphaCoverage	= this.options.sampleAlphaCoverage;
+
+		let k, v;
+		for([k,v] of this.uniforms) m.uniforms.set(k, { type:v.type, value:v.value } );
+
+		return m;
 	}
 
 	static checkData(value, type){
@@ -317,9 +328,6 @@ Shader.ATTRIB_BITANGENT_LOC		= 4;
 
 Shader.ATTRIB_JOINT_IDX_LOC		= 8;
 Shader.ATTRIB_JOINT_WEIGHT_LOC	= 9;
-
-Shader.UNIFORM_MODELMAT			= "u_modelMatrix";
-Shader.UNIFORM_NORMALMAT		= "u_normalMatrix";
 
 
 //##################################################################

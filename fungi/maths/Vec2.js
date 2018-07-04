@@ -34,9 +34,9 @@ class Vec2 extends Float32Array{
 		}
 
 		//When values are very small, like less then 0.000001, just make it zero.
-		nearZero(){
-			if(Math.abs(this[0]) <= 1e-6) this[0] = 0;
-			if(Math.abs(this[1]) <= 1e-6) this[1] = 0;
+		nearZero(x = 1e-6,y = 1e-6){
+			if(Math.abs(this[0]) <= x) this[0] = 0;
+			if(Math.abs(this[1]) <= y) this[1] = 0;
 			return this;
 		}
 

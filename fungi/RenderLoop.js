@@ -1,4 +1,4 @@
-import Fungi from "../Fungi.js";
+import Fungi from "./Fungi.js";
 
 class RenderLoop{
 	constructor(callback, fps = 0){

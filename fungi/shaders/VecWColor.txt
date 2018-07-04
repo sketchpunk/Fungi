@@ -1,6 +1,6 @@
 <shader>{
 	"name":"VecWColor",
-	"ubo":[ "UBOTransform" ],
+	"ubo":[ "UBOTransform", "UBOModel" ],
 	"options": { "modelMatrix":true },
 	"uniforms":[
 		{ "name":"u_colorAry", "type":"vec3" }
@@ -38,6 +38,12 @@
 		vec2	screenSize;
 	};
 
+	uniform UBOModel{
+		mat4 	modelMatrix;
+		mat3	normalMatrix;
+	};
+
+
 	uniform mat4 u_modelMatrix;
 	uniform vec3 u_colorAry[20];
 
@@ -47,7 +53,7 @@
 		v_color			= u_colorAry[ int(a_position.w) ];
 
 		gl_PointSize 	= 10.0;
-		gl_Position 	= projViewMatrix * u_modelMatrix * vec4(a_position.xyz, 1.0);
+		gl_Position 	= projViewMatrix * modelMatrix * vec4(a_position.xyz, 1.0);
 	}
 <\vertex>
 

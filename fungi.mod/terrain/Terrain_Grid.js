@@ -19,6 +19,7 @@ class Terrain{
 
 		return geo;
 	}
+
 }
 
 export default Terrain;
