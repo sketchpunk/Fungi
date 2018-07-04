@@ -15,10 +15,13 @@
 			import App			from "/fungi/App.js";
 			import Api			from "/fungi/Api.js";
 
+			import Quad			from "/fungi/primitives/Quad.js";
+
 			window.addEventListener("load",function(){
 				App.launch(onRender, [
 					{ type:"shader", file:"/fungi/shaders/VecWColor.txt" },
-				])	.then( ()=>App.loadScene() )
+				])	.then( ()=>App.useBehaviours() )
+					.then( ()=>App.loadScene() )
 					.then( ()=>onInit() )
 					.catch( err=>console.log("err", err) );
 			});
@@ -29,7 +32,10 @@
 				Fungi.camera.com.Transform.setPosition(0,2,5).setDegrees(-20,"x");
 
 				//........................
-
+				var eQuad = Quad("VecWColor");
+				eQuad.addByName("Behaviour").update = function(){
+					this.entity.com.Transform.setDegrees( 90 * Fungi.deltaTime );
+				}
 
 				//........................
 				Fungi.loop.start();
