@@ -10,138 +10,123 @@
 	</style>
 
 	<script type="module">
-		import Fungi		from "/fungi/Fungi.js";
-		import System		from "/fungi/System.js";
-		import Vao			from "/fungi/Vao.js";
-		import Renderable	from "/fungi/rendering/Renderable.js";
+		import Fungi	from "/fungi/Fungi.js";
+		import App		from "/fungi/App.js";
+		import Api		from "/fungi/Api.js";
 
-		import Lines		from "/fungi/primitives/Lines.js";
-		import LineBoxes	from "/fungi/primitives/LineBoxes.js";
+		import { Vec3 }				from "/fungi/Maths.js";
+		import Ray, { BoundingBox }	from "/fungi.mod/raycast/Ray.js";
+		import DVao 				from "/fungi/components/DynamicVao.js";
+		import RightMouseSystem 	from "/fungi/systems/RightMouseSystem.js";
 
-		import { Vec3 }		from "/fungi/Maths.js";
+		import VoxChunk				from "/fungi.mod/voxel/VoxelChunk.js";
+		import VoxVao				from "/fungi.mod/voxel/VoxelDynamicVao.js";
+		import DynamicVoxelSystem	from "/fungi.mod/voxel/DynamicVoxelSystem.js";
+		import VoxelRaycast			from "/fungi.mod/voxel/VoxelRaycast.js";
 
-		import Ray, { BoundingBox } from "/fungi.mod/raycast/Ray.js";
-
-		import Voxel		from "/fungi.mod/voxel/Voxel.js";
-		import VoxelChunk	from "/fungi.mod/voxel/VoxelChunk.js";
-		import VoxelRaycast	from "/fungi.mod/voxel/VoxelRaycast.js";
-		import DynamicVoxel	from "/fungi.mod/voxel/DynamicVoxel.js";
 		
 		window.addEventListener("load",function(){
-			System.beginWithResources([
+			App.launch(onRender, [
 				{ type:"shader", file:"/fungi/shaders/VecWColor.txt" },
-				{ type:"shader", file:"/fungi/shaders/LowPolyPhong.txt" }
-			])	.then( async()=>{ await System.startUp(onRender); } )
+				{ type:"shader", file:"/fungi/shaders/LowPolyPhong.txt" },
+			])	.then( ()=>App.useDynamicVao() )
+				.then( ()=>App.loadScene() )
 				.then( ()=>onInit() )
-				.catch( err=>console.log("Catch",err) );
+				.catch( err=>console.log("err", err) );
 		});
 
-		var dBoxes, dLines, dPoints, bbox, voxelOutline, voxelOutlineEx;
-		var chunk, dVoxel;
+		var eBoxes, eLines, ePoints, bbox, voxelOutline, voxelOutlineEx;
+		var vChunk, dVoxel;
 
+		function onRender(dt, ss){ Fungi.ecs.updateSystems(); }
 		function onInit(){
 			//........................				
-			Fungi.camera.setPosition(0,1,2).setDegrees(-20,"x");
-			Fungi.controller.onMouseStart = onMouseStart;
+			Fungi.camera.com.Transform.setPosition(0,2,5).setDegrees(-20,"x");
+			Fungi.ecs.addSystem(new RightMouseSystem( onRightMouse ), 10);
+			Fungi.ecs.addSystem(new DynamicVoxelSystem(), 21);
+
 
 			//........................
-			Fungi.scene.add( dLines = new Lines("debugLines", 20) );
-			Fungi.scene.add( dBoxes = new LineBoxes("debugBoxes", 20) );
+			let dVoxel = VoxChunk.init( Api.newDraw("VoxelC","LowPolyPhong"), 3, 3, 3);
+			VoxVao.init( dVoxel, "vchunk1" );
+				
+			vChunk = dVoxel.com.VoxelChunk;
+			//VoxChunk.set(vChunk, 0,0,0,1 );
 
-			Fungi.scene.add( voxelOutline = new LineBoxes("debugBoxes", 20) );
-			Fungi.scene.add( voxelOutlineEx = new LineBoxes("debugBoxes", 20) );
+			bbox = new BoundingBox( [0,0,0], VoxChunk.getMaxBound(vChunk) );
+
 
 			//........................
-			chunk	= new VoxelChunk(3,3,3);
-			bbox	= new BoundingBox( [0,0,0], chunk.getMaxBound() );
-			//chunk.set(0,0,0,1, 1,0,0,1);
-			Fungi.scene.add( dVoxel = new DynamicVoxel("dVoxel", chunk, "LowPolyPhong") );
+			ePoints	= DVao.initPoint( Api.newDraw("ePoint", "VecWColor") );
+			eLines	= DVao.initLine( Api.newDraw("eLine", "VecWColor") );
+			eBoxes	= DVao.initLine( Api.newDraw("eLine", "VecWColor") );
 
-			//Main Box
-			dBoxes.addRaw( 0,0,0, 
-				chunk.xLen * chunk.scale,
-				chunk.yLen * chunk.scale,
-				chunk.zLen * chunk.scale, 3 ).update();
+			voxelOutline	= DVao.initLine( Api.newDraw("eLine", "VecWColor") );
+			voxelOutlineEx	= DVao.initLine( Api.newDraw("eLine", "VecWColor") );
+				
+			DVao.vecBox(eBoxes, [0,0,0], VoxChunk.getMaxBound(vChunk), 0);	//Main Box
+			DVao.vecBox(voxelOutline,	[0,0,0], [0.2, 0.2, 0.2], 0);		//Hit Box
+			DVao.vecBox(voxelOutlineEx,	[0,0,0], [0.2, 0.2, 0.2], 1);		//Box before hit
 
-			//Hit Box
-			voxelOutline.addRaw( 0,0,0, 
-				chunk.scale,
-				chunk.scale,
-				chunk.scale, 0 ).update();
-
-			//Box before hit
-			voxelOutlineEx.addRaw( 0,0,0, 
-				chunk.scale,
-				chunk.scale,
-				chunk.scale, 1 ).update();
 
 			//........................
 			Fungi.loop.start();
 		}
 
-		function onRender(dt, ss){
-			dLines.update();
-			System.update();
-		}
+		function onRightMouse(mode){
+			if(mode != RightMouseSystem.MODE_DOWN) return;
 
-		function onMouseStart(e, ctrl, c){
-			if(e.shiftKey && e.ctrlKey){
-				dLines.reset();
+			//Get Ray
+			var ray = Ray.MouseSegment(Fungi.input.coord.x, Fungi.input.coord.y).prepareAABB();
+			DVao.reset(eLines);
+			DVao.vecLine(eLines, ray.origin, ray.end, 6);
 
-				//Get Ray
-				var ray = Ray.MouseSegment(c.x, c.y).prepareAABB();
-				dLines.addVec(ray.origin, ray.end, 0);
+			//Test Ray
+			var vData = VoxelRaycast(ray, vChunk, bbox);
+			if(vData == null){ console.log("no hit"); return true; }
+			//console.log(vData);
 
-				//Test Ray
-				var vData = VoxelRaycast(ray, chunk, bbox);
-				if(vData == null){ console.log("no hit"); return true; }
-				//console.log(vData.voxelCoord);
+			//...............................
+			//See hit 
+			voxelOutline.com.Transform.setPosition(
+				vData.voxelCoord[0] * vChunk.scale,
+				vData.voxelCoord[1] * vChunk.scale,
+				vData.voxelCoord[2] * vChunk.scale
+			);
 
-				//...............................
-				//See hit 
-				voxelOutline.setPosition(
-					vData.voxelCoord[0] * chunk.scale,
-					vData.voxelCoord[1] * chunk.scale,
-					vData.voxelCoord[2] * chunk.scale
-				);
+			//See the last voxel in ray before hit.
+			voxelOutlineEx.com.Transform.setPosition(
+				voxelOutline.com.Transform.position.x + (vData.hitNorm[0] * vChunk.scale),
+				voxelOutline.com.Transform.position.y + (vData.hitNorm[1] * vChunk.scale),
+				voxelOutline.com.Transform.position.z + (vData.hitNorm[2] * vChunk.scale)
+			);
 
-				//See the last voxel in ray before hit.
-				voxelOutlineEx.setPosition(
-					voxelOutline.posx + (vData.hitNorm[0] * chunk.scale),
-					voxelOutline.posy + (vData.hitNorm[1] * chunk.scale),
-					voxelOutline.posz + (vData.hitNorm[2] * chunk.scale)
-				);
+			//------------------------------------
+			//Add or Remove Voxel
+			var x = vData.voxelCoord[0],	//Voxel Coord
+				y = vData.voxelCoord[1],
+				z = vData.voxelCoord[2],
+				v = 1;						//Add or Remove Voxel.
 
-
-				//------------------------------------
-				//Add or Remove Voxel
-				var x = vData.voxelCoord[0],	//Voxel Coord
-					y = vData.voxelCoord[1],
-					z = vData.voxelCoord[2],
-					v = 1;						//Add or Remove Voxel.
-
-				var addMode = !e.altKey;	//If altKey, then we are removing voxels
-				
-				if(addMode){
-					if(vData.isHit){ //If we hit a voxel, not not the wall, get the coords of the last voxel before hit.
-						x += vData.hitNorm[0];
-						y += vData.hitNorm[1];
-						z += vData.hitNorm[2];
-					}
-				}else{//Remove Mode
-					if(!vData.isHit) return false; //Exit if not voxel was hit.
-					v = 0;
+			var addMode = true; //!e.altKey;	//If altKey, then we are removing voxels
+			
+			if(addMode){
+				if(vData.isHit){ //If we hit a voxel, not not the wall, get the coords of the last voxel before hit.
+					x += vData.hitNorm[0];
+					y += vData.hitNorm[1];
+					z += vData.hitNorm[2];
 				}
-
-				//console.log("hit", x,y,z,v);
-
-				//Set voxel data and update mesh.
-				chunk.set(x,y,z,v);
-				dVoxel.chunkUpdate();
-
-				return true;
+			}else{//Remove Mode
+				if(!vData.isHit) return false; //Exit if not voxel was hit.
+				v = 0;
 			}
-			return false;
+
+			//console.log("hit", x,y,z,v);
+
+			//Set voxel data and update mesh.
+			VoxChunk.set(vChunk,x,y,z,v);
+
+			return true;
 		}
 	</script>
 </head><body>

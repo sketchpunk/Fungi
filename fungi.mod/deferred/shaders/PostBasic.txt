@@ -3,8 +3,8 @@
 	"ubo"		: [ "UBOTransform" ],
 	"options"	: { "modelMatrix":false },
 	"uniforms"	: [
-		{ "name":"u_colorTex", "type":"sample2D" },
-		{ "name":"u_depthTex", "type":"sample2D" }
+		{ "name":"u_colorTex", "type":"sampler2D" },
+		{ "name":"u_depthTex", "type":"sampler2D" }
 	]
 }<\shader>
 	

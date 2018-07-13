@@ -246,6 +246,37 @@ class gl{
 			return tex;	
 		}
 
+		static loadTextureArray(name, img, imgW, imgH, imgCnt, doYFlip=false, useMips=false, wrapMode=0, filterMode=0){
+			var tex = gl.ctx.createTexture();
+			Fungi.textures.set(name, tex);
+
+			gl.ctx.bindTexture(gl.ctx.TEXTURE_2D_ARRAY, tex);
+
+			if(doYFlip) gl.ctx.pixelStorei(gl.ctx.UNPACK_FLIP_Y_WEBGL, true);	//Flip the texture by the Y Position, So 0,0 is bottom left corner.
+
+			if(useMips){
+				gl.ctx.texParameteri(gl.ctx.TEXTURE_2D_ARRAY, gl.ctx.TEXTURE_MAG_FILTER, gl.ctx.LINEAR);					//Setup up scaling
+				gl.ctx.texParameteri(gl.ctx.TEXTURE_2D_ARRAY, gl.ctx.TEXTURE_MIN_FILTER, gl.ctx.LINEAR_MIPMAP_NEAREST);	//Setup down scaling
+				gl.ctx.generateMipmap(gl.ctx.TEXTURE_2D);	//Precalc different sizes of texture for better quality rendering.
+			}else{
+				var filter	= (filterMode == 0)?	gl.ctx.LINEAR : gl.ctx.NEAREST,
+					wrap	= (wrapMode == 0)?		gl.ctx.REPEAT : gl.ctx.CLAMP_TO_EDGE;
+
+				gl.ctx.texParameteri(gl.ctx.TEXTURE_2D_ARRAY, gl.ctx.TEXTURE_MAG_FILTER,	filter);
+				gl.ctx.texParameteri(gl.ctx.TEXTURE_2D_ARRAY, gl.ctx.TEXTURE_MIN_FILTER,	filter);
+				gl.ctx.texParameteri(gl.ctx.TEXTURE_2D_ARRAY, gl.ctx.TEXTURE_WRAP_S,		wrap); 
+				gl.ctx.texParameteri(gl.ctx.TEXTURE_2D_ARRAY, gl.ctx.TEXTURE_WRAP_T,		wrap);
+			}
+
+			gl.ctx.texImage3D(gl.ctx.TEXTURE_2D_ARRAY, 0, gl.ctx.RGBA, imgW, imgH, imgCnt,
+				0, gl.ctx.RGBA, gl.ctx.UNSIGNED_BYTE, img );
+
+			gl.ctx.bindTexture(gl.ctx.TEXTURE_2D_ARRAY,null); //Unbind
+			
+			if(doYFlip) gl.ctx.pixelStorei(gl.ctx.UNPACK_FLIP_Y_WEBGL, false);	//Stop flipping textures
+			return tex;	
+		}
+
 		/*
 		//imgAry must be 6 elements long and images placed in the right order
 		//RIGHT,LEFT,TOP,BOTTOM,BACK,FRONT

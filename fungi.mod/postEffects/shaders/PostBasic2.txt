@@ -3,9 +3,9 @@
 	"ubo"		: [ "UBOTransform" ],
 	"options"	: { "modelMatrix":false },
 	"uniforms"	: [
-		{ "name":"u_colorTex", "type":"sample2D" },
-		{ "name":"u_depthTex", "type":"sample2D" },
-		{ "name":"u_shadowTex", "type":"sample2D" },
+		{ "name":"u_colorTex", "type":"sampler2D" },
+		{ "name":"u_depthTex", "type":"sampler2D" },
+		{ "name":"u_shadowTex", "type":"sampler2D" },
 		{ "name":"u_projMatrixInv", "type":"mat4" },
 		{ "name":"u_viewMatrixInv", "type":"mat4" },
 		{ "name":"u_lightProjMatrix", "type":"mat4" }
@@ -79,7 +79,7 @@
 		float depthLight2Frag = texture(u_shadowTex, shadowUV.xy).r;
 
 		//float inShadow		= step(shadowUV.z, depthLight2Frag );
-		float inShadow		= step(shadowUV.z - 0.005, depthLight2Frag ); //Fix Shadow Acne
+		float inShadow		= step(shadowUV.z - 0.002, depthLight2Frag ); //Fix Shadow Acne
 
 		//float bias = max(0.05 * (1.0 - dot( fragNormal, normalize( fragToLightDir ) )), 0.005);
 		//float inShadow		= step(shadowUV.z - bias, depthLight2Frag ); //Fix Shadow Acne

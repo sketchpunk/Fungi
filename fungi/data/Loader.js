@@ -8,14 +8,18 @@ export default class Loader{
 	//------------------------------------------------------
 		//Push Images to the GPU to be used as textures
 		static textures( ary ){
-			var itm,  doYFlip, useMips;
+			var itm,  doYFlip, useMips, w, h, aryLen;
 			for(itm of ary){
 				if(itm.type != "image") continue;
 
 				doYFlip = (itm.doYFlip == true);
 				useMips = (itm.useMips == true);
 
-				gl.loadTexture(itm.name, itm.download, doYFlip, useMips);
+				if(itm.arrayLen){ //If Texture Array, load up differently
+					gl.loadTextureArray(itm.name, itm.download, itm.w, itm.h, itm.arrayLen, doYFlip, useMips);// , wrapMode=0, filterMode=0
+				}else{
+					gl.loadTexture(itm.name, itm.download, doYFlip, useMips);
+				}
 			}
 		}
 	//endregion

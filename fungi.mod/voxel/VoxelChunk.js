@@ -1,103 +1,151 @@
-import Voxel from "./Voxel.js";
+import Voxel			from "./Voxel.js";
+import { Components }	from "../../fungi/Ecs.js";
 
 class VoxelChunk{
-	constructor(x=2, y=2, z=2, initVal=0){
-		this.scale = 0.2;
+	constructor(){
+		this.isModified = false;
 
 		//Overall size of the Chunk
-		this.xLen	= x;
-		this.yLen	= y;
-		this.zLen	= z;
+		this.scale	= 1;
+		this.xLen	= 0;
+		this.yLen	= 0;
+		this.zLen	= 0;
 
 		//Cache max coord values to save repeating the math
-		this.xMax	= (x != 0)? x-1 : 0;
-		this.yMax	= (y != 0)? y-1 : 0;
-		this.zMax	= (z != 0)? z-1 : 0;
+		this.xMax	= 0;
+		this.yMax	= 0;
+		this.zMax	= 0;
 
-		this.xzLen 	= x * z;	//Cache value, since this is used to help calc index
-		this.xyzLen = x * y * z;
+		this.xzLen 	= 0;	// Cache value, since this is used to help calc index
+		this.xyzLen = 0;	// Total amount of voxels
 
-		this.cells	= new Array(this.xyzLen); //Create flat array to hold Voxel Data.
-
-		for(var i=0; i < this.cells.length; i++) this.cells[i] = initVal;
+		this.cells	= null; // Create flat array to hold Voxel Data.
 	}
 
-	coordToIndex(x,y,z){ 
-		if( x < 0 || x > this.xMax ||
-			y < 0 || y > this.yMax ||
-			z < 0 || z > this.zMax ) return -1;
-		return x + z * this.xLen + y * this.xzLen;
-	}
-	indexToCoord(i,out){
-		return [
-			i % this.xLen,							//x
-			Math.floor(i / this.xzLen),				//y
-			Math.floor(i / this.xLen) % this.zLen	//z
-		];
-	}
 
-	set(x,y,z, v){ 
-		var i, p, a = arguments;
-		for(i=0; i < a.length; i+=4){
-			p = this.coordToIndex(a[i],a[i+1],a[i+2]); //p = this.coordToIndex(x,y,z);
-			if(p != -1) this.cells[ p ] = a[i+3];
-		}
-		return this;
-	}
-	
-	setColHeight(x,y,z){
-		var idx = this.coordToIndex(x,0,z);
+	////////////////////////////////////////////////////////////////////
+	// INITIALIZERS
+	////////////////////////////////////////////////////////////////////
+		static init(e, x=2, y=2, z=2, scale=0.2, initVal=0){
+			let vc = (e instanceof VoxelChunk)? e : e.com.VoxelChunk;
+			if(!vc) vc = e.addByName("VoxelChunk");
 
-		//Find the starting position, then loop
-		for(var i=0; i < this.yLen; i++){
-			this.cells[ idx + i * this.xzLen ] = (i <= y && y != -1)? 1 : 0;
-		}
-	}
+			// Overall size of the Chunk
+			vc.scale	= scale;
+			vc.xLen		= x;
+			vc.yLen		= y;
+			vc.zLen		= z;
 
-	setColHeightMirror(x,y,z){
-		var idx = this.coordToIndex(x,0,z);
-		var mid = this.yMax * 0.5;
-		var dist;
-			
-		//Find the starting position, then loop
-		for(var i=0; i < this.yLen; i++){
-			dist = Math.floor(Math.abs(i-mid));
-			//console.log(i,mid,i-mid, dist);
-			this.cells[ idx + i * this.xzLen ] = (dist <= y && y != -1)? 1 : 0;
-		}
-	}
+			// Cache max coord values to save repeating the math
+			vc.xMax		= (x != 0)? x-1 : 0;
+			vc.yMax		= (y != 0)? y-1 : 0;
+			vc.zMax		= (z != 0)? z-1 : 0;
 
-	get(x, y, z, dir = -1){
-		//Apply Direction to get a cell next to the requested cell
-		if(dir != -1){
-			var n = Voxel.FACES[dir].n;
-			x += n[0];
-			y += n[1];
-			z += n[2];
+			vc.xzLen	= x * z;		// Cache value, since this is used to help calc index
+			vc.xyzLen	= x * y * z;	// Total amount of voxels
+
+			vc.cells	= new Array(vc.xyzLen); //Create flat array to hold Voxel Data.
+
+			for(var i=0; i < vc.cells.length; i++) vc.cells[i] = initVal;
+
+			return e;
 		}
 
-		//Validate that coords are within the bounds of the chunk
-		if( x < 0 || x > this.xMax ||
-			y < 0 || y > this.yMax ||
-			z < 0 || z > this.zMax ) return null;
+	////////////////////////////////////////////////////////////////////
+	// CELL COORD
+	////////////////////////////////////////////////////////////////////
+		static coordToIndex(vc, x, y, z){
+			if( x < 0 || x > vc.xMax ||
+				y < 0 || y > vc.yMax ||
+				z < 0 || z > vc.zMax ) return -1;
+			return x + z * vc.xLen + y * vc.xzLen;
+		}
+		static indexToCoord(vc, i, out){
+			return [
+				i % vc.xLen,						//x
+				Math.floor(i / vc.xzLen),			//y
+				Math.floor(i / vc.xLen) % vc.zLen	//z
+			];
+		}
 
-		//Return the cell data
-		return this.cells[ x + z * this.xLen + y * this.xzLen ];
-	}
+	////////////////////////////////////////////////////////////////////
+	// SETTERS / GETTERS
+	////////////////////////////////////////////////////////////////////
+		static set(vc, x, y, z, v){
+			let a = arguments,
+				i, p;
 
-	getMaxBound(){ return [ this.xLen*this.scale, this.yLen*this.scale, this.zLen*this.scale ]; }
-	getCellBound(x,y,z){
-		if( x > this.xMax || y > this.yMax || z > this.zMax ) return null;
+			for(i=1; i < a.length; i+=4){
+				p = VoxelChunk.coordToIndex( vc, a[i], a[i+1], a[i+2] ); //p = this.coordToIndex(x,y,z);
+				if(p != -1) vc.cells[ p ] = a[i+3];
+			}
 
-		var xpos = x * this.scale,
-			ypos = y * this.scale,
-			zpos = z * this.scale;
+			vc.isModified = true;
+			return this;
+		}
+		
+		static setColHeight(e, x, y, z){
+			let vc	= e.com.VoxelChunk,
+				idx	= VoxelChunk.coordToIndex(vc,x,0,z);
 
-		return {
-			min:[xpos, ypos, zpos],
-			max:[xpos+this.scale, ypos+this.scale, zpos+this.scale]
-		};
-	}
-}
+			//Find the starting position, then loop
+			for(var i=0; i < vc.yLen; i++){
+				vc.cells[ idx + i * vc.xzLen ] = (i <= y && y != -1)? 1 : 0;
+			}
+
+			vc.isModified = true;
+		}
+
+		static setColHeightMirror(e, x, y, z){
+			let vc	= e.com.VoxelChunk,
+				idx	= VoxelChunk.coordToIndex(vc,x,0,z),
+				mid	= vc.yMax * 0.5,
+				dist;
+				
+			//Find the starting position, then loop
+			for(var i=0; i < vc.yLen; i++){
+				dist = Math.floor(Math.abs(i-mid));
+				vc.cells[ idx + i * vc.xzLen ] = (dist <= y && y != -1)? 1 : 0;
+			}
+
+			vc.isModified = true;
+		}
+
+		static get(vc, x, y, z, dir = -1){
+			//Apply Direction to get a cell next to the requested cell
+			if(dir != -1){
+				var n = Voxel.FACES[dir].n;
+				x += n[0];
+				y += n[1];
+				z += n[2];
+			}
+
+			//Validate that coords are within the bounds of the chunk
+			if( x < 0 || x > vc.xMax ||
+				y < 0 || y > vc.yMax ||
+				z < 0 || z > vc.zMax ) return null;
+
+			//Return the cell data
+			return vc.cells[ x + z * vc.xLen + y * vc.xzLen ];
+		}
+
+		static getMaxBound(vc){ //let vc = e.com.VoxelChunk;
+			return [ vc.xLen*vc.scale, vc.yLen*vc.scale, vc.zLen*vc.scale ];
+		}
+
+		static getCellBound(e, x, y, z){
+			let vc = (e instanceof VoxelChunk)? e : e.com.VoxelChunk;
+			if( x > vc.xMax || y > vc.yMax || z > vc.zMax ) return null;
+
+			let xpos = x * vc.scale,
+				ypos = y * vc.scale,
+				zpos = z * vc.scale;
+
+			return {
+				min:[xpos, ypos, zpos],
+				max:[xpos+vc.scale, ypos+vc.scale, zpos+vc.scale]
+			};
+		}
+} Components(VoxelChunk);
 
 export default VoxelChunk;

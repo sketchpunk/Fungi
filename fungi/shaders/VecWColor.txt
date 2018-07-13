@@ -43,8 +43,6 @@
 		mat3	normalMatrix;
 	};
 
-
-	uniform mat4 u_modelMatrix;
 	uniform vec3 u_colorAry[20];
 
 	out vec3 v_color;

@@ -1,6 +1,6 @@
 <shader>{
 	"name":"LowPolyPhong",
-	"ubo":[ "UBOTransform", "UBOLighting" ],
+	"ubo":[ "UBOTransform", "UBOLighting", "UBOModel" ],
 	"options": { "modelMatrix":true },
 	"uniforms":[
 		{ "name":"u_basecolor", "type":"vec3" }
@@ -50,11 +50,13 @@
 		vec2	screenSize;
 	};
 
-	uniform mat4 u_modelMatrix;
+	uniform UBOModel{
+		mat4 	modelMatrix;
+		mat3	normalMatrix;
+	};
 
 	out vec3 v_cameraPos;
 	out vec3 v_worldPos;
-	
 
 	void main(void){
 		//Need to pass Camera pos turned to WorldSpace avoid inverse
@@ -62,7 +64,7 @@
 
 		v_cameraPos = cameraPos;
 
-		vec4 wpos	= u_modelMatrix * vec4(a_position,1.0);
+		vec4 wpos	= modelMatrix * vec4(a_position,1.0);
 		v_worldPos	= wpos.xyz;
 
 		gl_Position	= projViewMatrix * wpos;

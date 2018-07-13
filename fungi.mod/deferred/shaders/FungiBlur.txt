@@ -3,7 +3,7 @@
 	"ubo"		: [ ],
 	"options"	: { "modelMatrix":false },
 	"uniforms"	: [
-		{ "name":"u_colorTex",	"type":"sample2D" },
+		{ "name":"u_colorTex",	"type":"sampler2D" },
 		{ "name":"u_dir",		"type":"vec2" },
 		{ "name":"u_kernel",	"type":"afloat" },
 		{ "name":"u_kernelLen",	"type":"int" }

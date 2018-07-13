@@ -1,19 +1,20 @@
 class Voxel{
 	//This is Static so we can build build voxels without needing a render, need to wireframing
-	static buildMesh(vc, vAry, iAry){
-		var x,y,z,node;
+	static buildMesh(vc, vcGet, vAry, iAry, uAry){
+		let x, y, z, node;
 		/* Single Loop on the whole floor, calc x,z from index, access cell directly */
 		for(var i=0; i < vc.xyzLen; i++){
-			if(vc.cells[i] == 1){
-				x = i % vc.xLen;						//Convert Index to Voxel Coord
+			if(vc.cells[i] != 0){
+				//Convert Index to Voxel Coord
+				x = i % vc.xLen;						
 				z = Math.floor(i / vc.xLen) % vc.zLen;
 				y = Math.floor(i / vc.xzLen);
 
 				//Check all 6 Neighboring cells to see if they're being drawn
 				for(var f=0; f < 6; f++){
-					var node = vc.get(x,y,z,f);
-
-					if(node != 1) Voxel.appendQuad(vc,f,x,y,z,vAry,iAry);
+					//node = vc.get(x, y, z, f);
+					node = vcGet(vc, x, y, z, f);
+					if(!node) Voxel.appendQuad(vc, f, x, y, z, vAry, iAry, uAry); //Not Null and Not 0
 				}
 			}
 		}
@@ -21,9 +22,9 @@ class Voxel{
 
 
 	//Take quad template and append it to the Vertex and Index Arrays
-	static appendQuad(vc,fIdx,x,y,z,vAry,iAry){
+	static appendQuad(vc, fIdx, x, y, z, vAry, iAry, uAry){
 		var i,ii,
-			xx=0, yy=0, zz=0, 						//Translate Vertices if needed
+			xx=0, yy=0, zz=0, 					//Translate Vertices if needed
 			idx = vAry.length / Voxel.COMPLEN,	//Get vertex count, use that as a starting index value
 			v 	= Voxel.FACES[fIdx].v;
 
@@ -44,17 +45,22 @@ class Voxel{
 				v[ii+0] * vc.scale + x * vc.scale + xx,
 				v[ii+1] * vc.scale + y * vc.scale + yy,
 				v[ii+2] * vc.scale + z * vc.scale + zz,
-				v[ii+3] //Just color Index, TODO get rid of down the line
+				v[ii+3] //Stores Face Index
 			);
+
 		}
 
 		//.............................................
 		//Generate Triangle Indexes
 		for(i=0; i < Voxel.INDEX.length; i++) iAry.push( Voxel.INDEX[i] + idx );
+
+		//.............................................
+		//Add UV Values
+		for(i=0; i < Voxel.UV.length; i++) uAry.push( Voxel.UV[i] );
 	}
 }
 
-Voxel.COMPLEN = 4; //Remove when no longer need 4th comp
+Voxel.COMPLEN = 4; //4th comp stores face
 
 //..............................
 //Direction of Quads to build a Voxel
@@ -69,42 +75,42 @@ Voxel.DOWN	= 5; //BOTTOM
 //Information needed for each quad that is created.
 Voxel.UV	= [0.0,0.0, 1.0,0.0, 1.0,1.0, 0.0,1.0];
 Voxel.INDEX	= [0,1,2,2,3,0];
-Voxel.FACES	= [ //TODO, REMOVE 4th component when no longer in need.
+Voxel.FACES	= [
 	{ 	n:[0.0,0.0,-1.0], nOffset:false,
 		v:[1.0,0.0,0.0,0.0,
-		   0.0,0.0,0.0,1.0,
-		   0.0,1.0,0.0,2.0,
-		   1.0,1.0,0.0,3.0] }, //Back
+		   0.0,0.0,0.0,0.0,
+		   0.0,1.0,0.0,0.0,
+		   1.0,1.0,0.0,0.0] }, //Back
 
 	{ 	n:[-1.0,0.0,0.0], nOffset:false,
-		v:[0.0,0.0,0.0,0.0,
+		v:[0.0,0.0,0.0,1.0,
 		   0.0,0.0,1.0,1.0,
-		   0.0,1.0,1.0,2.0,
-		   0.0,1.0,0.0,3.0] }, //Right
+		   0.0,1.0,1.0,1.0,
+		   0.0,1.0,0.0,1.0] }, //Right
 
 	{ 	n:[0.0,0.0,1.0], nOffset:true,
-		v:[0.0,0.0,0.0,0.0,
-		   1.0,0.0,0.0,1.0,
+		v:[0.0,0.0,0.0,2.0,
+		   1.0,0.0,0.0,2.0,
 		   1.0,1.0,0.0,2.0,
-		   0.0,1.0,0.0,3.0] }, //Front
+		   0.0,1.0,0.0,2.0] }, //Front
 
 	{ 	n:[1.0,0.0,0.0], nOffset:true,
-		v:[0.0,0.0,1.0,0.0,
-		   0.0,0.0,0.0,1.0,
-		   0.0,1.0,0.0,2.0,
+		v:[0.0,0.0,1.0,3.0,
+		   0.0,0.0,0.0,3.0,
+		   0.0,1.0,0.0,3.0,
 		   0.0,1.0,1.0,3.0] }, //Left
 
 	{ 	n:[0.0,1.0,0.0], nOffset:true,
-		v:[0.0,0.0,1.0,0.0,
-		   1.0,0.0,1.0,1.0,
-		   1.0,0.0,0.0,2.0,
-		   0.0,0.0,0.0,3.0] }, //Top
+		v:[0.0,0.0,1.0,4.0,
+		   1.0,0.0,1.0,4.0,
+		   1.0,0.0,0.0,4.0,
+		   0.0,0.0,0.0,4.0] }, //Top
 
 	{ 	n:[0.0,-1.0,0.0], nOffset:false,
-		v:[0.0,0.0,0.0,0.0,
-		   1.0,0.0,0.0,1.0,
-		   1.0,0.0,1.0,2.0,
-		   0.0,0.0,1.0,3.0] } //Bottom
+		v:[0.0,0.0,0.0,5.0,
+		   1.0,0.0,0.0,5.0,
+		   1.0,0.0,1.0,5.0,
+		   0.0,0.0,1.0,5.0] } //Bottom
 ];
 
 export default Voxel;

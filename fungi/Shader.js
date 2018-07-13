@@ -286,9 +286,16 @@ class Shader{
 			case "mat4":	gl.ctx.uniformMatrix4fv(	itm.loc, false, uValue); break;
 			case "mat3":	gl.ctx.uniformMatrix3fv(	itm.loc, false, uValue); break;
 			case "mat2x4": 	gl.ctx.uniformMatrix2x4fv(	itm.loc, false, uValue); break;
-			case "sample2D":
+			case "sampler2D":
 				gl.ctx.activeTexture(	gl.ctx.TEXTURE0 + this.texSlot);
 				gl.ctx.bindTexture(		gl.ctx.TEXTURE_2D, uValue);
+				gl.ctx.uniform1i(		itm.loc, this.texSlot);
+				this.texSlot++;
+				break;
+
+			case "sampler2DArray":
+				gl.ctx.activeTexture(	gl.ctx.TEXTURE0 + this.texSlot);
+				gl.ctx.bindTexture(		gl.ctx.TEXTURE_2D_ARRAY, uValue);
 				gl.ctx.uniform1i(		itm.loc, this.texSlot);
 				this.texSlot++;
 				break;

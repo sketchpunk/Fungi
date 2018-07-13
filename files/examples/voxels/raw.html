@@ -11,52 +11,45 @@
 		</style>
 
 		<script type="module">
-			import Fungi		from "/fungi/Fungi.js";
-			import System		from "/fungi/System.js";
-			import Vao			from "/fungi/Vao.js";
-			import Renderable	from "/fungi/rendering/Renderable.js";
+			import Fungi	from "/fungi/Fungi.js";
+			import App		from "/fungi/App.js";
+			import Api		from "/fungi/Api.js";
 
-			import Voxel		from "/fungi.mod/voxel/Voxel.js";
-			import VoxelChunk	from "/fungi.mod/voxel/VoxelChunk.js";
+			import VoxChunk	from "/fungi.mod/voxel/VoxelChunk.js";
+			import VoxVao	from "/fungi.mod/voxel/VoxelDynamicVao.js";
+			import DynamicVoxelSystem	from "/fungi.mod/voxel/DynamicVoxelSystem.js";
+
 			
 			window.addEventListener("load",function(){
-				System.beginWithResources([
+				App.launch(onRender, [
 					{ type:"shader", file:"/fungi/shaders/VecWColor.txt" },
-					{ type:"shader", file:"/fungi/shaders/LowPolyPhong.txt" }
-				])	.then( async()=>{ await System.startUp(onRender); } )
+					{ type:"shader", file:"/fungi/shaders/LowPolyPhong.txt" },
+				])	.then( ()=>App.loadScene() )
 					.then( ()=>onInit() )
-					.catch( err=>console.log("Catch",err) );
+					.catch( err=>console.log("err", err) );
 			});
 
 			var dBoxes, dLines, dPoints, bbox;
 
 			function onInit(){
 				//........................				
-				Fungi.camera.setPosition(0,1,2).setDegrees(-20,"x");
+				Fungi.camera.com.Transform
+				.setPosition(0,2,5).setDegrees(-20,"x");
 
-				//........................		
-				var vc = new VoxelChunk(3,3,3, 1);
-				vc.set(
-					1,2,1,0,
+				Fungi.ecs.addSystem(new DynamicVoxelSystem(), 21);
 
-					0,1,1,0,  1,1,1,0,  2,1,1,0,  1,1,0,0,  1,1,2,0,
+				//........................
+				let e = VoxChunk.init( Api.newDraw("VoxelC","LowPolyPhong") );
+						VoxVao.init( e, "vchunk1" );
+				let vc	= e.com.VoxelChunk;
 
-					1,0,1,0
-				);
-
-				var vAry 	= [], iAry = [];
-					Voxel.buildMesh(vc,vAry,iAry);
-
-				var vao 	= Vao.standardRenderable("Voxel001", Voxel.COMPLEN, vAry, null, null, iAry),
-					model 	= new Renderable("Voxel001", vao, "LowPolyPhong");
-
-				Fungi.scene.add(model);
+				VoxChunk.set(vc, 0,0,0,1 );
 
 				//........................
 				Fungi.loop.start();
 			}
 
-			function onRender(dt, ss){ System.update(); }
+			function onRender(dt, ss){ Fungi.ecs.updateSystems(); }
 		</script>
 	</head>
 <body>

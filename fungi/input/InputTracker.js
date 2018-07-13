@@ -160,6 +160,7 @@ class InputTracker{
 
 	isShift(){	return this.keyState[ 16 ]; }
 	isCtrl(){	return this.keyState[ 17 ]; }
+	isAlt(){	return this.keyState[ 18 ]; }
 }
 
 export default InputTracker;

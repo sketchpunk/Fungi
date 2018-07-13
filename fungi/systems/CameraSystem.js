@@ -51,7 +51,7 @@ class CameraSystem extends System{
 
 		//............................................
 		//Has mouse movement started, if so which mode to be in
-		if(!Fungi.input.isMouseActive){
+		if(!Fungi.input.leftMouse){  //if(!Fungi.input.isMouseActive){
 			this.isActive = false;		
 			return;	
 		}else if(!this.isActive){

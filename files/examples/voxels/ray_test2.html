@@ -34,7 +34,7 @@
 		});
 
 		var eBBox, eBox, eLine, ePoint, bbox;
-		var cChunk;
+		var eChunk;
 
 		function onRender(dt, ss){ Fungi.ecs.updateSystems(); }
 		function onInit(){
@@ -43,17 +43,31 @@
 			Fungi.ecs.addSystem(new RightMouseSystem( onRightMouse ), 10);
 
 			//........................
-			cChunk = Fungi.components("VoxelChunk");
-			VoxChunk.init(cChunk, 8, 8, 8);
-			bbox = new BoundingBox( [0,0,0], VoxChunk.getMaxBound(cChunk) );
+/**/
+				eChunk = VoxChunk.init( Api.newDraw("VoxelC","LowPolyPhong"), 4, 4, 4, 0.2, 0 );
+				VoxVao.init( eChunk, "vchunk1" );
+				eChunk.com.Transform.setPosition(-0.8, 0.5, -0.8);
+
+				var cChunk	= eChunk.com.VoxelChunk;
+				bbox	= new BoundingBox( [0,0,0], VoxChunk.getMaxBound(cChunk) ).setTarget(eChunk).update();
+
+
+			//cChunk = Fungi.components("VoxelChunk");
+			//VoxChunk.init(cChunk, 8, 8, 8);
+			//bbox = new BoundingBox( [0,0,0], VoxChunk.getMaxBound(cChunk) );
 			
 			//........................
 			ePoint	= DVao.initPoint( Api.newDraw("ePoint", "VecWColor") );
 			eLine	= DVao.initLine( Api.newDraw("eLine", "VecWColor") );
 			eBox	= DVao.initLine( Api.newDraw("eLine", "VecWColor") );
 			eBBox	= DVao.initLine( Api.newDraw("eLine", "VecWColor") );
-			DVao.vecBox(eBBox, [0,0,0], VoxChunk.getMaxBound(cChunk), 0);
+			
+			//DVao.vecBox(eBBox, [0,0,0], VoxChunk.getMaxBound(cChunk), 0);
+			DVao.vecBox(eBBox, bbox.worldBounds[0], bbox.worldBounds[1], 0);	//Main Box
 
+
+			//onRightMouse( RightMouseSystem.MODE_DOWN );
+			
 			//........................
 			Fungi.loop.start();
 		}
@@ -62,15 +76,21 @@
 			if(mode != RightMouseSystem.MODE_DOWN) return;
 
 			var ray = Ray.MouseSegment(Fungi.input.coord.x, Fungi.input.coord.y).prepareAABB();
+			
+			//var ray = new Ray( 
+			//	new Vec3(-0.25907859206199646, 0.3644635081291199, 5.266218662261963), 
+			//	new Vec3(-1.5537521839141846, -3.7974612712860107, -94.75812530517578)
+			//).prepareAABB();
+
 
 			DVao.reset(eLine, ePoint, eBox);
 			DVao.vecLine(eLine, ray.origin, ray.end, 6);
 
-			VoxelRaycast( ray, cChunk, bbox );
+			console.log( VoxelRaycast( ray, eChunk, bbox ) );
 		}
 
 	//TODO: Need to test if Ray Origin is inside AABB, If it is, need to determine the initial voxel coord instead of doing a Ray-AABB Test
-	function VoxelRaycast( ray, chunk, bbox, tries=30 ){
+	function VoxelRaycast( ray, eChunk, bbox, tries=30 ){
 		//..................................................
 		//Determine if the voxel chunk has an intersection.
 		var tBox = {};
@@ -78,14 +98,18 @@
 		DVao.vecPoint(ePoint, ray.getPos(tBox.min), 0);
 		DVao.vecPoint(ePoint, ray.getPos(tBox.max), 1);
 
+
 		//..................................................
-		var inPos		= ray.getPos(tBox.min).nearZero(), //entry point for chunk, Clean up vals near zero.
+		var chunk 		= eChunk.com.VoxelChunk,
+			offsetPos	= eChunk.com.Transform._position,	// Help Move inPos to Local Space from World Space
+			inPos		= ray.getPos( Math.max(tBox.min, 0) ).nearZero(),	// Entry point for chunk, Clean up vals near zero. If Min < 0, origin is in AABB
+			inPosLoc	= Vec3.sub(inPos, offsetPos),		// Move inPos which is world space, to local space.
 			cellSize	= chunk.scale,
 
 			//--------- Calc Voxel Coord Integer(x,y,z)
-			ix			= Math.min( Math.floor(inPos.x / cellSize), chunk.xMax),
-			iy			= Math.min( Math.floor(inPos.y / cellSize), chunk.yMax),
-			iz			= Math.min( Math.floor(inPos.z / cellSize), chunk.zMax),
+			ix			= Math.max( Math.min( Math.floor( inPosLoc.x / cellSize), chunk.xMax), 0),
+			iy			= Math.max( Math.min( Math.floor( inPosLoc.y / cellSize), chunk.yMax), 0),
+			iz			= Math.max( Math.min( Math.floor( inPosLoc.z / cellSize), chunk.zMax), 0),
 
 			//--------- Simplify direction with -1,0,1
 			dir = new Vec3(-1,-1,-1),
@@ -95,6 +119,7 @@
 
 			//--------- Position of the closest boundary line for each axis at the ray dir. Depends on direction.
 			xBound, yBound, zBound;
+//console.log(ix, iy, iz);
 
 		//--------- Original code used 9 shorthand ifs, changed it to use 3 regular ifs for optimization.
 		if(ray.dir.x >= 0){
@@ -124,9 +149,9 @@
 
 
 			//--------- Time for axis //(xBound - inPos.x) / ray.dir.x,
-		var	xt			= (xBound - inPos.x) / ray.dir.x,
-			yt 			= (yBound - inPos.y) / ray.dir.y,
-			zt			= (zBound - inPos.z) / ray.dir.z,
+		var	xt			= (xBound - inPosLoc.x ) / ray.dir.x,
+			yt 			= (yBound - inPosLoc.y ) / ray.dir.y,
+			zt			= (zBound - inPosLoc.z ) / ray.dir.z,
 
 			//--------- Delta T for each axis as we traverse one voxel at a time
 			xDelta		= cellSize * dir.x / ray.dir.x,
@@ -150,7 +175,9 @@
 			//if(VoxChunk.get(chunk, ix, iy, iz) == 1){ isHit = true; break; }
 
 			var cellBound = VoxChunk.getCellBound(chunk, ix, iy, iz);
-			DVao.vecBox(eBox, cellBound.min, cellBound.max, 0);		//Display Voxel
+			console.log(ix, iy, iz);
+			//DVao.vecBox(eBox, cellBound.min, cellBound.max, 0);		//Display Voxel Local Space
+			DVao.vecBox(eBox, Vec3.add(cellBound.min,offsetPos) , Vec3.add(cellBound.max,offsetPos), 0);		//Display Voxel in World Space
 			DVao.vecPoint(ePoint, inPos, 2);						//Display Intersection Point for Voxel
 			DVao.vecLine(eLine, inPos, Vec3.add(inPos,norm), 2);	//Display Normal
 
@@ -193,7 +220,9 @@
 			norm[2]		= 0;
 			norm[nAxis]	= -dir[nAxis] * 0.1;	//Update the specific axis
 
-			boundPos 	= (( dir[nAxis] > 0)? iAxis+1 : iAxis) * cellSize;	//Position of boundary		
+			boundPos 	= (( dir[nAxis] > 0)? iAxis+1 : iAxis) * cellSize;	//Position of boundary in Local Space
+			boundPos 	+= offsetPos[nAxis]; //Move from Local Space to WorldSpace, to figure out T of Ray which is in World Space
+
 			tt			= ( boundPos - ray.origin[nAxis] ) / ray.vecLen[nAxis]; //Time when at boundary
 			inPos 		= ray.getPos(tt);	// Intersection point on voxel face
 		}

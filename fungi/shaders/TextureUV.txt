@@ -1,9 +1,9 @@
 <shader>{
 	"name":"TextureUV",
-	"ubo":[ "UBOTransform" ],
+	"ubo":[ "UBOTransform", "UBOModel" ],
 	"options": { "modelMatrix":true },
 	"uniforms":[
-		{ "name":"u_tex01", "type":"sample2D" },
+		{ "name":"u_tex01", "type":"sampler2D" },
 		{ "name":"u_texScale", "type":"vec2" }
 	]
 }<\shader>
@@ -29,14 +29,18 @@
 		vec2	screenSize;
 	};
 
-	uniform mat4 u_modelMatrix;
+	uniform UBOModel{
+		mat4 	modelMatrix;
+		mat3	normalMatrix;
+	};
+
 	uniform vec2 u_texScale;
 
 	out vec2 v_uv;
 
 	void main(void){
 		v_uv		= a_uv * u_texScale;
-		gl_Position	= projViewMatrix * u_modelMatrix * vec4(a_position, 1.0);
+		gl_Position	= projViewMatrix * modelMatrix * vec4(a_position, 1.0);
 	}
 <\vertex>
 

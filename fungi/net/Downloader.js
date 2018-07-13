@@ -2,6 +2,7 @@
 var dl = new Downloader(
 	{ type:"shader", file:"../../fungi/shaders/VecWColor.txt" },
 	{ type:"image", name:"tex01", file:"../../images/UV_Grid_Sm.jpg", doYFlip:true, useMips:false }
+	{ type:"image", name:"tex01", file:"./tile03.png", doYFlip:true, useMips:false, w:128, h:128, arrayLen:6 },
 ]);
 
 dl.start()

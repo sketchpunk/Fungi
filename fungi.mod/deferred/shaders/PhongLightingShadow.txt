@@ -3,12 +3,12 @@
 	"ubo"		: [ "UBOTransform", "UBOLighting" ],
 	"options"	: { "modelMatrix":false },
 	"uniforms"	: [
-		{ "name":"u_colorTex",			"type":"sample2D" },
-		{ "name":"u_normalTex",			"type":"sample2D" },
-		{ "name":"u_positionTex",		"type":"sample2D" },
-		{ "name":"u_emissionTex",		"type":"sample2D" },
-		{ "name":"u_depthTex",			"type":"sample2D" },
-		{ "name":"u_shadowTex",			"type":"sample2D" },
+		{ "name":"u_colorTex",			"type":"sampler2D" },
+		{ "name":"u_normalTex",			"type":"sampler2D" },
+		{ "name":"u_positionTex",		"type":"sampler2D" },
+		{ "name":"u_emissionTex",		"type":"sampler2D" },
+		{ "name":"u_depthTex",			"type":"sampler2D" },
+		{ "name":"u_shadowTex",			"type":"sampler2D" },
 
 		{ "name":"u_ambientStrength",	"type":"float" },
 		{ "name":"u_diffuseStrength",	"type":"float" },
