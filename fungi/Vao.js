@@ -230,15 +230,15 @@ class Vao{
 			return vao;
 		}
 
-		static standardEmpty(name, vertCompLen=3, vertCnt=4, normLen=null, uvLen=null, indexLen=null){
+		static standardEmpty(name, vertCompLen=3, vertCnt=4, normLen=0, uvLen=0, indexLen=0){
 			var o = new Vao().create()
 				.emptyFloatBuffer("bVertices",
 					Float32Array.BYTES_PER_ELEMENT * vertCompLen * vertCnt, 
 					Shader.ATTRIB_POSITION_LOC, vertCompLen );
 
 			//if(aryNorm)	VAO.floatArrayBuffer(rtn,	"bNormal",	aryNorm,	ATTR_NORM_LOC,	3,0,0,true);
-			//if(aryUV)	VAO.floatArrayBuffer(rtn,	"bUV",		aryUV,		ATTR_UV_LOC,	2,0,0,true);
-			if(indexLen > 0) o.emptyIndexBuffer("bIndex", Uint16Array.BYTES_PER_ELEMENT * indexLen, false);
+			if(uvLen > 0)		o.emptyFloatBuffer("bUV", Float32Array.BYTES_PER_ELEMENT * 2 * uvLen, Shader.ATTRIB_UV_LOC, 2);
+			if(indexLen > 0)	o.emptyIndexBuffer("bIndex", Uint16Array.BYTES_PER_ELEMENT * indexLen, false);
 
 			var vao = o.finalize(name);
 			o.cleanup();

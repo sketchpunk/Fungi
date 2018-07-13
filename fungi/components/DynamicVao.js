@@ -73,6 +73,7 @@ class DynamicVao{
 		return DynamicVao;
 	}
 
+	static vecBox(e, v1, v2, c=0){ return DynamicVao.rawBox(e, v1[0], v1[1], v1[2], v2[0],v2[1],v2[2], c); }
 	static rawBox(e, x1, y1, z1, x2, y2, z2, c=0){//Min -> Max to creating a bounding box.		
 		//TopLeft,TopRight,BotRight,BotLeft
 		let d = e.com.DynamicVao.verts.data,
@@ -102,9 +103,12 @@ class DynamicVao{
 	////////////////////////////////////////////////////////////////////
 	// MISC
 	////////////////////////////////////////////////////////////////////
-	static reset(e){
-		e.com.DynamicVao.verts.data.splice(0);
-		e.com.DynamicVao.isModified = true;
+	static reset(){
+		let e;
+		for(e of arguments){
+			e.com.DynamicVao.verts.data.splice(0);
+			e.com.DynamicVao.isModified = true;
+		}
 		return DynamicVao;
 	}
 } Components(DynamicVao);

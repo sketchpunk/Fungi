@@ -1,14 +1,11 @@
-import gl 			from "../gl.js";
+import Fungi		from "../Fungi.js";
 import Vao 			from "../Vao.js";
-import Renderable	from "../rendering/Renderable.js";
 
-function Cone(mat, cnt = 3, radius=1, height = 1, isUp = true){
-	var data	= Cone.vertData(cnt, radius, height, isUp),
-		vao		= Vao.standardRenderable("Cone", 3, data.vertices, null, data.uv, data.index),
-		model 	= new Renderable("Cone", vao, mat);
-
-	//model.drawMode	= gl.ctx.TRIANGLES;
-	return model;
+function Cone(name, matName, cnt = 3, radius=1, height = 1, isUp = true){
+	var e = Fungi.ecs.newAssemblage("Draw",name);
+	e.com.Drawable.vao 		= Cone.vao(name, cnt, radius, height, isUp);
+	e.com.Drawable.material	= Fungi.getMaterial(matName);
+	return e;
 }
 
 Cone.vertData = function(cnt = 3, radius=1, height = 1, isUp = true){
@@ -41,6 +38,11 @@ Cone.vertData = function(cnt = 3, radius=1, height = 1, isUp = true){
 	}
 
 	return { vertices, index, uv };
+}
+
+Cone.vao = function(name, cnt = 3, radius=1, height = 1, isUp = true){
+	var data = Cone.vertData(cnt, radius, height, isUp);
+	return Vao.standardRenderable("Cone", 3, data.vertices, null, data.uv, data.index);
 }
 
 export default Cone;

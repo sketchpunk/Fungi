@@ -13,6 +13,19 @@ import CameraSystem		from "./systems/CameraSystem.js";
 
 import Api 				from "./Api.js";
 
+
+/* SYSTEM NOTES:
+	CameraSystem		10
+	Behaviour 			20
+
+	DynamicVao			21
+	DynamicVoxelSystem	21
+
+	TransformSystem		100
+	RenderSystem		200
+*/
+
+
 /////////////////////////////////////////////////////////////////////////////////
 // Main Fungi App Startup Functions
 /////////////////////////////////////////////////////////////////////////////////
@@ -127,6 +140,11 @@ async function loadScene(){
 	);
 }
 
+function loadFPS(){
+	let lblFPS = document.getElementById("lblFPS");
+	setInterval(function(){ lblFPS.innerHTML = Fungi.loop.fps; }.bind(this),200);
+}
+
 
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -172,4 +190,4 @@ async function useTransformHierarchy( priority=100 ){
 }
 
 
-export default { launch, loadScene, useBehaviours, useDynamicVao, useTransformHierarchy };
+export default { launch, loadScene, loadFPS, useBehaviours, useDynamicVao, useTransformHierarchy };

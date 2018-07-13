@@ -29,6 +29,7 @@ class Transform{
 	set rotation(v){	this._isModified = true; this._rotation.copy(v); }
 	get rotation(){		return this._rotation.clone(); }
 	setDegrees(deg, axis="y"){ this._isModified = true; this._rotation["r"+axis](deg * Maths.DEG2RAD); return this; }
+	setAxisAngle(v, a){ this._isModified = true; this._rotation.setAxisAngle(v,a); return this; }
 
 } Components(Transform);
 

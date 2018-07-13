@@ -1,3 +1,31 @@
+https://github.com/redxdev/ECS
+http://cowboyprogramming.com/2007/01/05/evolve-your-heirachy/
+
+https://www.bitovi.com/blog/long-live-es6-proxies
+
+https://gist.github.com/mflux/c32e2066948d5c8b591b small ECS 
+
+http://vasir.net/blog/game-development/how-to-build-entity-component-system-in-javascript
+
+http://bitsquid.blogspot.com/2014/10/building-data-oriented-entity-system.html
+
+
+https://g.js.org/guide/image.html  HAS A BUNCH OF FILTERS LIKE BLUR, EDGES, GLOW, PINCH, TWIRL
+
+https://en.wikipedia.org/wiki/Sawtooth_wave //LOOK AT GIF OF SAW TOOTH AND SIN MERGED, VERY COOL SHOULD CODE
+
+https://joshbedo.github.io/JS-Design-Patterns/ Observer Pattern, etc
+
+https://github.com/maierfelix/rokon Another WebGL 2.0 Engine
+
+https://github.com/a-jie/Proton  Particle Engine
+https://a-jie.github.io/Proton/
+
+https://www.3dgep.com/
+
+https://blogs.msdn.microsoft.com/uk_faculty_connection/2018/05/08/entity-component-system-in-unity-a-tutorial/
+https://www.gamedev.net/articles/programming/general-and-gameplay-programming/implementing-component-entity-systems-r3382
+
 .......................................................
 Triplanar Shaders
 https://medium.com/@bgolus/normal-mapping-for-a-triplanar-shader-10bf39dca05a
@@ -33,11 +61,47 @@ https://www.youtube.com/watch?v=6M-BnuJMuQE
 
 .......................................................
 Effects
+
+https://www.nutty.ca/?page_id=352&link=glow  BETTER GLOW AND BLOOM
+https://www.nutty.ca/?page_id=352&link=refraction  REFRACTION
+https://www.nutty.ca/?page_id=352&link=gamma_correction  GAMMA CORRECTION
+https://www.nutty.ca/?page_id=352&link=depth_of_field  DEPTH OF FIELD
+https://www.nutty.ca/?page_id=352&link=old_film  OLD FILM
+https://www.nutty.ca/?page_id=352&link=shadow_map  SHADOW MAP good info
+
 https://twitter.com/etiennepov/status/969703381471256576?s=03
 
 http://joostdevblog.blogspot.com/2016/09/creating-crisper-special-effects-with.html  STYLIZED TRAILS, MESH EFFECTS, ETC VERY COOL
 
 https://www.youtube.com/watch?v=X0kjv0MozuY  coding train fire
+
+https://www.youtube.com/watch?v=HR3flKges_A  TEXTURE ANIMATED DISOLVE
+
+https://www.youtube.com/watch?v=MAzkNgzWK9w  GLOWING CUT OFF
+
+https://www.youtube.com/watch?v=HobKiwNHNxc&list=PLnfzvYOawOqArAASPfH5rOErJNnLkk7Fw PORTAL
+
+https://www.youtube.com/watch?v=EBNQUZU7NKo&index=9&list=PLnfzvYOawOqArAASPfH5rOErJNnLkk7Fw  Smoke Fire
+
+https://www.youtube.com/watch?v=CmRvve709Dk&t=612s  Distored Lightening
+
+
+https://www.youtube.com/watch?v=-7DXS7X3nn8  World Effect like Batman vision
+
+http://prideout.net/blog/?tag=opengl-silhouette Toon like Shader
+
+https://twitter.com/FarrukhAbdur/status/1003892304623661056 LAVA SHADER EFFECT
+
+https://www.artstation.com/artwork/8NlBm  Zelda Guardian Attack beam and explosion
+
+https://www.youtube.com/watch?v=KGGB5LFEejg Hologram
+
+https://deepspacebanana.github.io/deepspacebanana.github.io/blog/shader/art/unreal%20engine/Teleportation-Shader 
+https://www.youtube.com/watch?v=mZEWc2AQZso
+
+https://www.youtube.com/watch?v=YbWYc3W43EI LASER
+
+https://www.youtube.com/watch?v=ewXDr-1go9U  hologram shader with texture
 
 .......................................................
 Maze
@@ -51,7 +115,35 @@ https://www.youtube.com/watch?v=_3dRFu3k8Nw
 https://www.youtube.com/watch?v=-UJpgZucQGs&list=PL9ZqDLjDY8PmY7rUNIniwxvTqxrQwMtzc
 
 
+.......................................................
+Frustum Culling
+http://www.lighthouse3d.com/tutorials/view-frustum-culling/
 
+
+.......................................................
+Lighting / Shadows
+
+https://hero.handmade.network/episode/code/day096/#833  Long Lecture on Lighting
+
+https://blogs.igalia.com/itoral/2017/07/06/working_lights_shadows_parti_phong_reflection_model/
+https://blogs.igalia.com/itoral/2017/07/30/working-with-lights-and-shadows-part-ii-the-shadow-map/
+https://blogs.igalia.com/itoral/2017/10/02/working-with-lights-and-shadows-part-iii-rendering-the-shadows/
+
+https://blogs.igalia.com/itoral/2018/04/17/frame-analysis-of-a-rendering-of-the-sponza-model/ Complete Deffered Rendering explained
+
+http://learnwebgl.brown37.net/11_advanced_rendering/shadows.html
+
+http://www.chinedufn.com/webgl-shadow-mapping-tutorial/
+
+http://www.opengl-tutorial.org/intermediate-tutorials/tutorial-16-shadow-mapping/
+
+https://www.tomdalling.com/blog/modern-opengl/07-more-lighting-ambient-specular-attenuation-gamma/
+https://www.tomdalling.com/blog/modern-opengl/08-even-more-lighting-directional-lights-spotlights-multiple-lights/
+
+
+https://learnopengl.com/Advanced-Lighting/Deferred-Shading
+
+https://learnopengl.com/Advanced-Lighting/SSAO
 
 .......................................................
 Shaders
@@ -100,6 +192,16 @@ https://www.shadertoy.com/view/ldfGWn
 
 http://prideout.net/blog/?p=22 TOON SHADING VERY GOOD
 
+https://www.shaderoo.org/?shader=8Yw3Q8 SKETCHY CROS HATCHING
+
+https://www.youtube.com/watch?v=jJcSbixSy5c
+
+.......................................................
+Particles
+http://prideout.net/blog/?p=63  Noise Baed Particles Collision
+
+https://www.youtube.com/watch?v=CKbgMxLiRJM  Smoke Grenade Effect
+
 .......................................................
 Biodomes
 http://procworld.blogspot.ca/2016/04/geometry-is-destiny.html
@@ -111,6 +213,16 @@ https://threejs.org/examples/webgl_decals.html
 https://github.com/benpurdy/threejs-decals
 http://blog.wolfire.com/2009/06/how-to-project-decals/
 
+.......................................................
+Procedural Animations
+
+https://www.youtube.com/watch?v=LNidsMesxSE
+
+.......................................................
+https://blog.molecular-matters.com/2013/02/22/adventures-in-data-oriented-design-part-2-hierarchical-data/
+
+
+https://www.youtube.com/watch?v=xkuniXI3SEE //Build City
 
 .......................................................
 Modelling
@@ -129,6 +241,8 @@ https://www.blendernation.com/2018/04/14/how-to-use-the-screw-modifier-and-curve
 https://www.blendernation.com/2018/04/13/tutorial-procedural-paper-texture-material/
 https://www.blendernation.com/2018/04/12/cleaning-up-your-mesh-properly-quick-tips/
 https://www.blendernation.com/2018/04/10/procedural-texture-blurring/
+
+https://www.youtube.com/watch?v=hje_OMFV_pI
 
 .......................................................
 Misc
@@ -156,9 +270,14 @@ https://www.youtube.com/watch?v=AxE77Z4EeIk
 
 https://www.youtube.com/watch?v=vZp0ETdD37E
 
+https://www.youtube.com/watch?v=rQG9aUWarwE 2D Over the TOP Field of view, VERY COOL.
+
 .......................................................
 Armature
 http://physicsforgames.blogspot.com/2010/06/blending-walkrun-cycle.html
+
+https://www.alanzucconi.com/2018/05/02/ik-2d-1/  Inverse Kinematics in 2D
+https://www.alanzucconi.com/2018/05/02/ik-2d-2/
 
 .......................................................
 PHYSICS
@@ -186,6 +305,8 @@ https://github.com/gamephysicscookbook/GamePhysicsCookbook
 https://www.youtube.com/watch?v=gHeQ8Hr92P4   //Walk on planet like Mario World. PLANET ATTRACTOR
 https://www.youtube.com/watch?v=cH4oBoXkE00
 
+https://turanszkij.wordpress.com/2018/05/21/scalabe-gpu-fluid-simulation/
+
 .......................................................
 MATH
 https://www.youtube.com/watch?v=8fm8wXa2x5k
@@ -197,6 +318,12 @@ https://github.com/mattatz/ShibuyaCrowd/blob/master/source/shaders/common/quater
 http://physicsforgames.blogspot.com/2010/02/quaternions-why.html
 
 http://physicsforgames.blogspot.com/2010/02/quaternions.html
+
+http://www.opengl-tutorial.org/miscellaneous/math-cheatsheet/
+
+https://www.3dgep.com/understanding-quaternions/
+
+https://infinityplusonemath.wordpress.com/
 
 .......................................................
 RAY MARCHING
@@ -293,7 +420,9 @@ https://www.blendernation.com/2018/03/16/how-to-sculpt-a-leg-in-blender/
 https://www.blendernation.com/2018/03/14/blender-euler-angle-axis-angle-quaternion-rotations-w-x-y-z-explained/
 
 
+http://prideout.net/blog/?p=61 - Tron, Volumetric Lines, and Meshless Tubes
 
+http://prideout.net/blog/?p=48 Triangle Tessellation with OpenGL 4.0 SPHERES
 
 //----------------------------------------------------------
 VR RENDERER
