@@ -21,6 +21,7 @@ import Api 				from "./Api.js";
 	DynamicVao			21
 	DynamicVoxelSystem	21
 
+	ArmatureSystem		100
 	TransformSystem		100
 	RenderSystem		200
 */

@@ -1,6 +1,8 @@
 
 import Vec3 from "../maths/Vec3.js";
 import Vec2 from "../maths/Vec2.js";
+import Vao from "../Vao.js";
+import Fungi from "../Fungi.js";
 
 class Geometry{
 	constructor(){
@@ -14,239 +16,257 @@ class Geometry{
 		return this;
 	}
 
-	//...................................................
-	addVert(x,y,z, toEnd=true){
-		var v = new Vertex(x, y, z);
-		if(toEnd)	this.verts.push(v);
-		else		this.verts.unshift(v);
-		return v;
-	}
+	////////////////////////////////////////////////////////////////////
+	// Verts and Faces
+	////////////////////////////////////////////////////////////////////
+		addVert(x,y,z, toEnd=true){
+			var v = new Vertex(x, y, z);
+			if(toEnd)	this.verts.push(v);
+			else		this.verts.unshift(v);
+			return v;
+		}
 
-	addVerts(x,y,z){
-		//................................
-		//if passing in just one array
-		if(arguments.length == 1 && arguments[0].length == 3){
-			this.verts.push( new Vertex( arguments[0][0], arguments[0][1], arguments[0][2] ) );
+		addVerts(x,y,z){
+			//................................
+			//if passing in just one array
+			if(arguments.length == 1 && arguments[0].length == 3){
+				this.verts.push( new Vertex( arguments[0][0], arguments[0][1], arguments[0][2] ) );
+				return this;
+			}
+
+			//................................
+			for(var i=0; i < arguments.length; i+= 3) this.verts.push( 
+				new Vertex( arguments[i], arguments[i+1], arguments[i+2] )
+			);
+
 			return this;
 		}
 
-		//................................
-		for(var i=0; i < arguments.length; i+= 3) this.verts.push( 
-			new Vertex( arguments[i], arguments[i+1], arguments[i+2] )
-		);
-
-		return this;
-	}
-
-	addFace(a,b,c){
-		for(var i=0; i < arguments.length; i+= 3) this.faces.push(
-			new Face(this).set( arguments[i], arguments[i+1], arguments[i+2] )
-		);
-		return this;
-	}
-
-	faceVert(f,v){
-		var face = this.faces[f];
-		if(!face){ console.log("Face not found",f);  return null; }
-		return this.verts[ face[v] ];
-	}
-
-	cloneVert(idx, save=true, toEnd=true){
-		let v = this.verts[idx].clone();
-		if(save){
-			if(toEnd)	this.verts.push(v);
-			else		this.verts.unshift(v);
-		}
-		return v;
-	}
-
-	//...................................................
-	extrude(idxAry, vDir){
-		let len = idxAry.length,
-			out = new Array( len ),
-			idx = this.verts.length,
-			i,v;
-
-		for(i=0; i < len; i++){
-			this.verts.push( v = this.verts[ idxAry[i] ].clone().add(vDir) );
-			out[i] = idx + i;
+		addFace(a,b,c){
+			for(var i=0; i < arguments.length; i+= 3) this.faces.push(
+				new Face(this).set( arguments[i], arguments[i+1], arguments[i+2] )
+			);
+			return this;
 		}
 
-		return out;
-	}
+		faceVert(f,v){
+			var face = this.faces[f];
+			if(!face){ console.log("Face not found",f);  return null; }
+			return this.verts[ face[v] ];
+		}
 
-	scale(idxAry, vDir){
-		let i;
-		for(i of idxAry) this.verts[ i ].mul(vDir);
-		return this;
-	}
+		cloneVert(idx, save=true, toEnd=true){
+			let v = this.verts[idx].clone();
+			if(save){
+				if(toEnd)	this.verts.push(v);
+				else		this.verts.unshift(v);
+			}
+			return v;
+		}
 
 
-	translate(idxAry, vDir){
-		let i;
-		for(i of idxAry) this.verts[ i ].add(vDir);
-		return this;
-	}
+	////////////////////////////////////////////////////////////////////
+	// Manipulate Vertices
+	////////////////////////////////////////////////////////////////////
+		extrude(idxAry, vDir){
+			let len = idxAry.length,
+				out = new Array( len ),
+				idx = this.verts.length,
+				i,v;
+
+			for(i=0; i < len; i++){
+				this.verts.push( v = this.verts[ idxAry[i] ].clone().add(vDir) );
+				out[i] = idx + i;
+			}
+
+			return out;
+		}
+
+		scale(idxAry, vDir){
+			let i;
+			for(i of idxAry) this.verts[ i ].mul(vDir);
+			return this;
+		}
+
+		translate(idxAry, vDir){
+			let i;
+			for(i of idxAry) this.verts[ i ].add(vDir);
+			return this;
+		}
 
 
-	lathe(pathAry, steps, rotAxis = "y"){
-		var plen	= pathAry.length,
-			inc		= Math.PI * 2 / -steps,
-			rad, 
-			cos, sin, 
-			i, p, v, 
-			rx, ry, rz;
+		lathe(pathAry, steps, rotAxis = "y"){
+			var plen	= pathAry.length,
+				inc		= Math.PI * 2 / -steps,
+				rad, 
+				cos, sin, 
+				i, p, v, 
+				rx, ry, rz;
 
-		for(i=1; i < steps; i++){
-			rad = i * inc;
-			cos = Math.cos(rad);
-			sin = Math.sin(rad);
+			for(i=1; i < steps; i++){
+				rad = i * inc;
+				cos = Math.cos(rad);
+				sin = Math.sin(rad);
 
-			for(p of pathAry){
-				v = this.cloneVert( p );
+				for(p of pathAry){
+					v = this.cloneVert( p );
 
-				switch(rotAxis){ // https://www.siggraph.org/education/materials/HyperGraph/modeling/mod_tran/3drota.htm#Y-Axis%20Rotation
-					case "y": ry = v.y;		rx = v.z*sin + v.x*cos;		rz = v.z*cos - v.x*sin; break;
-					case "x": rx = v.x; 	ry = v.y*cos - v.z*sin;		rz = v.y*sin + v.z*cos; break;
-					case "z": rz = v.z;		rx = v.x*cos - v.y*sin;		ry = v.x*sin + v.y*cos; break;
+					switch(rotAxis){ // https://www.siggraph.org/education/materials/HyperGraph/modeling/mod_tran/3drota.htm#Y-Axis%20Rotation
+						case "y": ry = v.y;		rx = v.z*sin + v.x*cos;		rz = v.z*cos - v.x*sin; break;
+						case "x": rx = v.x; 	ry = v.y*cos - v.z*sin;		rz = v.y*sin + v.z*cos; break;
+						case "z": rz = v.z;		rx = v.x*cos - v.y*sin;		ry = v.x*sin + v.y*cos; break;
+					}
+
+					v.set(rx, ry, rz);
 				}
-
-				v.set(rx, ry, rz);
 			}
 		}
-	}
 
 
-	//...................................................
-	//using two index arrays, if built counter clockwise, create triangles out of the quads that make up the wall.
-	triangleWallLoop(iAryA,iAryB){
-		let i, a, b, c, d, p,
-			len = iAryA.length;
+	////////////////////////////////////////////////////////////////////
+	// Create Triangles
+	////////////////////////////////////////////////////////////////////
+		//using two index arrays, if built counter clockwise, create triangles out of the quads that make up the wall.
+		triangleWallLoop(iAryA,iAryB){
+			let i, a, b, c, d, p,
+				len = iAryA.length;
 
-		for(i=0; i < len; i++){
-			p = (i+1)%len;
-			a = iAryB[i],
-			b = iAryA[i],
-			c = iAryA[p],
-			d = iAryB[p];
-			this.addFace(a,b,c,c,d,a);
-		}
-	}
-
-	//Triangles in a fan way, With a center point connecting to circle of points
-	triangleCircle(cIdx, cAry){
-		let len	= cAry.length,
-			i, ii;
-
-		for(i=0; i < len; i++){
-			ii = (i + 1) % len;
-			this.addFace( cAry[i], cIdx, cAry[ii] );
-		}
-	}
-
-	triangleGrid(cLen, rLen){
-		var cc, rr, rA, rB, 
-			a, b, c, d;
-
-		for(rr=0; rr < rLen-1; rr++){
-			rA = rr * cLen;
-			rB = (rr+1) * cLen;
-			for(cc=0; cc < cLen-1; cc++){
-				a = rA + cc;	//Defined Quad
-				b = rB + cc;
-				c = b + 1;
-				d = a + 1;
+			for(i=0; i < len; i++){
+				p = (i+1)%len;
+				a = iAryB[i],
+				b = iAryA[i],
+				c = iAryA[p],
+				d = iAryB[p];
 				this.addFace(a,b,c,c,d,a);
 			}
 		}
-		return this;
-	}
 
-	triangleLathe(cLen, rLen, triStart = false, isLoop=true){
-		var cc, rr, rA, rB,
-			a, b, c, d,
-			rEnd = (isLoop)? rLen : rLen-1;
+		//Triangles in a fan way, With a center point connecting to circle of points
+		triangleCircle(cIdx, cAry){
+			let len	= cAry.length,
+				i, ii;
 
-		for(rr=0; rr < rEnd; rr++){
-			rA = rr * cLen;
-			rB = (rr+1) % rLen * cLen;
-
-			for(cc=0; cc < cLen-1; cc++){
-				a = rA + cc;	//Defined Quad
-				b = rB + cc;
-				c = b + 1;
-				d = a + 1;
-
-				if(triStart && cc == 0)	this.addFace(c,d,a);
-				else 					this.addFace(a,b,c,c,d,a);
+			for(i=0; i < len; i++){
+				ii = (i + 1) % len;
+				this.addFace( cAry[i], cIdx, cAry[ii] );
 			}
 		}
-	}
 
+		triangleGrid(cLen, rLen){
+			var cc, rr, rA, rB, 
+				a, b, c, d;
 
-	//Create index that will work for TRIANGLE_TRIP draw mode
-	static triangleStrip(indAry,rLen,cLen,isLoop=false,doClose=false){ 
-		// isLoop :: ties the left to the right
-		// doClose :: is for paths that are closed shapes like a square
-		var iLen = (rLen-1) * cLen,		//How many indexes do we need
-			iEnd = (cLen*(rLen-1))-1,	//What the final index for triangle strip
-			iCol = cLen - 1,			//Index of Last col
-			posA = 0,					//Top Index
-			posB = posA + cLen,			//Bottom Index
-			c = 0;						//Current Column : 0 to iCol
+			for(rr=0; rr < rLen-1; rr++){
+				rA = rr * cLen;
+				rB = (rr+1) * cLen;
+				for(cc=0; cc < cLen-1; cc++){
+					a = rA + cc;	//Defined Quad
+					b = rB + cc;
+					c = b + 1;
+					d = a + 1;
+					this.addFace(a,b,c,c,d,a);
+				}
+			}
+			return this;
+		}
 
-		for(var i=0; i < iLen; i++){
-			c = i % cLen;
-			indAry.push(posA+c,posB+c);
+		triangleLathe(cLen, rLen, triStart = false, isLoop=true){
+			var cc, rr, rA, rB,
+				a, b, c, d,
+				rEnd = (isLoop)? rLen : rLen-1;
 
-			//Create degenerate triangles, The last then the first index of the current bottom row.
-			if(c == iCol){
-				if(i == iEnd && isLoop == true){
-					if(doClose == true) indAry.push(posA,posB);
-					indAry.push(posB+cLen-1,posB);
-					iLen += cLen; //Make loop go overtime for one more row that connects the final row to the first.
-					posA += cLen;
-					posB = 0;
-				}else if(i >= iEnd && doClose == true){
-					indAry.push(posA,posB);
-				}else if(i < iEnd){ //if not the end, then skip to next row
-					if(doClose == true) indAry.push(posA,posB);
-					indAry.push(posB+cLen-1, posB);
-					posA += cLen;
-					posB += cLen;
+			for(rr=0; rr < rEnd; rr++){
+				rA = rr * cLen;
+				rB = (rr+1) % rLen * cLen;
+
+				for(cc=0; cc < cLen-1; cc++){
+					a = rA + cc;	//Defined Quad
+					b = rB + cc;
+					c = b + 1;
+					d = a + 1;
+
+					if(triStart && cc == 0)	this.addFace(c,d,a);
+					else 					this.addFace(a,b,c,c,d,a);
 				}
 			}
 		}
-	}
 
-	//...................................................
-	vertexArray(){	return this.compileArray(this.verts, Float32Array, 3); }
-	faceArray(){	return this.compileArray(this.faces, Uint16Array, 3); }
-	uvArray(){		return this.compileArray(this.verts, Float32Array, 2, "uv"); }
-	normArray(){	return this.compileArray(this.verts, Float32Array, 3, "norm"); }
 
-	jointArray(size){	return this.compileArray(this.verts, Float32Array, size, "jointIndex"); }
-	weightArray(size){	return this.compileArray(this.verts, Float32Array, size, "jointWeight"); }
+		//Create index that will work for TRIANGLE_TRIP draw mode
+		static triangleStrip(indAry,rLen,cLen,isLoop=false,doClose=false){ 
+			// isLoop :: ties the left to the right
+			// doClose :: is for paths that are closed shapes like a square
+			var iLen = (rLen-1) * cLen,		//How many indexes do we need
+				iEnd = (cLen*(rLen-1))-1,	//What the final index for triangle strip
+				iCol = cLen - 1,			//Index of Last col
+				posA = 0,					//Top Index
+				posB = posA + cLen,			//Bottom Index
+				c = 0;						//Current Column : 0 to iCol
 
-	compileArray(ary,AryType,size,sub=null){
-		var aLen	= ary.length * size,
-			out		= new AryType(aLen),
-			itm, ii, j;
+			for(var i=0; i < iLen; i++){
+				c = i % cLen;
+				indAry.push(posA+c,posB+c);
 
-		for(var i=0; i < ary.length; i++){
-			ii	= i * size;
-			itm	= (!sub)? ary[i] : ary[i][sub];
-
-			for(j=0; j < size; j++) out[ii + j] = itm[j];
+				//Create degenerate triangles, The last then the first index of the current bottom row.
+				if(c == iCol){
+					if(i == iEnd && isLoop == true){
+						if(doClose == true) indAry.push(posA,posB);
+						indAry.push(posB+cLen-1,posB);
+						iLen += cLen; //Make loop go overtime for one more row that connects the final row to the first.
+						posA += cLen;
+						posB = 0;
+					}else if(i >= iEnd && doClose == true){
+						indAry.push(posA,posB);
+					}else if(i < iEnd){ //if not the end, then skip to next row
+						if(doClose == true) indAry.push(posA,posB);
+						indAry.push(posB+cLen-1, posB);
+						posA += cLen;
+						posB += cLen;
+					}
+				}
+			}
 		}
-		return out;
-	}
 
-	//...................................................
-	debugPoints(dPoint, color = 0){
-		for(let i of this.verts) dPoint.addVec(i, color);
-		return this;
-	}
+
+	////////////////////////////////////////////////////////////////////
+	// Flatten Data
+	////////////////////////////////////////////////////////////////////
+		vertexArray(){	return this.compileArray(this.verts, Float32Array, 3); }
+		faceArray(){	return this.compileArray(this.faces, Uint16Array, 3); }
+		uvArray(){		return this.compileArray(this.verts, Float32Array, 2, "uv"); }
+		normArray(){	return this.compileArray(this.verts, Float32Array, 3, "norm"); }
+
+		jointArray(size){	return this.compileArray(this.verts, Float32Array, size, "jointIndex"); }
+		weightArray(size){	return this.compileArray(this.verts, Float32Array, size, "jointWeight"); }
+
+		compileArray(ary,AryType,size,sub=null){
+			var aLen	= ary.length * size,
+				out		= new AryType(aLen),
+				itm, ii, j;
+
+			for(var i=0; i < ary.length; i++){
+				ii	= i * size;
+				itm	= (!sub)? ary[i] : ary[i][sub];
+
+				for(j=0; j < size; j++) out[ii + j] = itm[j];
+			}
+			return out;
+		}
+
+	////////////////////////////////////////////////////////////////////
+	// Misc
+	////////////////////////////////////////////////////////////////////
+		applyDraw(e, vaoName, useIdx=false, jointSize=0, dMode = Fungi.PNT){
+			e.com.Drawable.drawMode = dMode;
+
+			let vertices	= this.vertexArray(),
+				index		= (useIdx)? this.faceArray() : null,
+				joints 		= (jointSize > 0)? this.jointArray(jointSize) : null,
+				weights 	= (jointSize > 0)? this.weightArray(jointSize) : null;
+
+			e.com.Drawable.vao = Vao.standardArmature(vaoName, 3, vertices, null, null, index, jointSize, joints, weights);
+			return e;
+		}
 }
 
 /*
@@ -401,18 +421,6 @@ class Face extends Array{
 //}
 
 
-//#################################################################
-	import Vao 			from "../Vao.js";
-	import Renderable	from "../rendering/Renderable.js";
-
-	function GeoRenderable(name, mat, geo, useIdx=false){
-		let vertices	= geo.vertexArray(),
-			index		= (useIdx)? geo.faceArray() : null,
-			vao 		= Vao.standardRenderable(name, 3, vertices, null, null, index);
-
-		return new Renderable(name, vao, mat);
-	}
-
 
 export default Geometry;
-export { Face, Vertex, GeoRenderable };
+export { Face, Vertex };

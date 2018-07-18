@@ -1,6 +1,6 @@
 <shader>{
 	"name"		: "ArmaturePreview",
-	"ubo"		: [ "UBOTransform" ],
+	"ubo"		: [ "UBOTransform", "UBOModel" ],
 	"options"	: { "modelMatrix":true },
 	"uniforms"	: []
 }<\shader>
@@ -15,6 +15,7 @@
 
 	layout(location=8) in vec4 a_QR; //Rotation
 	layout(location=9) in vec4 a_QD; //Position
+	layout(location=10) in float a_length;
 
 	uniform UBOTransform{
 		mat4 	projViewMatrix;
@@ -23,7 +24,10 @@
 		vec2	screenSize;
 	};
 
-	uniform mat4 u_modelMatrix;
+	uniform UBOModel{
+		mat4 	modelMatrix;
+		mat3	normalMatrix;
+	};
 
 	out vec3 v_color;
 
@@ -45,14 +49,17 @@
 		return pos + tran;
 	}
 
-	void main(void){			
+	void main(void){
 		if(a_position.w == 0.0)			v_color = vec3(1.0,0.0,0.0);
 		else if(a_position.w == 1.0)	v_color = vec3(0.0,1.0,0.0);
 		else if(a_position.w == 2.0)	v_color = vec3(0.0,0.0,1.0);
 		else 							v_color = vec3(0.6,0.6,0.6);
 
-		vec3 pos 	= dqTransform(a_QR, a_QD, a_position.xyz);
-		gl_Position = projViewMatrix * u_modelMatrix * vec4(pos, 1.0);
+		vec3 pos 	= a_position.xyz;
+		if(a_position.w == 1.0) pos.y = a_length;
+
+		pos = dqTransform(a_QR, a_QD, pos);
+		gl_Position = projViewMatrix * modelMatrix * vec4(pos, 1.0);
 	}
 <\vertex>
 

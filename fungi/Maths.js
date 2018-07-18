@@ -2,121 +2,109 @@ import Vec3		from "./maths/Vec3.js";
 import Mat4		from "./maths/Mat4.js";
 import Quat		from "./maths/Quat.js";
 
-var Maths = {
-	PI_H	: 1.5707963267948966,
-	PI_2	: 6.283185307179586,
-	PI_Q	: 0.7853981633974483,
+class Maths{
+	////////////////////////////////////////////////////////////////////
+	// 
+	////////////////////////////////////////////////////////////////////
+		static toRad(v){ return v * Maths.DEG2RAD; }
+		static toDeg(v){ return v * Maths.RAD2DEG; }
 
-	DEG2RAD	: 0.01745329251, // PI / 180
-	RAD2DEG	: 57.2957795131, // 180 / PI
+		static map(x, xMin, xMax, zMin, zMax){ return (x - xMin) / (xMax - xMin) * (zMax-zMin) + zMin; }
+		static clamp(v, min, max){ return Math.max(min, Math.min(max,v) ); }
+		static norm(min, max, v){ return (v-min) / (max-min); }
 
-	EPSILON : 1e-6,
+		static lerp(a, b, t){ return (1 - t) * a + t * b; }  //return a + t * (b-a); 
 
-	toRad	: function(v){ return v * Maths.DEG2RAD; },
-	toDeg	: function(v){ return v * Maths.RAD2DEG; },
+		static fract(f){ return f - Math.floor(f); }
+		static step(edge, x){ return (x < edge)? 0 : 1; }
 
-	map		: function(x, xMin, xMax, zMin, zMax){ return (x - xMin) / (xMax - xMin) * (zMax-zMin) + zMin; },
-	clamp 	: function(v, min, max){ return Math.max(min, Math.min(max,v) ); },
-	norm	: function(min, max, v){ return (v-min) / (max-min); },
-
-	lerp 	: function(a, b, t){ return (1 - t) * a + t * b; },  //return a + t * (b-a); 
-
-	fract	: function(f){ return f - Math.floor(f); },
-	step 	: function(edge, x){ return (x < edge)? 0 : 1; },
-
-	nearZero	: function(v){ return (Math.abs(v) <= this.EPSILON)? 0 : v; },
-	smoothStep 	: function(edge1, edge2, val){ //https://en.wikipedia.org/wiki/Smoothstep
-		var x = Math.max(0, Math.min(1, (val-edge1)/(edge2-edge1)));
-		return x*x*(3-2*x);
-	},
-
-	rnd(min,max){ return Math.random() * (max - min) + min; },
-
-	//https://stackoverflow.com/questions/521295/seeding-the-random-number-generator-in-javascript
-	//https://en.wikipedia.org/wiki/Lehmer_random_number_generator
-	rnd_lcg(seed){
-    	function lcg(a) {return a * 48271 % 2147483647}
-    	seed = seed ? lcg(seed) : lcg(Math.random());
-    	return function(){ return (seed = lcg(seed)) / 2147483648; }
-	},
+		static nearZero(v){ return (Math.abs(v) <= Maths.EPSILON)? 0 : v; }
+		static smoothStep(edge1, edge2, val){ //https://en.wikipedia.org/wiki/Smoothstep
+			var x = Math.max(0, Math.min(1, (val-edge1)/(edge2-edge1)));
+			return x*x*(3-2*x);
+		}
 
 
-	//https://gist.github.com/jhermsmeier/72626d5fd79c5875248fd2c1e8162489
-	polarToCartesian : function(lon, lat, radius, out) {
-		out = out || new Vec3();
+	////////////////////////////////////////////////////////////////////
+	// RANDOM NUMBERS
+	////////////////////////////////////////////////////////////////////
+		static rnd(min,max){ return Math.random() * (max - min) + min; }
 
-		let phi 	= ( 90 - lat ) * this.DEG2RAD,
-	  		theta 	= ( lon + 180 ) * this.DEG2RAD;
-
-	  	out[0] = -(radius * Math.sin(phi) * Math.sin(theta));
-	    out[1] = radius * Math.cos(phi);
-	    out[2] = radius * Math.sin(phi) * Math.cos(theta);
-	  	return out;
-	},
-	cartesianToPolar : function( v, radius, out ){
-		out = out || [0,0];
-  		var lon 	= Math.atan2( v[0], -v[2] ) * this.RAD2DEG,
-  			length 	= Math.sqrt( v[0] * v[0] + v[2] * v[2] ),
-  			lat 	= Math.atan2( v[1], length ) * this.RAD2DEG;
-  		return [ lon, lat ]
-	},
-
-	//https://github.com/nodebox/g.js/blob/master/src/libraries/math.js
-	sawtoothWave(time, min=0, max=1, period=1){
-		var amplitude	= (max - min) * 0.5,
-			frequency	= this.PI_2 / period,
-			phase		= 0;
-
-		if(time % period !== 0)	phase = (time * frequency) % this.PI_2;
-		if(phase < 0)			phase += this.PI_2;
-
-		//return 2 * (phase / this.PI_2) * amplitude + min;
-		return 2 * (phase * 0.15915494309) * amplitude + min; //Change Div to Mul
-	},
-
-};
+		//https://stackoverflow.com/questions/521295/seeding-the-random-number-generator-in-javascript
+		//https://en.wikipedia.org/wiki/Lehmer_random_number_generator
+		static rnd_lcg(seed){
+			function lcg(a) {return a * 48271 % 2147483647}
+			seed = seed ? lcg(seed) : lcg(Math.random());
+			return function(){ return (seed = lcg(seed)) / 2147483648; }
+		}
 
 
-/*
-g.sineWave = function (v, min, max, period, offset) {
-    if (min === undefined) min = -1;
-    if (max === undefined) max = 1;
-    if (period === undefined) period = 1;
-    if (offset === undefined) offset = 0;
-    var amplitude = (max - min) / 2;
-    return (min + amplitude) + Math.sin((offset + v) * TWO_PI / period) * amplitude;
-};
+	////////////////////////////////////////////////////////////////////
+	// POLAR
+	////////////////////////////////////////////////////////////////////
+		//https://gist.github.com/jhermsmeier/72626d5fd79c5875248fd2c1e8162489
+		static polarToCartesian(lon, lat, radius, out) {
+			out = out || new Vec3();
 
-g.squareWave = function (v, min, max, period, offset) {
-    if (min === undefined) min = -1;
-    if (max === undefined) max = 1;
-    if (period === undefined) period = 1;
-    if (offset === undefined) offset = 0;
-    var halfPeriod = period / 2;
-    var d = (v + offset) % period;
-    if (d < halfPeriod) {
-        return max;
-    } else {
-        return min;
-    }
-};
+			let phi 	= ( 90 - lat ) * Maths.DEG2RAD,
+				theta 	= ( lon + 180 ) * Maths.DEG2RAD;
 
-g.triangleWave = function (v, min, max, period, offset) {
-    if (min === undefined) min = -1;
-    if (max === undefined) max = 1;
-    if (period === undefined) period = 1;
-    if (offset === undefined) offset = 0;
-    var amplitude = (max - min) / 2,
-        frequency = TWO_PI / period,
-        phase = 0,
-        time = v + offset + period / 4;
-    if (time % period !== 0) {
-        phase = (time * frequency) % TWO_PI;
-    }
-    if (phase < 0) { phase += TWO_PI; }
-    return 2 * amplitude * (1 + -Math.abs((phase / TWO_PI) * 2 - 1)) + min;
-};
-*/
+			out[0] = -(radius * Math.sin(phi) * Math.sin(theta));
+			out[1] = radius * Math.cos(phi);
+			out[2] = radius * Math.sin(phi) * Math.cos(theta);
+			return out;
+		}
+
+		static cartesianToPolar( v, radius, out ){
+			out = out || [0,0];
+			var lon 	= Math.atan2( v[0], -v[2] ) * Maths.RAD2DEG,
+				length 	= Math.sqrt( v[0] * v[0] + v[2] * v[2] ),
+				lat 	= Math.atan2( v[1], length ) * Maths.RAD2DEG;
+			return [ lon, lat ]
+		}
+
+
+	////////////////////////////////////////////////////////////////////
+	// WAVES
+	////////////////////////////////////////////////////////////////////
+		//https://github.com/nodebox/g.js/blob/master/src/libraries/math.js
+		static sawtoothWave(time, min=0, max=1, period=1){
+			var amplitude	= (max - min) * 0.5,
+				frequency	= Maths.PI_2 / period,
+				phase		= 0;
+
+			if(time % period !== 0)	phase = (time * frequency) % Maths.PI_2;
+			if(phase < 0)			phase += Maths.PI_2;
+
+			//return 2 * (phase / Maths.PI_2) * amplitude + min;
+			return 2 * (phase * 0.15915494309) * amplitude + min; //Change Div to Mul
+		}
+
+		static triangleWave(v, min=0, max=1, period = 1){
+			var amplitude	= (max - min) * 0.5,
+				frequency	= Maths.PI_2 / period,
+				phase		= 0,
+				time		= v + period * 0.25; // div 4 changed to * 0.25
+				
+			if(time % period !== 0)	phase	= (time * frequency) % Maths.PI_2;
+			if(phase < 0) 			phase	+= Maths.PI_2;
+
+			return 2 * amplitude * (1 + -Math.abs((phase / Maths.PI_2) * 2 - 1)) + min;
+		}
+
+		static squareWave (v, min=0, max=1, period=1){ return ( (v % period) <  (period * 0.5) )? max : min; }
+}
+
+////////////////////////////////////////////////////////////////////
+// CONSTANTS
+////////////////////////////////////////////////////////////////////
+	Maths.PI_H		= 1.5707963267948966;
+	Maths.PI_2 		= 6.283185307179586;
+	Maths.PI_Q		= 0.7853981633974483;
+	Maths.DEG2RAD	= 0.01745329251; // PI / 180
+	Maths.RAD2DEG	= 57.2957795131; // 180 / PI
+	Maths.EPSILON	= 1e-6;
+
 
 
 /*

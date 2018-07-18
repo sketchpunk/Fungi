@@ -1,224 +1,220 @@
-import Vec3		from "../../fungi/maths/Vec3.js";
-import Quat		from "../../fungi/maths/Quat.js";
-import DualQuat	from "../../fungi/maths/DualQuat.js";
+import { Components }	from "../../fungi/Ecs.js";
+import {Vec3, Quat}		from "../../fungi/Maths.js";
+import DualQuat			from "../../fungi/maths/DualQuat.js";
 
-//##################################################################
-// SHADER TEMPLATES
 class Armature{
 	constructor(){
-		this.root	= new Joint("root");
-		this.joints	= new Array();
+		this.joints			= null;	// Main Joints Array : Ordered Hierarchy level
+		this.orderedJoints	= null;	// Second list of joints : Ordered by an order number
+		this.flatOffset		= null;
+
+		this.isModified		= true;	//Mark if any joint was updated, so we can update Skinning or Previews
 	}
 
-	bindPose(){ //only call once when all bones are set where they need to be.
-		var stack = [ this.root ];
-		var j, jj, p
 
-		while(stack.length > 0){
-			this.joints.push( j = stack.pop() );
-			p = j.parent;
-			//console.log(j.name,this.joints.length-1);
+	////////////////////////////////////////////////////////////////////
+	// INITIALIZERS
+	////////////////////////////////////////////////////////////////////
+		static init(e){
+			let arm;
+			if(e instanceof Armature)	arm = e;						//Is Component
+			else if(!e.com.Armature)	arm = e.addByName("Armature");	//Component missing, add it
+			else 						arm = e.com.Armature;			//Get Component Reference
 
-			//................................
-			//Calc our local Pos/Rotation
-			j.dqLocal.set(j._rotation, j._position);
-
-			//................................
-			//Calculate the World Pos/Rotation
-			if(p)	DualQuat.mul(p.dqWorld, j.dqLocal, j.dqWorld);	// parent.world * child.local = child.world
-			else	j.dqWorld.copy(j.dqLocal);						// no parent, world == local
-
-			//................................
-			//Invert the World Dual-Quaternion which create our Bind Pos
-			//  This creates a way to "subtract" one DQ from another (You really can't subtract)
-			//  So by inverting one, you can use multiplication to achieve the idea of "subtraction"
-			j.dqWorld.invert( j.dqBindPose );
-
-			//................................
-			//Add children to stack, to continue the loop
-			if(j.children.length > 0) for(jj of j.children) stack.push(jj);
+			arm.joints	= new Array();
+			return e;
 		}
 
-		return this;
-	}
 
-	update(){ var j; for(j of this.joints) j.update(); return this; }
-
-	getJoint(name){
-		var j;
-		for(j of this.joints) if(j.name == name) return j;
-		return null;
-	}
-
-	//Used by a renderable to get the offset joint values
-	//for deforming the mesh to simulate movement (animations)
-	getFlatOffset(out){
-		var ii, dq;
-		out = out || new Float32Array( this.joints.length * 8 );
-
-		for(var i=0; i < this.joints.length; i++){
-			dq = this.joints[i].dqOffset;
-			ii = i * 8;
-			
-			out[ii+0] = dq[0];
-			out[ii+1] = dq[1];
-			out[ii+2] = dq[2];
-			out[ii+3] = dq[3];
-			out[ii+4] = dq[4];
-			out[ii+5] = dq[5];
-			out[ii+6] = dq[6];
-			out[ii+7] = dq[7];
+	////////////////////////////////////////////////////////////////////
+	// JOINT FUNCTIONS
+	////////////////////////////////////////////////////////////////////
+		static getJoint(e, name){
+			let j, arm = (e instanceof Armature)? e : e.com.Armature;
+			for(j of arm.joints) if(j.name == name) return j;
+			return null;
 		}
-		return out;
-	}
 
-	//Used by ArmaturePreview
-	getFlatWorldSpace(out=null){ //Used for visualizing bones
-		var ii, dq;
-		out = out || new Float32Array( this.joints.length * 8 );
+		static addJoint(arm, name, len = 1, pRef = null, order = null){
+			var j 	= new Joint(name, len);
+			j.order	= (order == null)? arm.joints.length : order;
 
-		for(var i=0; i < this.joints.length; i++){
-			dq = this.joints[i].dqWorld;
-			ii = i * 8;
-			
-			out[ii+0] = dq[0];
-			out[ii+1] = dq[1];
-			out[ii+2] = dq[2];
-			out[ii+3] = dq[3];
-			out[ii+4] = dq[4];
-			out[ii+5] = dq[5];
-			out[ii+6] = dq[6];
-			out[ii+7] = dq[7];
+			if(pRef){
+				j.parent		= pRef;
+				j.level			= pRef.level + 1;	// Add Level
+				j.position.y	= pRef.length;		// Move Joint to the end of the parent joint
+			}
+
+			arm.joints.push( j );
+			return j;
 		}
-		return out;
-	}
-}
+
+		static sortJoints(e){ 
+			let arm = (e instanceof Armature)? e : e.com.Armature;
+			//Copy array and sort it by ORDER
+			arm.orderedJoints = arm.joints.slice(0).sort( fSort_joint_order );
+
+			//Sort main array by level for transform hierarchy processing.
+			arm.joints.sort( fSort_joint_lvl );
+			return this;
+		}
 
 
-//##################################################################
-// SHADER TEMPLATES
+	////////////////////////////////////////////////////////////////////
+	// POSE DATA
+	////////////////////////////////////////////////////////////////////
+		static bindPose(e){ //only call once when all bones are set where they need to be.
+			let j, arm = (e instanceof Armature)? e : e.com.Armature;
+
+			for(j of arm.joints){
+				//................................
+				// Calc our local Pos/Rotation
+				j.dqLocal.set( j.rotation, j.position );
+
+				//................................
+				// Calculate the World Pos/Rotation
+				if(j.parent) 	DualQuat.mul(j.parent.dqWorld, j.dqLocal, j.dqWorld);	// parent.world * child.local = child.world
+				else 			j.dqWorld.copy( j.dqLocal );							// no parent, world == local
+
+				//................................
+				//Invert the World Dual-Quaternion which create our Bind Pos
+				//  This creates a way to "subtract" one DQ from another (You really can't subtract)
+				//  So by inverting one, you can use multiplication to achieve the idea of "subtraction"
+				j.dqWorld.invert( j.dqBindPose );
+
+				//................................
+				j.isModified = false;
+			}
+
+			//Create cache for final flat data.
+			if(!arm.flatOffset) arm.flatOffset = new Float32Array( arm.joints.length * 8 );
+			return this;
+		}
+
+		static updatePose(e){
+			let i, j, arm = (e instanceof Armature)? e : e.com.Armature;
+
+			//==========================================
+			for(i=0; i < arm.joints.length; i++){
+				j = arm.joints[i];
+
+				//................................
+				if(j.isModified){
+					j.dqLocal.set( j.rotation, j.position );
+
+					if(!j.parent) j.dqWorld.copy( j.dqLocal );
+				}
+
+				if(j.parent && j.parent.isModified){
+					DualQuat.mul(j.parent.dqWorld, j.dqLocal, j.dqWorld); // parent.world * child.local = child.world
+					j.isModified = true;	// Set as modifed, so children know parent has an updated world dq
+				}
+
+				//................................
+				// offset = world * bindPose;
+				if(j.isModified) DualQuat.mul(j.dqWorld, j.dqBindPose, j.dqOffset);
+			}
+
+			//==========================================
+			// Reset all the modified states
+			for(j of arm.joints) j.isModified = false;
+
+			arm.isModified	= false;
+		}
+
+
+	////////////////////////////////////////////////////////////////////
+	// FLATTEN DATA
+	////////////////////////////////////////////////////////////////////
+		//Used by a renderable to get the offset joint values
+		//for deforming the mesh to simulate movement (animations)
+		static flatOffset(e, out = null){
+			let i, ii, dq,
+				arm = (e instanceof Armature)? e : e.com.Armature;
+				out = out || new Float32Array( arm.orderedJoints.length * 8 );
+
+			for(i=0; i < arm.orderedJoints.length; i++){
+				dq = arm.orderedJoints[i].dqOffset;
+				ii = i * 8;
+				out[ii+0] = dq[0];
+				out[ii+1] = dq[1];
+				out[ii+2] = dq[2];
+				out[ii+3] = dq[3];
+				out[ii+4] = dq[4];
+				out[ii+5] = dq[5];
+				out[ii+6] = dq[6];
+				out[ii+7] = dq[7];
+			}
+			return out;
+		}
+
+		//Used by ArmaturePreview
+		static flatWorldSpace(e, out = null){ // Used for visualizing bones
+			let i, ii, dq, 
+				arm = (e instanceof Armature)? e : e.com.Armature;
+				out = out || new Float32Array( arm.joints.length * 8 );
+
+			for(i=0; i < arm.joints.length; i++){
+				dq = arm.joints[i].dqWorld;
+				ii = i * 8;
+				out[ii+0] = dq[0];
+				out[ii+1] = dq[1];
+				out[ii+2] = dq[2];
+				out[ii+3] = dq[3];
+				out[ii+4] = dq[4];
+				out[ii+5] = dq[5];
+				out[ii+6] = dq[6];
+				out[ii+7] = dq[7];
+			}
+			return out;
+		}
+} Components(Armature);
+
+
+
 class Joint{
-	constructor(name, pos = null, rot = null){
-		this.name	= name;
-		this.order	= 0;
-		this.level	= 0;
-		this._isModified = false;
+	constructor(n,len=1){
+		this.name		= n;
+		this.level		= 0;
+		this.order		= 0;
+		this.parent		= null;
+		this.length		= len;
 
-		//..............................
-		//Position and Rotation should be private.
-		this._position = new Vec3();
-		this._rotation = new Quat();
-		if(pos) this._position.copy(pos);
-		if(rot) this._rotation.copy(pos);
+		//...................................
+		this.position	= new Vec3();
+		this.rotation	= new Quat();
 
-		//..............................
+		//...................................
 		//Dual Quaternions to Hold Rotation/Position data instead of using Matrices.
 		this.dqLocal	= new DualQuat(); // Local Pos/Rot
 		this.dqWorld	= new DualQuat(); // Local plus all parents up the tree
 		this.dqBindPose	= new DualQuat(); // Initial Pos/Rot of joint
 		this.dqOffset	= new DualQuat(); // World Pos minus BindPose = How much to move the joint actually.
 
-		//..............................
-		//Parent / Child Relations
-		this.children	= [];
-		this.parent		= null;
-		this._parentModified = false;
+		//...................................
+		this.isModified	= true;
 	}
 
-	//calc all the joint dq to be used in shaders
-	update(){
-		if(!this._parentModified && !this._isModified) return false;
-		var isUpdated = false;
-
-		//......................................
-		//If parent exists BUT its data hasn't been updated, Request Update.
-		if(this.parent != null && this.parent._isModified) this.parent.update();
-
-		//......................................
-		//Local Transformation has changed, Update Local DQ
-		if(this._isModified){
-			//Calc our local Pos/Rotation
-			this.dqLocal.set(this._rotation, this._position);
-
-			//Alert Children that their parent dq has been updated.
-			var child;
-			for(child of this.children) child.__parentModified();
-		}
-
-		//......................................
-		//Figure out the world matrix.
-		if(this.parent != null && (this._parentModified || this._isModified)){
-			// parent.world * child.local = child.world
-			DualQuat.mul(this.parent.dqWorld, this.dqLocal, this.dqWorld);
-			this._parentModified	= false;
-			this._isModified		= false;
-			isUpdated = true;
-
-		}else if(this.parent == null && this._isModified){	
-			// no parent, world == local
-			this.dqWorld.copy(this.dqLocal);
-			this._isModified = false;
-			isUpdated = true;
-		}
-
-		//......................................
-		//Calc the difference from the bindPose, which is whats sent to shaders
-		if(isUpdated){
-			// offset = world * bindPose;
-			DualQuat.mul(this.dqWorld, this.dqBindPose, this.dqOffset);
-		}
-
-		return isUpdated;
+	setRaw(x,y,z){
+		this.position.set(x,y,z);
+		this.isModified = true;
+		return this;
 	}
+}
 
-	//----------------------------------------------
-	// Get-Set Rotation and Position
-		get position(){ return new Vec3(this._position); }
-		get rotation(){ return new Quat(this._rotation); }
 
-		set position(v){ this._isModified = true; this._position.copy(v); }
-		set rotation(v){ this._isModified = true; this._rotation.copy(v); }
 
-		setPosition(x,y,z){		this._isModified = true; this._position.set(x,y,z);		return this; }
-		setRotation(x,y,z,w){	this._isModified = true; this._rotation.set(x,y,z,w);	return this; }
-	//end region
+//Compare function to sort entities based on the level of the hierarchy.
+function fSort_joint_lvl(a,b){
+	if(a.level == b.level)		return  0;	// A = B
+	else if(a.level < b.level)	return -1;	// A < B
+	else						return  1;	// A > B
+}
 
-	//----------------------------------------------
-	//Parent-Child
-		//This function should only be called by parent
-		//Hopefully this will help cascade down the tree that the world matrix needs to be updated.
-		__parentModified(){
-			if(this._parentModified) return;
-			this._parentModified = true;
-
-			if(this.children.length == 0) return;
-			for(var i=0; i < this.children.length; i++) this.children[i].__parentModified();
-		}
-
-		//get parent(){ this._parent; }
-		//set parent(p){
-			//if(this._parent != null){ this._parent.removeChild(this); }
-			//if(p != null) p.addChild(this); //addChild also sets parent
-		//}
-
-		addChild(name, pos=null, rot=null){
-			var j = new Joint(name, pos, rot);
-			j.level		= this.level + 1;
-			j.parent	= this;
-
-			this.children.push(j);
-			return j;
-		}
-
-		removeChild(c){ 
-			var i = this.children.indexOf(c);
-			if(i != -1){
-				this.children[i].parent = null;
-				this.children.splice(i,1);
-			}
-			return this;
-		}
-	//endregion
+function fSort_joint_order(a,b){
+	if(a.order == b.order)		return  0;	// A = B
+	else if(a.order < b.order)	return -1;	// A < B
+	else						return  1;	// A > B
 }
 
 export default Armature;

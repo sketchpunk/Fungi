@@ -41,29 +41,28 @@ class RenderSystem extends System{
 			.updateItem("globalTime",		Fungi.sinceStart )
 			.updateGL();
 
-
 		//............................................
-		let r,e, ary = ecs.queryEntities( QUERY_COM );
+		let d, e, ary = ecs.queryEntities( QUERY_COM );
 		gl.clear();	//Clear Frame Buffer
 
 		//Draw all active Entities
 		for( e of ary ){
 			//......................................
 			if(!e.active) continue;
+			d = e.com.Drawable;
 
-			// Check if there is anything to render
-			r = e.com.Drawable;
-			if(!r.vao || r.vao.elmCount == 0){
-				//console.log("VAO has no index/vertices or null : ", e.name);
-				continue;
-			}
+			//......................................			
+			if(! d.draw){ //Use standard drawing
 
-			//......................................
-			//console.log("Draw", e.name);
-			this.loadMaterial( r.material );
-			this.loadEntity( e );
+				// Check if there is anything to render
+				if(!d.vao || d.vao.elmCount == 0) continue; //console.log("VAO has no index/vertices or null : ", e.name);
 
-			this.draw( r );
+				//Load and Draw
+				this.loadMaterial( d.material );
+				this.loadEntity( e );
+				this.draw( d );
+			
+			}else d.draw( this, e, d ); //Component has custom drawing instructions
 		}
 	}
 
@@ -144,21 +143,21 @@ class RenderSystem extends System{
 
 	//===============================================================
 	// DRAWING
-		draw(r){
+		draw(d){
 			//...............................
-			if(this.vao !== r.vao){
-				this.vao = r.vao;
-				gl.ctx.bindVertexArray(r.vao.id);
+			if(this.vao !== d.vao){
+				this.vao = d.vao;
+				gl.ctx.bindVertexArray(d.vao.id);
 				//console.log("Draw", r.entityPtr.name, r.vao.elmCount);
 			}
 
 			//...............................
-			if(!r.vao.isInstanced){
-				if(r.vao.isIndexed)	gl.ctx.drawElements(r.drawMode, r.vao.elmCount, gl.ctx.UNSIGNED_SHORT, 0); 
-				else				gl.ctx.drawArrays(r.drawMode, 0, r.vao.elmCount);
+			if(!d.vao.isInstanced){
+				if(d.vao.isIndexed)	gl.ctx.drawElements(d.drawMode, d.vao.elmCount, gl.ctx.UNSIGNED_SHORT, 0); 
+				else				gl.ctx.drawArrays(d.drawMode, 0, d.vao.elmCount);
 			}else{
-				if(r.vao.isIndexed)	gl.ctx.drawElementsInstanced(r.drawMode, r.vao.elmCount, gl.ctx.UNSIGNED_SHORT, 0, r.vao.instanceCount); 
-				else				gl.ctx.drawArraysInstanced(r.drawMode, 0, r.vao.elmCount, r.vao.instanceCount);
+				if(d.vao.isIndexed)	gl.ctx.drawElementsInstanced(d.drawMode, d.vao.elmCount, gl.ctx.UNSIGNED_SHORT, 0, d.vao.instanceCount); 
+				else				gl.ctx.drawArraysInstanced(d.drawMode, 0, d.vao.elmCount, d.vao.instanceCount);
 			}
 
 			//...............................

@@ -36,6 +36,8 @@ http://diary.conewars.com/melting-shader-part-2/
 https://github.com/zz85/threejs-path-flow  (Deform mesh based on Spline)
 https://github.com/Erkaman/gl-rock  (Generate Rocks from Sphere)
 
+https://www.youtube.com/watch?v=jkBF_wvJTTk Bend World, Like make flat world look rounded.
+
 .......................................................
 Water
 https://www.youtube.com/watch?v=BZUdGqeOD0w 2D Water Ripples Coding train.
@@ -52,6 +54,8 @@ https://demo.marpi.pl/biomes/
 https://www.youtube.com/watch?v=ELpZW62HGVs  Coding Train
 
 https://www.youtube.com/watch?v=wbpMiKiSKm8
+
+https://www.youtube.com/watch?v=l7gIm8AVG_c  Planet Generator in Godot
 
 .......................................................
 Marching Squares
@@ -330,6 +334,8 @@ RAY MARCHING
 http://iquilezles.org/www/articles/distfunctions/distfunctions.htm  DISTANCE FORMULAS
 http://jamie-wong.com/2016/07/15/ray-marching-signed-distance-functions/
 
+https://www.youtube.com/watch?v=iNMD8Vr1tKg  DISTANCE RENDERING
+
 .......................................................
 Voxels
 http://www.gedge.ca/dev/2014/08/17/greedy-voxel-meshing   Improvements to Rendering
@@ -399,6 +405,12 @@ https://www.youtube.com/watch?v=OJxEcs0w_kE
 Binary Tree
 https://www.youtube.com/watch?v=ZNH0MuQ51m4
 
+
+.......................................................
+Web Components
+
+https://ayushgp.github.io/html-web-components-using-vanilla-js-part-2/
+https://developer.mozilla.org/en-US/docs/Web/Web_Components
 
 .......................................................
 https://www.blendernation.com/2018/04/08/anime-stylized-look-in-blender-grease-pencil-neko-girl/#prettyPhoto

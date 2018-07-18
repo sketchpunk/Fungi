@@ -1,6 +1,8 @@
 //http://wscg.zcu.cz/wscg2012/short/A29-full.pdf
 //https://github.com/toji/gl-matrix/issues/221
 //https://github.com/stefnotch/gl-matrix/blob/master/src/gl-matrix/quat2.js
+//https://github.com/toji/gl-matrix/blob/master/src/gl-matrix/quat2.js
+
 class DualQuat extends Float32Array{
 	constructor(q,t){
 		super(8);
