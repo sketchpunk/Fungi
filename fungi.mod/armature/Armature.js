@@ -25,6 +25,12 @@ class Armature{
 			return e;
 		}
 
+		static finalize(e){
+			let arm = (e instanceof Armature)? e : e.com.Armature;
+			Armature.sortJoints(arm).bindPose(arm);
+			return e;
+		}
+
 
 	////////////////////////////////////////////////////////////////////
 	// JOINT FUNCTIONS
@@ -71,6 +77,9 @@ class Armature{
 				// Calc our local Pos/Rotation
 				j.dqLocal.set( j.rotation, j.position );
 
+				j.bindPosition.copy( j.position ); //Save to use as a starting value Or to reset joint
+				j.bindRotation.copy( j.rotation );
+
 				//................................
 				// Calculate the World Pos/Rotation
 				if(j.parent) 	DualQuat.mul(j.parent.dqWorld, j.dqLocal, j.dqWorld);	// parent.world * child.local = child.world
@@ -99,13 +108,13 @@ class Armature{
 				j = arm.joints[i];
 
 				//................................
-				if(j.isModified){
+				if(j.isModified){ //console.log(j.name);
 					j.dqLocal.set( j.rotation, j.position );
 
 					if(!j.parent) j.dqWorld.copy( j.dqLocal );
 				}
 
-				if(j.parent && j.parent.isModified){
+				if(j.parent && (j.parent.isModified || j.isModified)){
 					DualQuat.mul(j.parent.dqWorld, j.dqLocal, j.dqWorld); // parent.world * child.local = child.world
 					j.isModified = true;	// Set as modifed, so children know parent has an updated world dq
 				}
@@ -184,19 +193,34 @@ class Joint{
 		this.position	= new Vec3();
 		this.rotation	= new Quat();
 
+		this.bindPosition = new Vec3();
+		this.bindRotation = new Quat();
+
 		//...................................
 		//Dual Quaternions to Hold Rotation/Position data instead of using Matrices.
 		this.dqLocal	= new DualQuat(); // Local Pos/Rot
 		this.dqWorld	= new DualQuat(); // Local plus all parents up the tree
-		this.dqBindPose	= new DualQuat(); // Initial Pos/Rot of joint
+		this.dqBindPose	= new DualQuat(); // Initial Pos/Rot of joint in World Space
 		this.dqOffset	= new DualQuat(); // World Pos minus BindPose = How much to move the joint actually.
 
 		//...................................
 		this.isModified	= true;
 	}
 
-	setRaw(x,y,z){
+	setPos(x,y,z){
 		this.position.set(x,y,z);
+		this.isModified = true;
+		return this;
+	}
+
+	setRot(q){
+		this.rotation.copy(q);
+		this.isModified = true;
+		return this;
+	}
+
+	mulRot(q){
+		this.rotation.mul(q);
 		this.isModified = true;
 		return this;
 	}

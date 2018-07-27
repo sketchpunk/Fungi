@@ -29,7 +29,79 @@ class ArmaturePreview{
 		return this;
 	}
 
-	static vao(e, vName, verts){
+	static useDiamond(e, name){
+		const	pxz	= 0.06,
+				py	= 0.1;
+
+		const verts	= [
+			0, 0, 0, 0,				// 0 Bottom
+			0, 1, 0, 1,				// 1 Top
+			-pxz, py,  pxz, 0,		// 2 Bot Left
+			 pxz, py,  pxz, 0,		// 3 Bot Right
+			 pxz, py, -pxz, 0,		// 4 Top Right
+			-pxz, py, -pxz, 0		// 5 Top Left
+		];
+
+		const faces = [ 1,2,3, 1,3,4,  1,4,5,  1,5,2,
+						 0,3,2, 0,4,3,  0,5,4,  0,2,5 ];
+		
+		e.com.Drawable.vao			= ArmaturePreview.vao(e, name, verts, faces);
+		e.com.Drawable.drawMode		= Fungi.TRI;
+		e.com.Armature.vaoPreview	= e.com.Drawable.vao;
+		return this;
+	}
+
+	static useDiamondWire(e, name){
+		const	pxz	= 0.06,
+				py	= 0.1;
+
+		const verts	= [
+			0, 0, 0, 0,				// 0 Bottom
+			0, 1, 0, 1,				// 1 Top
+			-pxz, py,  pxz, 0,		// 2 Bot Left
+			 pxz, py,  pxz, 0,		// 3 Bot Right
+			 pxz, py, -pxz, 0,		// 4 Top Right
+			-pxz, py, -pxz, 0		// 5 Top Left
+		];
+
+		const faces = [ 1,2,1,3,1,4,1,5,
+						0,2,0,3,0,4,0,5,
+						2,3,3,4,4,5,5,2 ];
+		
+		e.com.Drawable.vao			= ArmaturePreview.vao(e, name, verts, faces);
+		e.com.Drawable.drawMode		= Fungi.LINE;
+		e.com.Armature.vaoPreview	= e.com.Drawable.vao;
+		return this;
+	}
+
+
+	static useCircleLine(e, name){
+		const radius	= 0.08;
+		const seg		= 10;
+		let c, s, a,
+			piOffset	= -Math.PI/2,
+			pi2			= Math.PI*2,
+			segInv		= 1 / seg,
+			verts		= [];
+
+		verts.push( 0, 1, -radius, 1);
+
+		for(let i=0; i <= seg; i++){
+			a = piOffset + pi2 * segInv * i;
+			c = Math.cos(a);
+			s = Math.sin(a);
+
+			verts.push( radius*c, 0, radius*s, 0);
+		}
+
+		e.com.Drawable.vao			= ArmaturePreview.vao(e, name, verts);
+		e.com.Drawable.drawMode		= Fungi.LINE_STRIP;
+		e.com.Armature.vaoPreview	= e.com.Drawable.vao;
+		return this;
+	}
+
+
+	static vao(e, vName, verts, faces = null){
 		let arm = (e instanceof Armature)? e : e.com.Armature;
 		ArmaturePreview.flattenData(arm);
 
@@ -47,6 +119,8 @@ class ArmaturePreview{
 			.floatBuffer("bOffset", arm.flatWorldSpace, ATTRIB_QD_ROT_LOC, 4, 32, 0, true, true)	// QR (Rotation)
 			.partitionFloatBuffer(ATTRIB_QD_POS_LOC, 4, 32, 16, true)								// QD (Translation)
 			.setInstanced( arm.joints.length );
+
+		if(faces) oVao.indexBuffer("bIndex", faces)
 
 		let vao = oVao.finalize(name);
 		oVao.cleanup();

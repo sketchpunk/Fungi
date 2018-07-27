@@ -13,7 +13,7 @@ class ArmatureSystem extends System{
 		let e, ary = ecs.queryEntities( QUERY_COM );
 		for( e of ary ){
 			if(!e.com.Armature.isModified) continue;
-
+			//console.log(e.name);
 			//if one joint has changed, then update pose
 			Armature.updatePose( e );
 			Armature.flatOffset(e, e.com.Armature.flatOffset )

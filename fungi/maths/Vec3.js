@@ -220,7 +220,13 @@ class Vec3 extends Float32Array{
 		//	return out;
 		//}
 
-		static add(a,b){ return new Vec3( a[0] + b[0], a[1] + b[1], a[2] + b[2] ); }
+		static add(a, b, out){ 
+			out = out || new Vec3();
+			out[0] = a[0] + b[0];
+			out[1] = a[1] + b[1];
+			out[2] = a[2] + b[2];
+			return out;
+		}
 		static sub(a, b, out){ 
 			out = out || new Vec3();
 			out[0] = a[0] - b[0];

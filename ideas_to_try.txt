@@ -26,6 +26,37 @@ https://www.3dgep.com/
 https://blogs.msdn.microsoft.com/uk_faculty_connection/2018/05/08/entity-component-system-in-unity-a-tutorial/
 https://www.gamedev.net/articles/programming/general-and-gameplay-programming/implementing-component-entity-systems-r3382
 
+https://www.ambiera.com/copperlicht/?v=1.15 JS Game Engine
+
+https://github.com/eligrey/FileSaver.js/
+
+https://github.com/schteppe/cannon.js Physics Engine
+
+https://www.youtube.com/watch?v=dRthdBr46cs  Quadruped Animation Samples
+
+
+.......................................................
+Curves
+https://www.desmos.com/calculator/hycpcbwtbq cubic spline
+
+https://www.desmos.com/calculator/cahqdxeshd Bezier curve
+
+https://www.desmos.com/calculator/029zrabdnc
+
+https://steemit.com/mathematics/@mes/polar-coordinates-graphing-with-polar-curves-with-desmos-calculator
+
+https://www.youtube.com/watch?v=mr5xkf6zSzk 1D Nonlinear Transformations - AD THE END HAS SUPER SIMPLE BEZIER VERY COOL.
+
+.......................................................
+Calculate the circumference of the wheel. Use the formula: c = 2_pi_r, where c is the circumference, r is the radius, and pi can be approximated by 3.14. Following the example, if the car wheel has a radius of 0.3 meters, then the circumference is equal to:
+0.3 x 3.14 x 2 = 1.89 meters.
+
+Calculate the wheel speed in revolutions per minute. To do this, use the formula:
+revolutions per minute = speed in meters per minute / circumference in meters.
+Following the example, the number of revolutions per minute is equal to:
+
+1,877 / 1.89 = 993 revolutions per minute.
+
 .......................................................
 Triplanar Shaders
 https://medium.com/@bgolus/normal-mapping-for-a-triplanar-shader-10bf39dca05a
@@ -56,6 +87,8 @@ https://www.youtube.com/watch?v=ELpZW62HGVs  Coding Train
 https://www.youtube.com/watch?v=wbpMiKiSKm8
 
 https://www.youtube.com/watch?v=l7gIm8AVG_c  Planet Generator in Godot
+
+https://github.com/pissang/little-big-city  AWESOME Planet Gen
 
 .......................................................
 Marching Squares
@@ -107,6 +140,8 @@ https://www.youtube.com/watch?v=YbWYc3W43EI LASER
 
 https://www.youtube.com/watch?v=ewXDr-1go9U  hologram shader with texture
 
+https://www.youtube.com/watch?v=wt2yYnBRD3U  Sand Rendering
+
 .......................................................
 Maze
 
@@ -123,6 +158,23 @@ https://www.youtube.com/watch?v=-UJpgZucQGs&list=PL9ZqDLjDY8PmY7rUNIniwxvTqxrQwM
 Frustum Culling
 http://www.lighthouse3d.com/tutorials/view-frustum-culling/
 
+
+.......................................................
+Procedural Animation
+
+https://codepen.io/MittenedWatchmaker/pen/zLqdaE?editors=0011
+
+https://youtu.be/KLjTU0yKS00
+
+https://youtu.be/wjn19jBzJCE
+
+https://www.youtube.com/watch?v=UNoX65PRehA&t=331s
+
+https://www.youtube.com/watch?v=LNidsMesxSE&t=970s
+
+https://www.youtube.com/watch?v=6TB62YKHwRQ&t=603s
+
+https://www.youtube.com/watch?v=_1j5Tf6ulII
 
 .......................................................
 Lighting / Shadows
@@ -199,6 +251,8 @@ http://prideout.net/blog/?p=22 TOON SHADING VERY GOOD
 https://www.shaderoo.org/?shader=8Yw3Q8 SKETCHY CROS HATCHING
 
 https://www.youtube.com/watch?v=jJcSbixSy5c
+
+https://www.youtube.com/watch?v=McmLtgY6Xuw  Curved World Shader
 
 .......................................................
 Particles
@@ -277,17 +331,14 @@ https://www.youtube.com/watch?v=vZp0ETdD37E
 https://www.youtube.com/watch?v=rQG9aUWarwE 2D Over the TOP Field of view, VERY COOL.
 
 .......................................................
-Armature
+Armature Kinematics Inverse Forward
 http://physicsforgames.blogspot.com/2010/06/blending-walkrun-cycle.html
 
 https://www.alanzucconi.com/2018/05/02/ik-2d-1/  Inverse Kinematics in 2D
 https://www.alanzucconi.com/2018/05/02/ik-2d-2/
 
-.......................................................
-PHYSICS
-http://codeflow.org/entries/2010/nov/29/verlet-collision-with-impulse-preservation/
+http://enesbot.me/pages/kinematics.html
 
-https://www.alanzucconi.com/2017/04/17/procedural-animations/
 https://www.alanzucconi.com/2017/04/12/tentacles/ Inverse Kinematics with TENTACLES, also spiders
 
 https://www.youtube.com/watch?v=WHn2ouKKSfs  Coding Math Kinematics and Inverse 
@@ -295,6 +346,13 @@ https://www.youtube.com/watch?v=WHn2ouKKSfs  Coding Math Kinematics and Inverse
 https://www.youtube.com/watch?v=xXjRlEr7AGk Kinematics CodingTrain
 https://www.youtube.com/watch?v=UNoX65PRehA
 https://www.youtube.com/watch?v=hbgDqyy8bIw
+
+.......................................................
+PHYSICS
+http://codeflow.org/entries/2010/nov/29/verlet-collision-with-impulse-preservation/
+
+https://www.alanzucconi.com/2017/04/17/procedural-animations/
+
 
 https://www.youtube.com/watch?v=E67e0RX-7Ew  Coding Train - Verlet Physics
 
@@ -328,6 +386,8 @@ http://www.opengl-tutorial.org/miscellaneous/math-cheatsheet/
 https://www.3dgep.com/understanding-quaternions/
 
 https://infinityplusonemath.wordpress.com/
+
+https://www.youtube.com/watch?v=0A4P6MaQxTs  Math 4 Game devs, Cool Equations
 
 .......................................................
 RAY MARCHING

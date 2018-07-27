@@ -118,8 +118,8 @@ class Quaternion extends Float32Array{
 			return this;
 		}
 
-		mul(q, out){ return Quaternion.multi( out || this, this, q ); }	 	// THIS * Q
-		pmul(q, out){ return Quaternion.multi( out || this , q, this ); }	// Q * THIS
+		mul(q, out){ return Quaternion.mul( out || this, this, q ); }	 	// THIS * Q
+		pmul(q, out){ return Quaternion.mul( out || this , q, this ); }	// Q * THIS
 
 		//AXIS MUST BE NORMALIZED.
 		//mult(this, setAxisAngle(axis, angle) )

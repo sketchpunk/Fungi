@@ -50,6 +50,8 @@
 	}
 
 	void main(void){
+		gl_PointSize = 5.0;
+		
 		if(a_position.w == 0.0)			v_color = vec3(1.0,0.0,0.0);
 		else if(a_position.w == 1.0)	v_color = vec3(0.0,1.0,0.0);
 		else if(a_position.w == 2.0)	v_color = vec3(0.0,0.0,1.0);
