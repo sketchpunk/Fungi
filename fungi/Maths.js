@@ -93,6 +93,34 @@ class Maths{
 		}
 
 		static squareWave (v, min=0, max=1, period=1){ return ( (v % period) <  (period * 0.5) )? max : min; }
+
+		//https://blog.demofox.org/2014/08/28/one-dimensional-bezier-curves/
+		//1D Cubic (3rd) Bezier through A, B, C, D where a Start and d is end are assumed to be 0 and 1.
+		static normalizedBezier3(b, c, t){
+			let s	= 1.0 - t,
+				t2	= t * t,
+				s2	= s * s,
+				t3	= t2 * t;
+			return (3.0 * b * s2 * t) + (3.0 * c * s * t2) + t3;
+		}
+
+		static normalizedBezier7(b, c, d, e, f, g, t){
+			let s	= 1.0 - t,
+				t2	= t * t,
+				s2	= s * s,
+				t3	= t2 * t,
+				s3	= s2 * s,
+				t4	= t2 * t2,
+				s4	= s2 * s2,
+				t5	= t3 * t2,
+				s5	= s3 * s2,
+				t6	= t3 * t3,
+				s6	= s3 * t3,
+				t7 	= t3 * t2 * t2;
+
+			return 	(7.0 * b * s6 * t) + (21.0 * c * s5 * t2) + (35.0 * d * s4 * t3) +
+					(35.0 * e * s3 * t4) + (21.0 * f * s2 * t5) + (7.0 * g * s * t6) + t7;
+		}
 }
 
 ////////////////////////////////////////////////////////////////////

@@ -131,6 +131,20 @@ class Armature{
 			arm.isModified	= false;
 		}
 
+		static forceUpdateJoint(j){
+			j.isModified = false;
+
+			//Local Transform
+			j.dqLocal.set( j.rotation, j.position );
+			
+			//World Transform
+			if(j.parent)	DualQuat.mul(j.parent.dqWorld, j.dqLocal, j.dqWorld); // parent.world * child.local = child.world
+			else 			j.dqWorld.copy( j.dqLocal );
+
+			//Offset Transform
+			DualQuat.mul(j.dqWorld, j.dqBindPose, j.dqOffset); //offset = world * bindPose;
+		}
+
 
 	////////////////////////////////////////////////////////////////////
 	// FLATTEN DATA

@@ -1,3 +1,4 @@
+import Fungi 			from "../../fungi/Fungi.js";
 import { System }		from "../../fungi/Ecs.js";
 import Armature			from "./Armature.js";
 import ArmaturePreview	from "./ArmaturePreview.js";
@@ -24,6 +25,8 @@ class ArmatureSystem extends System{
 									.updateBuffer( e );
 		}
 	}
+
+	static init(){ Fungi.ecs.addSystem(new ArmatureSystem, 50); }
 }
 
 export default ArmatureSystem;

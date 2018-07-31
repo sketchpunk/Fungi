@@ -25,7 +25,7 @@ class Weights{
 			bones	= Weights.getBoneInfoFromJoints(arm),
 			bCnt	= bones.length,
 			maxLen	= range * range; //Square it to get lengthSqr for comparison
-
+//console.log(bones);
 		let i, 						// Index 
 			b,						// Bone Ref
 			t,						// Projection Value
@@ -44,6 +44,7 @@ class Weights{
 				//....................................
 				Vec3.sub(v, b.vStart, bvLen);						// get b for projection
 				t = Vec3.dot( b.vLength, bvLen ) * b.fLenSqrInv;	// proj = dot(a,b) / dot(a,a);
+				//console.log("T", b.fLenSqrInv);
 
 				// if out of bounds, then not parallel to bone.
 				// If by chance its 1 BUT there is a next bone, exit too.
@@ -73,6 +74,8 @@ class Weights{
 
 				v	.initJoints( i, nextIdx, 0, 0 )
 					.initJointWeights( thisWeight, nextWeight, 0, 0 );
+
+				//console.log(i, nextIdx, thisWeight, nextWeight);
 			}
 		}
 	}
@@ -93,9 +96,13 @@ class Weights{
 		for(let j of arm.orderedJoints){
 			//..................................
 			// Calc the 2 points of a bone.
-			DualQuat.getTranslation(b0, j.dqWorld);	// Get World Space Position of Joint from DQ
+			DualQuat.getTranslation(j.dqWorld, b0);	// Get World Space Position of Joint from DQ
 			v.copy(Vec3.UP).scale(j.length);		// Vector Length of the Bone
-			Quat.rotateVec3(j.dqWorld, v, v)		// Rotate the direction based on World Rotation from DQ	
+
+													// Rotate the direction based on World Rotation from DQ	
+			if(j.parent)	Quat.rotateVec3(j.parent.dqWorld, v, v);
+			else 			Quat.rotateVec3(j.dqWorld, v, v);
+
 			b0.add(v, b1);							// Add Vector Length to Joint Position
 
 			//..................................

@@ -53,6 +53,8 @@ class RightMouseSystem extends System{
 		// Call Handler
 		if(mode != MODE_NONE && this.handler) this.handler(mode);
 	}
+
+	static init(onHandler, priority = 10){ Fungi.ecs.addSystem(new RightMouseSystem(onHandler), priority); }
 }
 
 RightMouseSystem.MODE_DOWN	= MODE_DOWN;

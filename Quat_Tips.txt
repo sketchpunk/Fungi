@@ -1,0 +1,14 @@
+...........................................................
+How to do a lookRotation but not moving forward but moving up at the direction
+
+const QUAT_FWD2UP = new Quat().setAxisAngle(Vec3.LEFT, Maths.toRad(90));
+Quat.lookRotation(vDir, Vec3.UP, q);
+Quat.mul(j.rotation, q, QUAT_FWD2UP);
+
+OR 
+
+Quat.lookRotation(Vec3.FORWARD, vDir, j.rotation); //This locks forward, this is more of a X look for 2D
+
+
+...........................................................
+When Combinding (multipling) Quaternions, If things don't work, flip the operation. Sometimes newRotation * oldRotation works correctly like in rolling ball tutorial i made instead of oldRotation * newRotation.

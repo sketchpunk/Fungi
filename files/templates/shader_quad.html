@@ -1,51 +1,61 @@
+
 <!DOCTYPE html>
-<html><head>
-	<style>
-		html,body{margin:0px; padding:0px; width:100%; height:100%;}
-		body{background-color:#404040;}
-		canvas{border:0px solid green;}
-		div{display:flex; width:100%; height:100%; align-items:center; justify-content:center;}
-		#lblFPS{position:absolute; top:0px; left:0px; width:40px; padding:5px 5px;
-			background:gray; color:white; font-weight:bold; text-align:center; font-family:arial; font-size:13px; }
-	</style>
+<html>
+	<head>
+		<style>
+			html,body{margin:0px; padding:0px; width:100%; height:100%;}
+			body{background-color:#404040;}
+			canvas{border:0px solid green;}
+			div{display:flex; width:100%; height:100%; align-items:center; justify-content:center;}
+			#lblFPS{position:absolute; top:0px; left:0px; width:40px; padding:5px 5px;
+				background:gray; color:white; font-weight:bold; text-align:center; font-family:arial; font-size:13px; }
+		</style>
 
-	<script type="module">
-		import Fungi		from "/fungi/Fungi.js";
-		import System		from "/fungi/System.js";
-		import Quad			from "/fungi/primitives/Quad.js";
-		import { LoadInlineShader } from "/fungi/Shader.js";
+		<script type="module">
+			import Fungi		from "/fungi/Fungi.js";
+			import App			from "/fungi/App.js";
+			import Api			from "/fungi/Api.js";
 
-		window.addEventListener("load",function(){
-			System.beginWithResources([
-				{ type:"shader", file:"/fungi/shaders/VecWColor.txt" }
-			]).then( async()=>{ 
-				await System.startUp(onRender); 
-				LoadInlineShader("inline_shader");
-				onInit();
-			}).catch( err=>console.log("Catch",err) );
-		});
+			import Quad			from "/fungi/primitives/Quad.js";
+			import { LoadInlineShader } from "/fungi/Shader.js";
 
-		function onRender(dt, ss){ System.update().renderScene(); }
-		function onInit(){
-			Fungi.camera.setPosition(0,1,1.9).setDegrees(-0,"x");
-			Fungi.scene.add( Quad("MatShader").setPosition(0,1,0) );
-			Fungi.loop.start();
-		}
-	</script>
-</head><body>
 
-<div><canvas id="FungiCanvas"></canvas></div>
-<span id="lblFPS">0</div>
+			window.addEventListener("load",function(){
+				App.launch(onRender, [
+					{ type:"shader", file:"/fungi/shaders/VecWColor.txt" },
+				])	.then( ()=>App.loadScene() )
+					.then( ()=>{
+						LoadInlineShader("inline_shader");
+						onInit(); 
+					}).catch( err=>console.log("err", err) );
+			});
+
+			function onRender(dt, ss){ Fungi.ecs.updateSystems(); }
+			function onInit(){
+				//........................				
+				Fungi.camera.com.Transform.setPosition(0,2,5).setDegrees(-20,"x");
+
+				//........................
+				var eQuad = Quad("MatShader");
+
+				//........................
+				Fungi.loop.start();
+			}
+		</script>
+	</head>
+<body>
+	<div><canvas id="FungiCanvas"></canvas></div>
+	<span id="lblFPS">0</div>
 
 <script id="inline_shader" type="plain/text">
 	<shader>{ 
 		"name"		: "Shader",
+		"ubo"		: [ "UBOTransform", "UBOModel" ],
 		"options"	: { "modelMatrix":true, "normalMatrix":false },
-		"ubo"		: [ "UBOTransform" ],
 		"uniforms"	: []
 	}<\shader>
 	/*
-		{ "name":"u_", "type":"sample2D" },
+		{ "name":"u_", "type":"sampler2D" },
 		{ "name":"u_", "type":"vec3" },
 		{ "name":"u_", "type":"float" },
 	*/
@@ -71,15 +81,16 @@
 			vec2	screenSize;
 		};
 
-		uniform mat4 u_modelMatrix;
+		uniform UBOModel{
+			mat4 	modelMatrix;
+			mat3	normalMatrix;
+		};
 
 		out vec2 v_uv;
 
 		void main(void){
 			v_uv = a_uv;
-
-
-			gl_Position	= projViewMatrix * u_modelMatrix * vec4(a_position,1.0);
+			gl_Position = projViewMatrix * modelMatrix * vec4(a_position.xyz, 1.0);
 		}
 	<\vertex>
 
@@ -96,4 +107,6 @@
 		}
 	<\fragment>
 </script>
-</body></html>
+
+</body>
+</html>

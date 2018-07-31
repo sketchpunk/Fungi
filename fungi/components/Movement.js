@@ -6,9 +6,9 @@ class Movement{
 		this.mass			= 1;
 		this.velocity		= new Vec3();
 		this.acceleration	= new Vec3();
-		this.useGravity		= true;
-		this.useFriction	= true;
-		this.doOrientation	= true;
+		this.useGravity		= false;
+		this.useFriction	= false;
+		this.doOrientation	= false;
 	}
 
 	set(uGrav, uFric){

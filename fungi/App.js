@@ -21,7 +21,8 @@ import Api 				from "./Api.js";
 	DynamicVao			21
 	DynamicVoxelSystem	21
 
-	ArmatureSystem		100
+	ArmatureSystem		50
+
 	TransformSystem		100
 	RenderSystem		200
 */
@@ -190,5 +191,12 @@ async function useTransformHierarchy( priority=100 ){
 	}
 }
 
+async function useMovement( priority=30 ){
+	await Promise.all([
+		Assemblages.add("Move", ["Movement", "Drawable", "Transform"]),
+		import("./systems/MovementSystem.js").then( mod=>{ Fungi.ecs.addSystem(new mod.default(), priority); })
+	]);	
+}
 
-export default { launch, loadScene, loadFPS, useBehaviours, useDynamicVao, useTransformHierarchy };
+
+export default { launch, loadScene, loadFPS, useBehaviours, useDynamicVao, useTransformHierarchy, useMovement };

@@ -3,6 +3,8 @@
 //https://github.com/stefnotch/gl-matrix/blob/master/src/gl-matrix/quat2.js
 //https://github.com/toji/gl-matrix/blob/master/src/gl-matrix/quat2.js
 
+import Vec3 from "./Vec3.js";
+
 class DualQuat extends Float32Array{
 	constructor(q,t){
 		super(8);
@@ -152,10 +154,11 @@ class DualQuat extends Float32Array{
 		return out;
 	}
 
-	static getTranslation(out,a){    
+	static getTranslation(a, out){
 		var ax =  a[4], ay =  a[5], az =  a[6], aw = a[7],
 			bx = -a[0], by = -a[1], bz = -a[2], bw = a[3];
 
+		out = out || new Array(3);
 		out[0] = (ax * bw + aw * bx + ay * bz - az * by)*2;
 		out[1] = (ay * bw + aw * by + az * bx - ax * bz)*2;
 		out[2] = (az * bw + aw * bz + ax * by - ay * bx)*2;
@@ -326,6 +329,19 @@ class DualQuat extends Float32Array{
 
 		return out;
 	}
+
+	static transformVec3(dq, va, out = null){
+		let pos	= DualQuat.getTranslation( dq );
+		out		= out || new Vec3();
+
+		Vec3.transformQuat(va, dq, out);
+		out[0] += pos[0];
+		out[1] += pos[1];
+		out[2] += pos[2];
+
+		return out;
+	}
+
 
 /**
  * Performs a linear interpolation between two dual quats's

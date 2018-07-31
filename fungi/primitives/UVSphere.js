@@ -1,17 +1,19 @@
-import gl			from "../gl.js";
-import Vao			from "../Vao.js";
-import Renderable	from "../rendering/Renderable.js";
+import Fungi		from "../Fungi.js";
+import Vao 			from "../Vao.js";
 
 
 function UVSphere(matName, name="UVSphere"){
-	var d 		= UVSphere.vertData(),
-		vao 	= Vao.standardRenderable(name, 3, d.vertices, d.normals, d.uv, d.index),
-		entity	= new Renderable(name, vao, matName);
-
-	entity.drawMode = gl.ctx.TRIANGLE_STRIP;
-	return entity;
+	var e = Fungi.ecs.newAssemblage("Draw",name);
+	e.com.Drawable.vao 		= UVSphere.vao();
+	e.com.Drawable.material	= Fungi.getMaterial(matName);
+	e.com.Drawable.drawMode = Fungi.TRI_STRIP;
+	return e;
 }
 
+UVSphere.vao = function(name="UVSphere"){
+	var d = UVSphere.vertData();
+	return Vao.standardRenderable(name, 3, d.vertices, d.normals, d.uv, d.index);
+}
 
 UVSphere.vertData = function(){
 	var yLen	= 18,

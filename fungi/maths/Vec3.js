@@ -307,6 +307,45 @@ class Vec3 extends Float32Array{
 			return out;
 		}
 
+		//https://github.com/toji/gl-matrix/blob/master/src/gl-matrix/vec3.js#L514
+		static transformQuat(a, q, out) {
+			// benchmarks: https://jsperf.com/quaternion-transform-vec3-implementations-fixed
+			let qx	= q[0], qy	= q[1], qz	= q[2], qw = q[3],
+				x	= a[0], y	= a[1], z	= a[2];
+
+			// var qvec = [qx, qy, qz];
+			// var uv = vec3.cross([], qvec, a);
+			let uvx = qy * z - qz * y,
+				uvy = qz * x - qx * z,
+				uvz = qx * y - qy * x;
+			// var uuv = vec3.cross([], qvec, uv);
+			let uuvx = qy * uvz - qz * uvy,
+				uuvy = qz * uvx - qx * uvz,
+				uuvz = qx * uvy - qy * uvx;
+			// vec3.scale(uv, uv, 2 * w);
+			let w2 = qw * 2;
+			uvx *= w2;
+			uvy *= w2;
+			uvz *= w2;
+			// vec3.scale(uuv, uuv, 2);
+			uuvx *= 2;
+			uuvy *= 2;
+			uuvz *= 2;
+
+			// return vec3.add(out, a, vec3.add(out, uv, uuv));
+			out = out || new Vec3();
+			out[0] = x + uvx + uuvx;
+			out[1] = y + uvy + uuvy;
+			out[2] = z + uvz + uuvz;
+			return out;
+		}
+
+		static createArray(len){
+			var i, ary = new Array(len);
+			for(i=0; i < len; i++) ary[i] = new Vec3();
+			return ary;
+		}
+
 		//Another Equation for Linear Interpolation : (1 - t) * v0 + t * v1;
 		//Todo, see if this one work better then whats there.
 		/*
@@ -325,6 +364,7 @@ class Vec3 extends Float32Array{
 		}
 		*/
 	//endregion
+
 }
 
 
@@ -340,3 +380,32 @@ Vec3.ZERO		= [0,0,0];
 
 //..........................................
 export default Vec3;
+
+
+/**
+ * Performs a bezier interpolation with two control points
+ *
+ * @param {vec3} out the receiving vector
+ * @param {vec3} a the first operand
+ * @param {vec3} b the second operand
+ * @param {vec3} c the third operand
+ * @param {vec3} d the fourth operand
+ * @param {Number} t interpolation amount, in the range [0-1], between the two inputs
+ * @returns {vec3} out
+
+export function bezier(out, a, b, c, d, t) {
+  let inverseFactor = 1 - t;
+  let inverseFactorTimesTwo = inverseFactor * inverseFactor;
+  let factorTimes2 = t * t;
+  let factor1 = inverseFactorTimesTwo * inverseFactor;
+  let factor2 = 3 * t * inverseFactorTimesTwo;
+  let factor3 = 3 * factorTimes2 * inverseFactor;
+  let factor4 = factorTimes2 * t;
+
+  out[0] = a[0] * factor1 + b[0] * factor2 + c[0] * factor3 + d[0] * factor4;
+  out[1] = a[1] * factor1 + b[1] * factor2 + c[1] * factor3 + d[1] * factor4;
+  out[2] = a[2] * factor1 + b[2] * factor2 + c[2] * factor3 + d[2] * factor4;
+
+  return out;
+}
+ */

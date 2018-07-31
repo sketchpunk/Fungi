@@ -35,6 +35,8 @@ https://github.com/schteppe/cannon.js Physics Engine
 https://www.youtube.com/watch?v=dRthdBr46cs  Quadruped Animation Samples
 
 
+http://hacksoflife.blogspot.com/2011/01/derivatives-i-discontinuities-and.html  Derivatives on GLSL, dFdx
+
 .......................................................
 Curves
 https://www.desmos.com/calculator/hycpcbwtbq cubic spline
@@ -176,6 +178,9 @@ https://www.youtube.com/watch?v=6TB62YKHwRQ&t=603s
 
 https://www.youtube.com/watch?v=_1j5Tf6ulII
 
+https://twitter.com/woodleynye/status/1023809117192769538 cool sliding and running animations
+https://twitter.com/woodleynye/status/1022281362856792064 cool looking character, Might be good mesh
+https://twitter.com/woodleynye/status/1020804911863218177 mesh
 .......................................................
 Lighting / Shadows
 
@@ -253,6 +258,8 @@ https://www.shaderoo.org/?shader=8Yw3Q8 SKETCHY CROS HATCHING
 https://www.youtube.com/watch?v=jJcSbixSy5c
 
 https://www.youtube.com/watch?v=McmLtgY6Xuw  Curved World Shader
+
+https://andreashackel.de/tech-art/stripes-shader-1/  Very cool shrips, curving them and warping them.
 
 .......................................................
 Particles

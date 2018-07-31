@@ -14,6 +14,7 @@ class InputTracker{
 		this.arrowDown		= false;
 		this.arrowLeft		= false;
 		this.arrowRight		= false;
+		this.spaceBar		= false;
 
 		//.............................
 		//Mouse State Data
@@ -139,7 +140,8 @@ class InputTracker{
 		this.keyState[ e.keyCode ] = true; 
 		this.keyCount++;
 
-		switch(e.keyCode){ //space:32
+		switch(e.keyCode){
+			case 32: this.spaceBar		= true; break;
 			case 37: this.arrowLeft		= true; break;
 			case 38: this.arrowUp		= true; break;
 			case 39: this.arrowRight	= true; break;
@@ -151,6 +153,7 @@ class InputTracker{
 		this.keyState[ e.keyCode ] = false;
 		this.keyCount--;
 		switch(e.keyCode){
+			case 32: this.spaceBar		= false; break;
 			case 37: this.arrowLeft		= false; break;
 			case 38: this.arrowUp		= false; break;
 			case 39: this.arrowRight	= false; break;

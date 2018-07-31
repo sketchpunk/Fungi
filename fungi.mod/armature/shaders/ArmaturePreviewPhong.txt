@@ -6,7 +6,7 @@
 }<\shader>
 	
 <materials>[
-	{ "name":"ArmaturePreviewPhong", "options": { "depthTest":false } }
+	{ "name":"ArmaturePreviewPhong", "options": { "depthTest":true } }
 ]<\materials>
 	
 <vertex>
@@ -58,12 +58,13 @@
 		vec4 pos = a_position;
 		if(a_position.w == 1.0) pos.y = a_length;
 
+		//Transform Vertex based on Dual Quat of the Bones Position/Rotation
+		pos.xyz = dqTransform(a_QR, a_QD, pos.xyz);
+
 		//Calculate World Position of the vertex
 		pos	= modelMatrix * vec4(pos.xyz,1.0);
 		v_worldPos	= pos.xyz;
 
-		//Transform Vertex based on Dual Quat of the Bones Position/Rotation
-		pos.xyz = dqTransform(a_QR, a_QD, pos.xyz);
 		gl_Position = projViewMatrix * pos;
 	}
 <\vertex>
