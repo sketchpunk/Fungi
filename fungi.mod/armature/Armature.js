@@ -238,6 +238,13 @@ class Joint{
 		this.isModified = true;
 		return this;
 	}
+
+	getWorldPos(out = null){
+		out = out || new Vec3();
+		if(this.parent)		DualQuat.transformVec3(this.parent.dqWorld, this.position, out);
+		else 				DualQuat.transformVec3(this.dqWorld, this.position, out);
+		return out;
+	}
 }
 
 

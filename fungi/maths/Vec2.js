@@ -209,6 +209,22 @@ class Vec2 extends Float32Array{
 			out[1] = v[1] - Math.floor( v[1] );
 			return out;
 		}
+
+		static length(v0,v1){
+			var x = v0[0] - v1[0],
+				y = v0[1] - v1[1];
+			return Math.sqrt( x*x + y*y );
+		}
+
+		static lerp(v0, v1, t, out){
+			out = out || new Vec2();
+			var tMin1 = 1 - t;
+			
+			//Linear Interpolation : (1 - t) * v0 + t * v1;
+			out[0] = v0[0] * tMin1 + v1[0] * t;
+			out[1] = v0[1] * tMin1 + v1[1] * t;
+			return out;
+		}
 	//endregion
 }
 

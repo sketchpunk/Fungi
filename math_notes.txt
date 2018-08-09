@@ -28,3 +28,37 @@ MISC - GOOD TO KNOW, Some of the stuff can help simplify equations
 	cos^2 + sin^2 == 1
 
 	tan = sin / cos
+
+	pythagormean theorem : opposite^2 + adjacent^2 = Hypotenuse^2
+
+
+	get angle using DOT product of two normalized vector directions
+		d = dot(unitVec1, unitVec2);
+		angleInRad = acos( clamp(d, -1, 1) )
+
+...........................................
+Law of Cosines (lowercase is length, Upper is Angle)
+    C
+   /\ 
+b /  \ a
+A/____\ B
+   c
+longer side is C
+
+	*when knowing 2 angles, subtract both from 180 to get remaining angle.
+
+	SSS : Solve only knowing sides Side-Side-Side  
+	cos(C) = (a^2 + b^2 - c^2) / 2ab
+	cos(A) = (b^2 + c^2 - a^2) / 2bc
+	cos(B) = (c^2 + a^2 - b^2) / 2ca
+
+
+	SSA : Solve length if 2 sides and its angle is known
+	c^2 = a^2 + b^2 - 2ab cos(C)
+	a^2 = b^2 + c^2 - 2bc cos(A)
+	b^2 = c^2 + a^2 - 2ca cos(B)
+
+Law of Sines
+	
+	SSA : find Angle of C when knowning Length of A and B, angle of B.
+	sin(C) = (a * Math.sin(B)) / b   

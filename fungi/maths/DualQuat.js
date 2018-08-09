@@ -341,6 +341,22 @@ class DualQuat extends Float32Array{
 
 		return out;
 	}
+/*
+	static lerp(a, b, t, out){
+		let mt = 1 - t;
+		if(dot(a, b) < 0) t = -t;
+
+		out[0] = a[0] * mt + b[0] * t;
+		out[1] = a[1] * mt + b[1] * t;
+		out[2] = a[2] * mt + b[2] * t;
+		out[3] = a[3] * mt + b[3] * t;
+		out[4] = a[4] * mt + b[4] * t;
+		out[5] = a[5] * mt + b[5] * t;
+		out[6] = a[6] * mt + b[6] * t;
+		out[7] = a[7] * mt + b[7] * t;
+		return out;
+	}
+*/
 
 
 /**

@@ -63,6 +63,26 @@ class Maths{
 			return [ lon, lat ]
 		}
 
+		//X and Y axis need to be normalized vectors, 90 degrees of eachother.
+		static planeCircle(vecCenter, xAxis, yAxis, angle, radius, out){
+			let sin = Math.sin(angle),
+				cos = Math.cos(angle);
+			out[0] = vecCenter[0] + radius * cos * xAxis[0] + radius * sin * yAxis[0];
+			out[1] = vecCenter[1] + radius * cos * xAxis[1] + radius * sin * yAxis[1];
+			out[2] = vecCenter[2] + radius * cos * xAxis[2] + radius * sin * yAxis[2];
+			return out;
+		}
+
+		//X and Y axis need to be normalized vectors, 90 degrees of eachother.
+		static planeEllipse(vecCenter, xAxis, yAxis, angle, xRadius, yRadius, out){
+			let sin = Math.sin(angle),
+				cos = Math.cos(angle);
+			out[0] = vecCenter[0] + xRadius * cos * xAxis[0] + yRadius * sin * yAxis[0];
+			out[1] = vecCenter[1] + xRadius * cos * xAxis[1] + yRadius * sin * yAxis[1];
+			out[2] = vecCenter[2] + xRadius * cos * xAxis[2] + yRadius * sin * yAxis[2];
+			return out;
+		}
+
 
 	////////////////////////////////////////////////////////////////////
 	// WAVES
