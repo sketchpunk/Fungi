@@ -37,6 +37,13 @@ https://www.youtube.com/watch?v=dRthdBr46cs  Quadruped Animation Samples
 
 http://hacksoflife.blogspot.com/2011/01/derivatives-i-discontinuities-and.html  Derivatives on GLSL, dFdx
 
+
+https://www.gamasutra.com/blogs/SebastienBENARD/20170329/294642/Building_the_Level_Design_of_a_procedurally_generated_Metroidvania_a_hybrid_approach.php
+
+http://schteppe.github.io/cannon.js/docs/files/src_collision_Ray.js.html#l12 RAY COLLISION CODE
+
+http://schteppe.github.io/cannon.js/docs/files/src_objects_Spring.js.html#l5  SPRINGS
+
 .......................................................
 Curves
 https://www.desmos.com/calculator/hycpcbwtbq cubic spline
@@ -144,6 +151,19 @@ https://www.youtube.com/watch?v=ewXDr-1go9U  hologram shader with texture
 
 https://www.youtube.com/watch?v=wt2yYnBRD3U  Sand Rendering
 
+https://www.youtube.com/watch?v=EhkBdCdNx-Y World Ripple Radar Effect
+
+https://www.youtube.com/watch?v=x3kSxy3hpok  Nuke Mushroom cloud mesh and shader effect
+
+https://www.youtube.com/watch?v=F5rEAHIMGus  fire tornado effect mesh and all, VERY cool
+
+https://www.youtube.com/watch?v=tu-Qe66AvtY&feature=youtu.be&t=905 Shaking Camera, Plus other crazy camera effects
+
+
+https://www.alanzucconi.com/2018/07/28/shader-showcase-saturday-3/ Interactive Grass
+
+https://www.youtube.com/watch?v=7Fl3so0Z5Tc Fortnite Effects by devs
+
 .......................................................
 Maze
 
@@ -168,7 +188,9 @@ https://codepen.io/MittenedWatchmaker/pen/zLqdaE?editors=0011
 
 https://youtu.be/KLjTU0yKS00
 
-https://youtu.be/wjn19jBzJCE
+https://www.youtube.com/watch?v=LNidsMesxSE
+
+https://youtu.be/wjn19jBzJCE  How to apply IK to a whole rig, like if you move the hand, how to push the sholder and other body parts.
 
 https://www.youtube.com/watch?v=UNoX65PRehA&t=331s
 
@@ -178,11 +200,36 @@ https://www.youtube.com/watch?v=6TB62YKHwRQ&t=603s
 
 https://www.youtube.com/watch?v=_1j5Tf6ulII
 
+https://www.youtube.com/watch?v=a-zKMzboOec
+
 https://twitter.com/woodleynye/status/1023809117192769538 cool sliding and running animations
 https://twitter.com/woodleynye/status/1022281362856792064 cool looking character, Might be good mesh
 https://twitter.com/woodleynye/status/1020804911863218177 mesh
+
+
+https://www.youtube.com/watch?v=Q0iqHQ-h644  //Good for Tail Wagging
+
+https://www.alanzucconi.com/2017/04/17/procedural-animations/
+
+
+http://www.andreasaristidou.com/FABRIK.html
+
+https://www.youtube.com/watch?v=T2kfzzCYkD0 PERFECT TENTICLE ANMATION, UNKNOWN HOW.
+
+https://medium.com/@conrad_9565/making-procedural-animation-friendlier-for-humans-a986ea46f587
+
+https://www.gdcvault.com/play/966/Dynamic-Walking-with-Semi-Procedural
+
+http://narf.pl/posts/robot-movement Vert Cool Example
+
+https://www.gdcvault.com/play/966/Dynamic-Walking-with-Semi-Procedural
+
 .......................................................
 Lighting / Shadows
+
+https://gist.github.com/patriciogonzalezvivo/3a81453a24a542aabc63  GLSL LIGHTING SOURCE
+
+http://www.falloutsoftware.com/tutorials/gl/gl8.htm  Tons of  Lighting Tutorials
 
 https://hero.handmade.network/episode/code/day096/#833  Long Lecture on Lighting
 
@@ -309,6 +356,23 @@ https://www.blendernation.com/2018/04/10/procedural-texture-blurring/
 
 https://www.youtube.com/watch?v=hje_OMFV_pI
 
+https://www.youtube.com/watch?v=nQwn-GzmdeA  blender excercises
+https://www.youtube.com/watch?v=pd_z9_PHoAI  Scifi Pod Model Tutorial
+https://www.youtube.com/watch?v=RfXxBqljPF4  TownHouse
+
+https://www.3dm3.com/tutorials/female_body/
+http://www.moridin.com/tutorials/wiro/female_body/index2.php
+
+https://www.3dtotal.com/tutorial/1508-making-of-black-wires-maya-by-carlos-ortega-character-cartoon-girl-wires-hair#.VjVCmrcrK01
+
+https://www.pinterest.com/pin/366199013433735142/   WALK ANIMATIONS
+https://www.pinterest.com/pin/270427152602357505/  Parker Animations
+https://www.pinterest.com/pin/341781059210833472/  Jumping
+https://www.pinterest.com/pin/508343876685374870/  Run Cycle
+https://iwanttobeananimator.wordpress.com/2017/02/15/ref_run-cycle_02/  Run Cycle
+https://www.pinterest.com/pin/571112796489695812/  Sexy Walk Cycle
+
+
 .......................................................
 Misc
 https://experiments.withgoogle.com/chrome/twitter-matrix
@@ -395,6 +459,9 @@ https://www.3dgep.com/understanding-quaternions/
 https://infinityplusonemath.wordpress.com/
 
 https://www.youtube.com/watch?v=0A4P6MaQxTs  Math 4 Game devs, Cool Equations
+
+
+https://math.stackexchange.com/questions/2197381/calculating-a-points-x-position-on-catenary-curve-given-pos-y
 
 .......................................................
 RAY MARCHING

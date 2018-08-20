@@ -1,5 +1,6 @@
 import Vec3 from "./Vec3.js";
 
+//https://github.com/libgdx/libgdx/blob/master/gdx/src/com/badlogic/gdx/math/Quaternion.java
 //http://physicsforgames.blogspot.com/2010/03/quaternion-tricks.html
 //http://physicsforgames.blogspot.com/2010/02/quaternions.html
 /*

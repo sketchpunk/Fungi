@@ -585,4 +585,23 @@ export { BoundingBox };
 	}
 
 
+Ray.pointInTriangle = pointInTriangle;
+function pointInTriangle(p, a, b, c) {
+    c.vsub(a,v0);
+    b.vsub(a,v1);
+    p.vsub(a,v2);
+ 
+    var dot00 = v0.dot( v0 );
+    var dot01 = v0.dot( v1 );
+    var dot02 = v0.dot( v2 );
+    var dot11 = v1.dot( v1 );
+    var dot12 = v1.dot( v2 );
+ 
+    var u,v;
+ 
+    return  ( (u = dot11 * dot02 - dot01 * dot12) >= 0 ) &&
+            ( (v = dot00 * dot12 - dot01 * dot02) >= 0 ) &&
+            ( u + v < ( dot00 * dot11 - dot01 * dot01 ) );
+}
+
 	*/

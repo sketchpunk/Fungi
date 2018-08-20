@@ -346,6 +346,18 @@ class Vec3 extends Float32Array{
 			return ary;
 		}
 
+
+		//When values are very small, like less then 0.000001, just make it zero.
+		static nearZero(v, out){
+			out = out || new Vec3();
+
+			out[0] = (Math.abs(v[0]) <= 1e-6) ? 0 : v[0];
+			out[1] = (Math.abs(v[1]) <= 1e-6) ? 0 : v[1];
+			out[2] = (Math.abs(v[2]) <= 1e-6) ? 0 : v[2];
+
+			return out;
+		}
+
 		//Another Equation for Linear Interpolation : (1 - t) * v0 + t * v1;
 		//Todo, see if this one work better then whats there.
 		/*
