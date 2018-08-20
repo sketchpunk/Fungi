@@ -19,6 +19,11 @@ class ArmatureSystem extends System{
 			Armature.updatePose( e );
 			Armature.flatOffset(e, e.com.Armature.flatOffset )
 
+			//if scale is enabled, setup data.
+			if(e.com.Armature.useScale){
+				Armature.flatScale(e, e.com.Armature.flatScale, true);
+			}
+
 			//If Preview Exists
 			if(e.com.Armature.flatWorldSpace) ArmaturePreview
 									.flattenData( e )

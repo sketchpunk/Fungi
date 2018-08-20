@@ -4,11 +4,13 @@ import DualQuat			from "../../fungi/maths/DualQuat.js";
 
 class Armature{
 	constructor(){
-		this.joints			= null;	// Main Joints Array : Ordered Hierarchy level
-		this.orderedJoints	= null;	// Second list of joints : Ordered by an order number
+		this.joints			= null;		// Main Joints Array : Ordered Hierarchy level
+		this.orderedJoints	= null;		// Second list of joints : Ordered by an order number
 		this.flatOffset		= null;
+		this.flatScale		= null;
 
-		this.isModified		= true;	//Mark if any joint was updated, so we can update Skinning or Previews
+		this.isModified		= true;		// Mark if any joint was updated, so we can update Skinning or Previews
+		this.useScale		= false;	// Mark to use Scaling in Skinning/Preview
 	}
 
 
@@ -97,6 +99,12 @@ class Armature{
 
 			//Create cache for final flat data.
 			if(!arm.flatOffset) arm.flatOffset = new Float32Array( arm.joints.length * 8 );
+
+			//Create cache for final scale data.
+			if(arm.useScale && !arm.flatScale){
+				arm.flatScale = new Float32Array( arm.joints.length * 3 );
+			}
+
 			return this;
 		}
 
@@ -154,7 +162,8 @@ class Armature{
 		static flatOffset(e, out = null){
 			let i, ii, dq,
 				arm = (e instanceof Armature)? e : e.com.Armature;
-				out = out || new Float32Array( arm.orderedJoints.length * 8 );
+			
+			out = out || new Float32Array( arm.orderedJoints.length * 8 );
 
 			for(i=0; i < arm.orderedJoints.length; i++){
 				dq = arm.orderedJoints[i].dqOffset;
@@ -175,7 +184,8 @@ class Armature{
 		static flatWorldSpace(e, out = null){ // Used for visualizing bones
 			let i, ii, dq, 
 				arm = (e instanceof Armature)? e : e.com.Armature;
-				out = out || new Float32Array( arm.joints.length * 8 );
+			
+			out = out || new Float32Array( arm.joints.length * 8 );
 
 			for(i=0; i < arm.joints.length; i++){
 				dq = arm.joints[i].dqWorld;
@@ -188,6 +198,23 @@ class Armature{
 				out[ii+5] = dq[5];
 				out[ii+6] = dq[6];
 				out[ii+7] = dq[7];
+			}
+			return out;
+		}
+
+		static flatScale(e, out = null, useOrdered=false){
+			let i, ii, itm,
+				arm		= (e instanceof Armature)? e : e.com.Armature,
+				joints 	= (useOrdered)?  arm.orderedJoints : arm.joints;
+
+			out = out || new Float32Array( joints.length * 3 );
+
+			for(i=0; i < joints.length; i++){
+				itm = joints[i].scale;
+				ii = i * 3;
+				out[ii+0] = itm[0];
+				out[ii+1] = itm[1];
+				out[ii+2] = itm[2];
 			}
 			return out;
 		}
@@ -204,6 +231,7 @@ class Joint{
 		this.length		= len;
 
 		//...................................
+		this.scale		= new Vec3(1,1,1);
 		this.position	= new Vec3();
 		this.rotation	= new Quat();
 

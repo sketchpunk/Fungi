@@ -7,6 +7,7 @@ import gl		from "../../fungi/gl.js";
 const ATTRIB_QD_ROT_LOC = 8; //Shader.ATTRIB_JOINT_IDX_LOC		= 8;
 const ATTRIB_QD_POS_LOC = 9; //Shader.ATTRIB_JOINT_WEIGHT_LOC	= 9;
 const ATTRIB_LEN_LOC	= 10;
+const ATTRIB_SCALE_LOC	= 11;
 
 class ArmaturePreview{
 	static init(e){
@@ -115,12 +116,17 @@ class ArmaturePreview{
 		//..........................................
 		let oVao = new Vao().create()
 			.floatBuffer("bVertices", verts, Shader.ATTRIB_POSITION_LOC, 4)
-			.floatBuffer("bLengths", lenAry, ATTRIB_LEN_LOC, 1, 4, 0, true, true)
+			.floatBuffer("bLengths", lenAry, ATTRIB_LEN_LOC, 1, 0, 0, true, true)
 			.floatBuffer("bOffset", arm.flatWorldSpace, ATTRIB_QD_ROT_LOC, 4, 32, 0, true, true)	// QR (Rotation)
 			.partitionFloatBuffer(ATTRIB_QD_POS_LOC, 4, 32, 16, true)								// QD (Translation)
 			.setInstanced( arm.joints.length );
 
-		if(faces) oVao.indexBuffer("bIndex", faces)
+		if(faces) oVao.indexBuffer("bIndex", faces);
+
+		if(arm.useScale){
+			let aryScale = Armature.flatScale(arm);
+			oVao.floatBuffer("bScale", aryScale, ATTRIB_SCALE_LOC, 3, 0, 0, true, true);
+		}
 
 		let vao = oVao.finalize(name);
 		oVao.cleanup();
