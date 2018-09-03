@@ -92,6 +92,25 @@ class Quaternion extends Float32Array{
 			return [ this[0] / s, this[1] / s, this[2] / s, angle ];
 		}
 
+		getAxis(out = null){
+			if(this[3] > 1) this.normalize();
+			
+			let s = Math.sqrt(1 - this[3] * this[3]);
+
+			out = out || new Vec3();
+			if(s < 0.001){
+				out[0] = 1;
+				out[1] = 0;
+				out[2] = 0;
+ 			}else{
+ 				out[0] = this[0] / s;
+				out[1] = this[1] / s;
+				out[2] = this[2] / s;
+ 			}
+
+ 			return out;
+		}
+
 		copy(q){
 			this[0] = q[0];
 			this[1] = q[1];

@@ -62,3 +62,20 @@ Law of Sines
 	
 	SSA : find Angle of C when knowning Length of A and B, angle of B.
 	sin(C) = (a * Math.sin(B)) / b   
+
+
+
+...........................................
+Projections
+
+
+Closet Point on a plane from a point.
+    p = point
+	v = p - planePoint  //vector length from point to a plane's point.
+	n = the plane's unit length vector direction
+	len = v dot n
+	pos = p - (n * len)
+
+Intersection Point between a Plane and a Ray
+
+	dot( planePos-rayOrigin, planeNorm ) / dot(rayVecLen, planeNorm);

@@ -8,6 +8,7 @@ class Maths{
 	////////////////////////////////////////////////////////////////////
 		static toRad(v){ return v * Maths.DEG2RAD; }
 		static toDeg(v){ return v * Maths.RAD2DEG; }
+		static dotToDeg(dot){  return Maths.toDeg( Math.acos( Maths.clamp(dot, -1, 1) ) ); }
 
 		static map(x, xMin, xMax, zMin, zMax){ return (x - xMin) / (xMax - xMin) * (zMax-zMin) + zMin; }
 		static clamp(v, min, max){ return Math.max(min, Math.min(max,v) ); }
@@ -141,17 +142,24 @@ class Maths{
 			return 	(7.0 * b * s6 * t) + (21.0 * c * s5 * t2) + (35.0 * d * s4 * t3) +
 					(35.0 * e * s3 * t4) + (21.0 * f * s2 * t5) + (7.0 * g * s * t6) + t7;
 		}
+
+
+	////////////////////////////////////////////////////////////////////
+	// WAVES
+	////////////////////////////////////////////////////////////////////
+
 }
 
 ////////////////////////////////////////////////////////////////////
 // CONSTANTS
 ////////////////////////////////////////////////////////////////////
-	Maths.PI_H		= 1.5707963267948966;
-	Maths.PI_2 		= 6.283185307179586;
-	Maths.PI_Q		= 0.7853981633974483;
-	Maths.DEG2RAD	= 0.01745329251; // PI / 180
-	Maths.RAD2DEG	= 57.2957795131; // 180 / PI
-	Maths.EPSILON	= 1e-6;
+	Maths.PI_H			= 1.5707963267948966;
+	Maths.PI_2 			= 6.283185307179586;
+	Maths.PI_Q			= 0.7853981633974483;
+	Maths.DEG2RAD		= 0.01745329251; // PI / 180
+	Maths.RAD2DEG		= 57.2957795131; // 180 / PI
+	Maths.EPSILON		= 1e-6;
+	//Maths.EPSILON_SQR	= Maths.EPSILON * Maths.EPSILON;
 
 
 
@@ -184,8 +192,9 @@ function closestPointToLine2D(x0,y0,x1,y1,px,py){
 
 //From a point in space, closest spot to a 3D line
 function closestPointToLine3D(a,b,p,out){
-	if(out == undefined) out = new Vec3();
-	var dx	= b.x - a.x,
+	out = out || new Vec3();
+
+	let dx	= b.x - a.x,
 		dy	= b.y - a.y,
 		dz	= a.z - a.z,
 		t	= ((p.x-a.x)*dx + (p.y-a.y)*dy + (p.z-a.z)*dz) / (dx*dx+dy*dy+dz*dz),
