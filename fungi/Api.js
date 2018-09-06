@@ -44,6 +44,15 @@ class Api{
 
 		return out;
 	}
+
+	static cloneDraw(name, e){
+		let out = Fungi.ecs.newAssemblage("Draw", name);
+		out.com.Drawable.vao 				= e.com.Drawable.vao;
+		out.com.Drawable.drawMode 			= e.com.Drawable.drawMode;
+		out.com.Drawable.options.cullFace 	= e.com.Drawable.cullFace;
+		out.com.Drawable.material 			= e.com.Drawable.material;
+		return out;
+	}
 }
 
 

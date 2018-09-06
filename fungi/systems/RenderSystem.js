@@ -19,6 +19,7 @@ class RenderSystem extends System{
 		//UBOs for Updating
 		this.UBOModel		= Fungi.getUBO("UBOModel");
 		this.UBOTransform	= Fungi.getUBO("UBOTransform");
+		this.UBOWorld 		= Fungi.getUBO("UBOWorld");
 
 		//GL Option states
 		this.options	= {
@@ -37,7 +38,7 @@ class RenderSystem extends System{
 		//Update Main UBO
 		this.UBOTransform
 			.updateItem("projViewMatrix",	Camera.getProjectionViewMatrix( Fungi.camera.com.Camera ) )
-			.updateItem("cameraPos",		Fungi.camera.com.Transform._position )
+			.updateItem("cameraPos",		Fungi.camera.com.Transform.position )
 			.updateItem("globalTime",		Fungi.sinceStart )
 			.updateGL();
 
@@ -126,6 +127,13 @@ class RenderSystem extends System{
 			let uboChanged = false;
 			if( this.shader.options.modelMatrix ){
 				this.UBOModel.updateItem("modelMatrix", e.com.Transform.modelMatrix);
+
+				//TODO, Experimenting with World Space Transform without Matrices
+				var comTransform = e.com.TransformNode || e.com.Transform;
+				this.UBOWorld.updateItem("rotation",	comTransform.rotation);
+				this.UBOWorld.updateItem("position",	comTransform.position);
+				this.UBOWorld.updateItem("scale",		comTransform.scale);
+				
 				uboChanged = true;
 			}
 
@@ -135,7 +143,10 @@ class RenderSystem extends System{
 				//uboChanged = true;
 			}
 
-			if( uboChanged ) this.UBOModel.updateGL();
+			if( uboChanged ){
+				this.UBOModel.updateGL();
+				this.UBOWorld.updateGL();	//TODO: Testing
+			}
 
 			//..........................................
 			this.loadOptions( e.com.Drawable.options );

@@ -1,13 +1,13 @@
-import gl			from "../gl.js";
+//import gl			from "../gl.js";
 import Vao			from "../Vao.js";
 import Fungi		from "../Fungi.js";
 
 
 function FacedCube(name ="FaceCube", matName = "VecWColor"){
-	//If the vao exists, create a new renderable using it.
-	//let vao = Fungi.vaos.get(name);
-	//if(!vao) vao = FacedCube.vao(name);
-	//return new Renderable(name, vao, matName);
+	var e = Fungi.ecs.newAssemblage("Draw",name);
+	e.com.Drawable.vao 		= FacedCube.vao( name );
+	e.com.Drawable.material	= Fungi.getMaterial(matName);
+	return e;
 }
 
 FacedCube.vao = function(name = "FungiFCube"){

@@ -124,6 +124,15 @@ function gl_launch(){
 			.addItems( "modelMatrix","mat4",  "normalMatrix","mat3" )
 			.finalize();
 
+		var UBOWorld = new Ubo("UBOWorld", 3)
+			.addItems( "rotation","vec4", "position","vec3", "scale","vec3" )
+			.finalize();
+
+		var UBOArmature = new Ubo("UBOArmature", 4)
+			.addItem( "joints", "mat2x4", 60)
+			.addItem( "scale", "vec3", 60)
+		.finalize();
+
 	return true;
 }
 
