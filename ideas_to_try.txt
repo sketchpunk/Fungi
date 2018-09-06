@@ -87,6 +87,11 @@ https://www.youtube.com/watch?v=BZUdGqeOD0w 2D Water Ripples Coding train.
 
 
 .......................................................
+LEVEL OF DETAIL
+https://www.patreon.com/posts/21195932  VERY VERY GOOD 
+
+
+.......................................................
 Terrains
 http://www.pheelicks.com/2014/03/rendering-large-terrains/
 https://demo.marpi.pl/biomes/
@@ -308,6 +313,9 @@ https://www.youtube.com/watch?v=McmLtgY6Xuw  Curved World Shader
 
 https://andreashackel.de/tech-art/stripes-shader-1/  Very cool shrips, curving them and warping them.
 
+
+https://github.com/3Dparallax/insight  WEBGL DEBUGGER
+
 .......................................................
 Particles
 http://prideout.net/blog/?p=63  Noise Baed Particles Collision
@@ -329,6 +337,8 @@ http://blog.wolfire.com/2009/06/how-to-project-decals/
 Procedural Animations
 
 https://www.youtube.com/watch?v=LNidsMesxSE
+
+https://www.youtube.com/watch?v=6UgB7TMk3Bg  IMPORTANT, Simple Example of a Look At Additive Blend
 
 .......................................................
 https://blog.molecular-matters.com/2013/02/22/adventures-in-data-oriented-design-part-2-hierarchical-data/
@@ -462,6 +472,9 @@ https://www.youtube.com/watch?v=0A4P6MaQxTs  Math 4 Game devs, Cool Equations
 
 
 https://math.stackexchange.com/questions/2197381/calculating-a-points-x-position-on-catenary-curve-given-pos-y
+
+
+https://gafferongames.com/post/integration_basics/  Velocity and stuff, Important by learning RK4
 
 .......................................................
 RAY MARCHING
