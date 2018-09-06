@@ -222,7 +222,7 @@ class Ray{
 
 
 		static inOBB(ray, box, out){
-			var bbRayDelta	= Vec3.sub(box.target._position, ray.origin),	//Distance between Ray start and Box Position
+			var bbRayDelta	= Vec3.sub(box.target.position, ray.origin),	//Distance between Ray start and Box Position
 				wMat		= box.target.worldMatrix,	//Alias to the world matrix object
 				axis 		= new Vec3(),				//Current Axis being tested.
 				tMin 		= 0,
@@ -443,8 +443,8 @@ class BoundingBox{
 
 	//TODO this won't work well with child renderables. May need to pull translation from worldMatrix.
 	update(){
-		this.localBounds[0].add(this.target.com.Transform._position, this.worldBounds[0]);
-		this.localBounds[1].add(this.target.com.Transform._position, this.worldBounds[1]);
+		this.localBounds[0].add(this.target.com.Transform.position, this.worldBounds[0]);
+		this.localBounds[1].add(this.target.com.Transform.position, this.worldBounds[1]);
 		return this;
 	}
 }

@@ -17,13 +17,13 @@ class TransformHierarchySystem extends System{
 		for( e of ary ){
 			t		= e.com.Transform;
 			h		= e.com.Hierarchy;
-			isMod 	= (t._isModified || (h && h.parentModified));
+			isMod 	= (t.isModified || (h && h.parentModified));
 
 			//...........................................
 			if( isMod ){
 				//Handle Local Transform Matrix
-				t._isModified = false;
-				Mat4.fromQuaternionTranslationScale(t.modelMatrix, t._rotation, t._position, t._scale);
+				t.isModified = false;
+				Mat4.fromQuaternionTranslationScale(t.modelMatrix, t.rotation, t.position, t.scale);
 			
 				// Handle Hierarchy
 				if( h ){

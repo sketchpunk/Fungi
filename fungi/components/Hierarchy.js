@@ -66,15 +66,15 @@ class Hierarchy{
 			//Check if there is a parent, if not just pass the local rotation
 			out = out || new Quat();
 			let p = e.com.Hierarchy.parent;
-			if(p == null) return out.copy( e.com.Transform._rotation );
+			if(p == null) return out.copy( e.com.Transform.rotation );
 			
 			//.................................
 			//Move Up the stack to get all the rotations
 			let stack 	= new Array();
-			stack.push( e.com.Transform._rotation );
+			stack.push( e.com.Transform.rotation );
 
 			while(p != null){
-				stack.push( p.com.Transform._rotation );
+				stack.push( p.com.Transform.rotation );
 				p = p.com.Hierarchy.parent;
 			}
 

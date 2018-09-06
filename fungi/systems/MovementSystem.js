@@ -21,7 +21,7 @@ class MovementSystem extends System{
 
 		for( e of ary ){
 			if(!e.active) continue;
-
+//console.log(e.name);
 			t = e.com.Transform;
 			m =	e.com.Movement;
 
@@ -37,30 +37,34 @@ class MovementSystem extends System{
 
 			//....................................
 			//Make the movement framerate independant
-			t._position.add( Vec3.scale(m.velocity, Fungi.deltaTime, v) );
+			t.position.add( Vec3.scale(m.velocity, Fungi.deltaTime, v) );
+			t.isModified = true;
 
-			if(m.useGravity) t._position.add( Vec3.scale(GRAVITY, Fungi.deltaTime, v) );
+			//console.log(t.position);
+			if(m.useGravity) t.position.add( Vec3.scale(GRAVITY, Fungi.deltaTime, v) );
 
 			//....................................
 			//Rotate toward direction of velocity
 			if(m.doOrientation){
 				Quat.lookRotation( m.velocity, Vec3.UP, q );	// Look at Rotation
-				val = Quat.dot( t._rotation, q );
+				val = Quat.dot( t.rotation, q );
 
 				//check angle, stop lerping once we're close enough to final rotation.
 				if(val < 0.9999){
 					//Quat.lerp(t._rotation, q, 0.05, t._rotation);
-					Quat.lerp2(t._rotation, q, 3.5 * Fungi.deltaTime, t._rotation);
-					t._rotation.normalize(); //Normalize gets rid of some wierd glitchy scaling that happens.
+					Quat.lerp2(t.rotation, q, 3.5 * Fungi.deltaTime, t.rotation);
+					t.rotation.normalize(); //Normalize gets rid of some wierd glitchy scaling that happens.
 					//Quat.slerp(t._rotation, q, 3.5 * Fungi.deltaTime, t._rotation);
+					t.isModified = true;
 				}else{
-					t._rotation.set(q);
+					t.rotation.set(q);
+					t.isModified = true;
 					m.doOrientation = false;
 				}
 			}
 
 			//....................................
-			t._isModified = true;
+			//t.isModified = true;
 		}
 	}
 }

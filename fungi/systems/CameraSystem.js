@@ -35,6 +35,7 @@ class CameraSystem extends System{
 		//Handle Keyboard Input
 		if(Fungi.input.keyCount > 0) this.handleKeyboard();
 
+		//console.log(ecs);
 
 		//............................................
 		//Handle Mouse Wheel Change
@@ -44,8 +45,8 @@ class CameraSystem extends System{
 			let t = Fungi.camera.com.Transform,
 				cc = (Fungi.input.isCtrl())? 5 : 1;
 
-			t.position = Api.getLocalForward(Fungi.camera, null, KB_FORWARD_RATE * Fungi.input.wheelValue * cc)
-				.add( t._position );
+			t.position.add( Api.getLocalForward(Fungi.camera, null, KB_FORWARD_RATE * Fungi.input.wheelValue * cc) );
+			t.isModified = true;
 		}
 
 
@@ -56,8 +57,8 @@ class CameraSystem extends System{
 			return;	
 		}else if(!this.isActive){
 			this.isActive = true;
-			this.initRotation.copy( Fungi.camera.com.Transform._rotation );
-			this.initPosition.copy( Fungi.camera.com.Transform._position );
+			this.initRotation.copy( Fungi.camera.com.Transform.rotation );
+			this.initPosition.copy( Fungi.camera.com.Transform.position );
 
 			if(Fungi.input.keyState[16] == true)		this.mode = 0; // Shift - Pan Mode
 			else if(Fungi.input.keyState[17] == true)	this.mode = 2; // Ctrl - Orbit Mode
@@ -101,7 +102,8 @@ class CameraSystem extends System{
 				euler[0] += c.idy * LOOK_RATE;
 				euler[1] += c.idx * LOOK_RATE;
 
-				t.rotation = Quat.fromEuler(null, euler[0], euler[1], 0, "YZX");
+				t.rotation.copy( Quat.fromEuler(null, euler[0], euler[1], 0, "YZX") );
+				t.isModified = true;
 			break;
 			//------------------------------------ Orbit
 			case 2:
@@ -118,15 +120,18 @@ class CameraSystem extends System{
 				Quat.rotateVec3(q, pos, pos);
 
 				//Save New Position, then update rotation
-				t.position	= pos;
-				t.rotation	= Quat.lookRotation(pos, Vec3.UP);
+				t.position.copy( pos );
+				t.rotation.copy( Quat.lookRotation(pos, Vec3.UP) );
+				t.isModified = true;
 			break;
 			//------------------------------------ Panning
 			default:
-				t.position = new Vec3()
+				t.position.copy( new Vec3()
 					.add( Api.getLocalUp(	Fungi.camera, null, PAN_RATE * c.idy) )		// Up-Down
 					.add( Api.getLocalLeft(	Fungi.camera, null, PAN_RATE * -c.idx) )	// Left-Right
-					.add( this.initPosition );											// Add Change to Inital Position
+					.add( this.initPosition )											// Add Change to Inital Position
+				);
+				t.isModified = true;
 			break;
 		}
 	}
@@ -143,26 +148,28 @@ class CameraSystem extends System{
 		if(!key[67] && this.state_c){
 			this.state_c = false;
 
-			let axis = t._rotation.getAxisAngle();
+			let axis = t.rotation.getAxisAngle();
 			console.log(".setPosition(%f, %f, %f)\n.setAxisAngle([%f,%f,%f], %f);", 
-				t._position.x,t._position.y, t._position.z,
+				t.position.x,t.position.y, t.position.z,
 				axis[0], axis[1], axis[2], axis[3]
 			);
-			console.log("Camera Length: %f", t._position.length());
+			console.log("Camera Length: %f", t.position.length());
 		}else if(key[67] && !this.state_c) this.state_c = true;
 
 		//..................................... Forward / Backwards
 		 // w - s
 		if(key[87] || key[83]){
 			let s = (key[87])? KB_FORWARD_RATE : -KB_FORWARD_RATE;
-			t.position = Api.getLocalForward(Fungi.camera, null, s * ss).add( t._position );
+			t.position.add( Api.getLocalForward(Fungi.camera, null, s * ss) );
+			t.isModified = true;
 		}
 
 		//..................................... Left / Right
 		// A - D
 		if(key[65] || key[68]){
 			let s = (key[68])? -KB_FORWARD_RATE : KB_FORWARD_RATE;
-			t.position = Api.getLocalLeft(Fungi.camera, null, s * ss).add( t._position );
+			t.position.add( Api.getLocalLeft(Fungi.camera, null, s * ss) );
+			t.isModified = true;
 		}
 
 		//..................................... Left / Right
@@ -170,8 +177,8 @@ class CameraSystem extends System{
 		if(key[81] || key[69]){
 			let s = (key[69])? -KB_ROTATE_RATE : KB_ROTATE_RATE;
 
-			Quat.mulAxisAngle(t._rotation, Vec3.UP, s * ss); //Modifies t._rotation, need to set isModified
-			t._isModified = true;
+			Quat.mulAxisAngle(t.rotation, Vec3.UP, s * ss);
+			t.isModified = true;
 		}
 	}
 }

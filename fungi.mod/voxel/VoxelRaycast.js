@@ -136,7 +136,7 @@ function VoxelRaycast( ray, eChunk, bbox, tries=30 ){
 		// Entry point for chunk, Clean up vals near zero. If Min < 0, origin is in AABB
 		// Move inPos which is world space, to local space to work with the algorithum which only works in that space
 			//inPos		= ray.getPos( Math.max(tBox.min, 0) ).nearZero(),
-		inPosLoc	= ray.getPos( Math.max(tBox.min, 0) ).nearZero().sub( eChunk.com.Transform._position ),		
+		inPosLoc	= ray.getPos( Math.max(tBox.min, 0) ).nearZero().sub( eChunk.com.Transform.position ),		
 		cellSize	= chunk.scale,
 
 		//--------- Calc Voxel Coord Integer(x,y,z), Clamp between 0 and Max
