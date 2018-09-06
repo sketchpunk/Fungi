@@ -164,6 +164,25 @@ class Quaternion extends Float32Array{
 			out[3]	= aw * bw - ax * bx - ay * by - az * bz;
 			return out;
 		}
+
+		invert(out) {
+			let a0	= this[0],
+				a1	= this[1],
+				a2	= this[2],
+				a3	= this[3],
+				dot	= a0*a0 + a1*a1 + a2*a2 + a3*a3;
+			
+			// TODO: Would be faster to return [0,0,0,0] immediately if dot == 0
+			if(dot == 0){ out[0] = out[1] = out[2] = out[3] = 0; }
+
+			let invDot = dot ? 1.0/dot : 0;
+			out		=  out || this;
+			out[0]	= -a0 * invDot;
+			out[1]	= -a1 * invDot;
+			out[2]	= -a2 * invDot;
+			out[3]	=  a3 * invDot;
+			return out;
+		}
 	//endregion
 
 

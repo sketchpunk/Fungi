@@ -41,8 +41,8 @@ class Ubo{
 	}
 
 	//========================================================================
-	addItem(iName, iType){ 
-		this.items.set(iName, {type:iType, offset: 0, blockSize: 0, dataSize: 0 });
+	addItem(iName, iType, aryLen = 0){ 
+		this.items.set(iName, {type:iType, offset: 0, blockSize: 0, dataSize: 0, aryLen });
 		return this;
 	}
 
@@ -64,9 +64,17 @@ class Ubo{
 		var itm = this.items.get(name);
 
 		switch(itm.type){
-			case "float": case "mat3": case "mat4": case "vec2": case "vec3": case "vec4":
+			case "float": case "mat3": case "mat4": case "vec2": case "vec3": case "vec4": case "mat2x4":
+				if(name == "scale"){
+					//console.log("xx", data, itm);
+				}
 				this.byteBuffer.setFloat( itm.offset, data );
 				break;
+
+			case "int":
+				this.byteBuffer.setInt32( itm.offset, data );
+				break;
+
 			default: console.log("Ubo Type unknown for item ",name); break;
 		}
 
@@ -90,12 +98,13 @@ class Ubo{
 	static getSize(type){ 
 		switch(type){ //[Alignment,Size]
 			case "float": case "int": case "b": return [4,4];
-			case "mat4": return [64,64]; //16*4
-			case "mat3": return [48,48]; //16*3
-			case "vec2": return [8,8];
-			case "vec3": return [16,12]; //Special Case
-			case "vec4": return [16,16];
-			default: return [0,0];
+			case "mat2x4":	return [32,32]; //16*2
+			case "mat4": 	return [64,64]; //16*4
+			case "mat3":	return [48,48]; //16*3
+			case "vec2":	return [8,8];
+			case "vec3":	return [16,12]; //Special Case
+			case "vec4":	return [16,16];
+			default:		return [0,0];
 		}
 	}
 
@@ -104,20 +113,26 @@ class Ubo{
 			offset		= 0,	//Offset in the buffer allocation
 			size,				//Data Size of the current type
 			prevItem	= null,
-			key,itm;
+			key,itm, i;
 
 		for( [key,itm] of m ){
 			//.....................................
-			// When dealing with arrays, Each element takes up 16 bytes regardless of type.
-			size = (!itm.arylen || itm.arylen == 0)?
-					Ubo.getSize(itm.type) :
-					[itm.arylen * 16, itm.arylen * 16] ;
+			// When dealing with arrays, Each element takes up 16 bytes regardless of type, but if the type
+			// is a factor of 16, then that values times array length will work, in case of matrices
+			size = Ubo.getSize(itm.type);
+			if(itm.aryLen > 0){
+				for(i=0; i < 2; i++){
+					if(size[i] < 16)	size[i] = itm.aryLen * 16;
+					else				size[i] *= itm.aryLen;
+				}
+			}
 
 			//.....................................
 			// Check if there is enough block space, if not 
 			// give previous item the remainder block space
+			// If the block space is full and the size is equal too or greater, dont give back to previous
 			if(blockSpace >= size[0]) blockSpace -= size[1];
-			else if(blockSpace > 0 && prevItem){
+			else if(blockSpace > 0 && prevItem && !(blockSpace == 16 && size[1] >= 16) ){
 				prevItem.blockSize += blockSpace;
 				offset 		+= blockSpace;
 				blockSpace	= 16 - size[1];
@@ -226,7 +241,31 @@ class ByteBuffer{
 				this._bView.setFloat32( bPos, f, isLittleEndian ); //Need Little Endian to work in WebGL, Big is default which doesnt work.
 				bPos += 4;							
 			}
-		}else this._bView.setFloat32( bPos, n );
+		}else this._bView.setFloat32( bPos, n, isLittleEndian );
+
+		return this;
+	}
+
+
+	//===========================================================
+	//Handle Floats
+	getInt32( bPos = 0 ){ return this._bView.getInt32( bPos ); }
+	setInt32( bPos = 0, n, isLittleEndian = true){
+		if(n instanceof Int32Array){
+			//Test ifthe data will not overflow the buffer
+			let bMax = n.length * 4 + bPos;
+			if(bMax > this._bAry.byteLength){
+				console.log("Int32Array to large for byte buffer at pos ", bPos);
+				return this;
+			}
+
+			//Copy the Data one Int at a Time
+			let f;
+			for(f of n){
+				this._bView.setInt32( bPos, f, isLittleEndian ); //Need Little Endian to work in WebGL, Big is default which doesnt work.
+				bPos += 4;							
+			}
+		}else this._bView.setInt32( bPos, n, isLittleEndian );
 
 		return this;
 	}
