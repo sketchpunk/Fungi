@@ -5,7 +5,7 @@ import Vec3 from "../maths/Vec3.js";
 const QUERY_COM = ["TransformNode", "Transform"];
 
 class TransformNodeSystem extends System{
-	static init(){ Fungi.ecs.addSystem(new TransformNodeSystem, 90); }
+	static init( priority = 90 ){ Fungi.ecs.addSystem(new TransformNodeSystem(), priority); }
 
 	constructor(){ super(); }
 	update(ecs){
@@ -14,7 +14,7 @@ class TransformNodeSystem extends System{
 			pn, 	// Parent Transform Node
 			e,		// Entity
 			c,		// Child
-			v	= new Vec3(),
+			//v	= new Vec3(),
 			ary	= ecs.queryEntities( QUERY_COM, thSort );
 
 
@@ -37,8 +37,11 @@ class TransformNodeSystem extends System{
 
 				//POSITION
 				// parent.position + ( parent.rotation * ( parent.scale * child.position ) )
-				Vec3.mul(pn.scale, ct.position, v);	// p.scale * c.position;
-				Vec3.transformQuat(v, pn.rotation, v).add(pn.position, cn.position);
+				//Vec3.mul(pn.scale, ct.position, v);	// p.scale * c.position;
+				//Vec3.transformQuat(v, pn.rotation, v).add(pn.position, cn.position);
+
+				Vec3.mul(pn.scale, ct.position, cn.position);	// p.scale * c.position;
+				Vec3.transformQuat(cn.position, pn.rotation, cn.position).add(pn.position);
 
 				cn.parentModified	= false;
 			}else{

@@ -19,14 +19,6 @@ class Bone{
 
 		this.dqBindPose		= new DualQuat();
 		this.dqOffset		= new DualQuat();
-
-		//this.bindScale		= new Vec3();	// Initial Values Inverted, to use to create offset.
-		//this.bindPosition	= new Vec3();
-		//this.bindRotation	= new Quat();
-		
-		//this.offsetScale		= new Vec3();	// Final offset values used to move vertices
-		//this.offsetPosition	= new Vec3();
-		//this.offsetRotation	= new Quat();
 	}
 } Components(Bone);
 
@@ -36,6 +28,7 @@ class Armature{
 		this.bones			= new Array();	// Main Joints Array : Ordered Hierarchy level
 		this.orderedBones	= null;			// Second list of joints : Ordered by an order number
 		this.isModified		= true;
+		this.isActive		= true;
 
 		this.flatOffset	= null;
 		this.flatScale	= null;
@@ -84,6 +77,14 @@ class Armature{
 			return e;
 		}
 
+		static getBone(arm, name){
+			let b;
+			for(b of arm.bones){
+				if(b.name == name) return b;
+			}
+			return null;
+		}
+
 
 		static sortBones(arm){ 
 			//Copy array and sort it by ORDER
@@ -91,6 +92,7 @@ class Armature{
 
 			//Sort main array by level for transform hierarchy processing.
 			arm.bones.sort( fSort_bone_lvl );
+
 			return Armature;
 		}
 
@@ -111,7 +113,7 @@ class Armature{
 				TransformNode.updateNode( e );			// Update Transform Node, Need Heirachy Values
 				b.initPosition	.copy( t.position );	// Save original values, to use to reset or whatever
 				b.initRotation	.copy( t.rotation );
-				b.initScale		.copy( t.scale );
+				b.initScale		.copy( t.scale );		// TODO, is this even needed?
 
 				//................................
 				dqWorld.set( n.rotation, n.position );	// Create a Dual Quaternion of the World Space Value
@@ -179,14 +181,20 @@ class Armature{
 /////////////////////////////////////////////////////////////////////////
 
 function fSort_bone_lvl(a,b){
-	if(a.level == b.level)		return  0;	// A = B
-	else if(a.level < b.level)	return -1;	// A < B
-	else						return  1;	// A > B
+	let aa = a.com.TransformNode,
+		bb = b.com.TransformNode;
+
+	if(aa.level == bb.level)		return  0;	// A = B
+	else if(aa.level < bb.level)	return -1;	// A < B
+	else							return  1;	// A > B
 }
 
 function fSort_bone_order(a,b){
-	if(a.order == b.order)		return  0;	// A = B
-	else if(a.order < b.order)	return -1;	// A < B
+	let aa = a.com.Bone,
+		bb = b.com.Bone;
+
+	if(aa.order == bb.order)		return  0;	// A = B
+	else if(aa.order < bb.order)	return -1;	// A < B
 	else						return  1;	// A > B
 }
 

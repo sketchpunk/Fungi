@@ -169,11 +169,20 @@ async function useBehaviours( priority=20 ){
 }
 
 
-async function useDynamicVao( priority=21 ){
+async function useDynamicVao( useLine = false, usePoint = false, priority=21 ){
+	let rtn = {};
+
 	await Promise.all([
-		import("./components/DynamicVao.js"),
-		import("./systems/DynamicVaoSystem.js").then( mod=>{ Fungi.ecs.addSystem(new mod.default(), priority); })
-	]);	
+		import("./components/DynamicVao.js").then( mod=>{
+			if(useLine)		rtn.line	= mod.default.initLine( Api.newDraw("eLine", "VecWColor") );
+			if(usePoint)	rtn.point	= mod.default.initPoint( Api.newDraw("ePoint", "VecWColor") );
+		}),
+		import("./systems/DynamicVaoSystem.js").then( 
+			mod=>{ Fungi.ecs.addSystem(new mod.default(), priority);
+		})
+	]);
+
+	return rtn;
 }
 
 
@@ -200,6 +209,21 @@ async function useTransformHierarchy( priority=100 ){
 	}
 }
 
+
+async function useTransformNode( priority=90 ){
+	await Promise.all([
+		import("./components/TransformNode.js"),
+		import("./systems/TransformNodeSystem.js").then( mod=>{ mod.default.init( priority ); })
+	]);
+}
+
+async function useArmature( priority=91 ){
+	await Promise.all([
+		import("../fungi.mod/armature_e/ArmatureSystem.js").then( mod=>{ mod.default.init( priority ); })
+	]);
+}
+
+
 async function useMovement( priority=30 ){
 	await Promise.all([
 		Assemblages.add("Move", ["Movement", "Drawable", "Transform"]),
@@ -208,4 +232,4 @@ async function useMovement( priority=30 ){
 }
 
 
-export default { launch, loadScene, loadFPS, useBehaviours, useDynamicVao, useTransformHierarchy, useMovement };
+export default { launch, loadScene, loadFPS, useBehaviours, useDynamicVao, useTransformHierarchy, useTransformNode, useArmature, useMovement };

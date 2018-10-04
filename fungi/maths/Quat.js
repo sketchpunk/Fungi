@@ -638,6 +638,8 @@ class Quaternion extends Float32Array{
 	//endregion
 }
 
+Quaternion.ZERO = new Quaternion();
+
 export default Quaternion;
 
 

@@ -115,6 +115,43 @@ class Maths{
 
 		static squareWave (v, min=0, max=1, period=1){ return ( (v % period) <  (period * 0.5) )? max : min; }
 
+		
+
+
+	////////////////////////////////////////////////////////////////////
+	// CURVES
+	////////////////////////////////////////////////////////////////////
+		static CBezierEase(target, x0,y0, x1,y1, x2,y2, x3,y3 ){
+			const TRIES		= 30;
+			const MARGIN	= 0.001;
+
+			//if(target <= 0.00001) // Target is Zero
+			//else if(target > 0.99999 ) //target is One
+
+			let a		= 0,
+				b		= 1,
+				loop	= 0,
+				t,tt, i, ii, x;
+
+			while( loop++ < TRIES ){
+				t	= (b - a) * 0.5  + a;
+				i	= 1 - t;
+				tt	= t * t;
+				ii	= i * i;
+				x 	= i*ii*x0 + 3*t*ii*x1 + 3*tt*i*x2 + t*tt*x3;
+
+				//console.log("x",loop, x, target, Math.abs(target - x));
+
+				if( Math.abs(target - x) < MARGIN ) break; //console.log("found target at", t);
+
+				if(target > x)		a = t;
+				else if(target < x)	b = t;
+			}
+
+			return i*ii*y0 + 3*t*ii*y1 + 3*tt*i*y2 + t*tt*y3;
+		}
+
+		
 		//https://blog.demofox.org/2014/08/28/one-dimensional-bezier-curves/
 		//1D Cubic (3rd) Bezier through A, B, C, D where a Start and d is end are assumed to be 0 and 1.
 		static normalizedBezier3(b, c, t){
@@ -124,6 +161,7 @@ class Maths{
 				t3	= t2 * t;
 			return (3.0 * b * s2 * t) + (3.0 * c * s * t2) + t3;
 		}
+
 
 		static normalizedBezier7(b, c, d, e, f, g, t){
 			let s	= 1.0 - t,
@@ -144,9 +182,13 @@ class Maths{
 		}
 
 
-	////////////////////////////////////////////////////////////////////
-	// WAVES
-	////////////////////////////////////////////////////////////////////
+		//https://blog.demofox.org/2014/08/28/one-dimensional-bezier-curves/
+		//1D Bezier Curves.
+		//Quadratic Bezier curve:
+		//y = A * (1-x)^2 + B * 2 * (1-x) * x + C * x ^2
+
+		//Cubic Bezier curve:
+		//y = A*(1-x)^3+3*B*(1-x)^2*x+3*C*(1-x)*x^2+D*x^3
 
 }
 
@@ -155,10 +197,15 @@ class Maths{
 ////////////////////////////////////////////////////////////////////
 	Maths.PI_H			= 1.5707963267948966;
 	Maths.PI_2 			= 6.283185307179586;
+	Maths.PI_2_INV 		= 1 / 6.283185307179586;
 	Maths.PI_Q			= 0.7853981633974483;
+	Maths.PI_270		= Math.PI + Maths.PI_H;
 	Maths.DEG2RAD		= 0.01745329251; // PI / 180
 	Maths.RAD2DEG		= 57.2957795131; // 180 / PI
 	Maths.EPSILON		= 1e-6;
+
+	
+
 	//Maths.EPSILON_SQR	= Maths.EPSILON * Maths.EPSILON;
 
 
@@ -297,6 +344,24 @@ function closestPointS_2Segments(A0,A1,B0,B1){
 
 	return [ u.scale(sc).add(A0), v.scale(tc).add(B0) ];
 }
+
+/*
+    function asinc(x0){
+        var x = 6*(1-x0);   
+        var x1 = x;  
+        var a = x;                                           x*=x1; 
+        a += x                   /20.0;                     x*=x1; 
+        a += x* 2.0              /525.0;                        x*=x1; 
+        a += x* 13.0             /37800.0;                  x*=x1; 
+        a += x* 4957.0           /145530000.0;              x*=x1; 
+        a += x* 58007.0          /16216200000.0;            x*=x1;
+        a += x* 1748431.0        /4469590125000.0;          x*=x1; 
+        a += x* 4058681.0        /92100645000000.0;     x*=x1;
+        a += x* 5313239803.0     /1046241656460000000.0;    x*=x1;
+        a += x* 2601229460539.0/4365681093774000000000.0;   // x^10
+        return Math.sqrt(a);
+    }
+*/
 
 
 export default Maths;

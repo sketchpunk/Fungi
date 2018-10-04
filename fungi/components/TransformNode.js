@@ -72,13 +72,57 @@ class TransformNode{
 		}else{
 			let pn = cn.parent.com.TransformNode;
 
-			pn.scale.mul( ct.scale, cn.scale );			// parent.scale * child.scale
+			pn.scale.mul( ct.scale, cn.scale );				// parent.scale * child.scale
 			pn.rotation.mul( ct.rotation, cn.rotation );	// parent.rotation * child.rotation
 
 			//Calc Position
 			// parent.position + ( parent.rotation * ( parent.scale * child.position ) )
-			let v = Vec3.mul(pn.scale, ct.position);	// p.scale * c.position;
-			Vec3.transformQuat(v, pn.rotation, v).add(pn.position, cn.position);
+			Vec3.mul(pn.scale, ct.position, cn.position);	// p.scale * c.position;
+			Vec3.transformQuat(cn.position, pn.rotation, cn.position).add(pn.position);
+		}
+	}
+
+	static transform(lPosition, lRotation, lScale, wPosition, wRotation, wScale, pPosition=null, pRotation=null, pScale=null){
+		if(pPosition == null){
+			wPosition.copy(lPosition);
+			wRotation.copy(lRotation);
+			wScale.copy(lScale);
+		}else{
+			pScale.mul( lScale, wScale );
+			pRotation.mul( lRotation, wRotation );
+
+			// parent.position + ( parent.rotation * ( parent.scale * child.position ) )
+			Vec3.mul( pScale, lPosition, wPosition ); // p.scale * c.position;
+			Vec3.transformQuat(wPosition, pRotation, wPosition).add( pPosition );
+		}
+	}
+
+	static getWorldTransform(e, wPos, wRot, wScale){
+		var ary	= [e.com.Transform],
+			t	= e.com.TransformNode;
+
+		//Get the parent tree of the entity
+		while(t.parent != null){
+			ary.push( t.parent.com.Transform );
+			t = t.parent.com.TransformNode;
+		}
+
+		let last 	= ary.length - 1,
+			tPos	= new Vec3(),
+			tRot 	= new Quat(),
+			tScale 	= new Vec3();
+
+		wPos.copy( ary[last].position );
+		wRot.copy( ary[last].rotation );
+		wScale.copy( ary[last].scale );
+
+		for(let i= last-1; i >= 0; i--){
+			t = ary[i];
+			TransformNode.transform(t.position, t.rotation, t.scale, tPos, tRot, tScale, wPos, wRot, wScale);
+
+			wPos.copy( tPos );
+			wRot.copy( tRot );
+			wScale.copy( tScale);
 		}
 	}
 } Components(TransformNode);

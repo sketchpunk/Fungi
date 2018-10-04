@@ -44,6 +44,21 @@ http://schteppe.github.io/cannon.js/docs/files/src_collision_Ray.js.html#l12 RAY
 
 http://schteppe.github.io/cannon.js/docs/files/src_objects_Spring.js.html#l5  SPRINGS
 
+
+https://jsfiddle.net/cs00L0ok/  Curve Path
+
+.......................................................
+CURVE INTERFACE??
+http://scaledinnovation.com/analytics/nonlinear/about.html
+http://scaledinnovation.com/analytics/nonlinear/fisheye.html  How to Project 2D to 3D
+
+http://scaledinnovation.com/analytics/trees/dendrograms.html  Circular Trees
+http://scaledinnovation.com/analytics/trees/treemaps.html
+http://scaledinnovation.com/analytics/trees/fractalmaps.html
+
+http://scaledinnovation.com/analytics/splines/aboutSplines.html
+
+
 .......................................................
 Curves
 https://www.desmos.com/calculator/hycpcbwtbq cubic spline
@@ -54,7 +69,20 @@ https://www.desmos.com/calculator/029zrabdnc
 
 https://steemit.com/mathematics/@mes/polar-coordinates-graphing-with-polar-curves-with-desmos-calculator
 
-https://www.youtube.com/watch?v=mr5xkf6zSzk 1D Nonlinear Transformations - AD THE END HAS SUPER SIMPLE BEZIER VERY COOL.
+https://www.youtube.com/watch?v=mr5xkf6zSzk 1D Nonlinear Transformations - AD THE END HAS SUPER SIMPLE BEZIER VERY COOL. Bezier Tween Ease
+
+https://github.com/JPBotelho/Catmull-Rom-Splines
+https://en.wikipedia.org/wiki/Centripetal_Catmull%E2%80%93Rom_spline
+https://engineering.riotgames.com/news/compressing-skeletal-animation-data
+http://serversideguy.com/2018/05/01/can-bezier-curves-be-quickly-parameterized-by-arc-length/
+http://www.mvps.org/directx/articles/catmull/
+https://gamedev.stackexchange.com/questions/75262/how-can-i-make-a-spline-out-of-three-points-that-define-circular-arc
+http://aross.io/play/catmull-rom/
+
+http://aross.io/play/casteljau/
+
+https://gist.github.com/mckamey/3783009  CSS bezier curve in JS 01 to 11;
+https://github.com/gre/bezier-easing#readme
 
 .......................................................
 Calculate the circumference of the wheel. Use the formula: c = 2_pi_r, where c is the circumference, r is the radius, and pi can be approximated by 3.14. Following the example, if the car wheel has a radius of 0.3 meters, then the circumference is equal to:
@@ -69,6 +97,12 @@ Following the example, the number of revolutions per minute is equal to:
 .......................................................
 Triplanar Shaders
 https://medium.com/@bgolus/normal-mapping-for-a-triplanar-shader-10bf39dca05a
+
+
+.......................................................
+http://aross.io/play/recognizer-levenshtein/
+http://aross.io/play/bin-packer/
+http://aross.io/play/blobs/
 
 .......................................................
 Morph Meshes
@@ -119,6 +153,16 @@ https://www.nutty.ca/?page_id=352&link=gamma_correction  GAMMA CORRECTION
 https://www.nutty.ca/?page_id=352&link=depth_of_field  DEPTH OF FIELD
 https://www.nutty.ca/?page_id=352&link=old_film  OLD FILM
 https://www.nutty.ca/?page_id=352&link=shadow_map  SHADOW MAP good info
+
+https://www.youtube.com/watch?v=RdNnbozAPGQ LIGHTENING - JUST PATHS OF NOISE, AWESOME
+
+https://www.youtube.com/watch?v=-7HoenS6PpY  Mesh Effects , like Lightening on a sword
+
+https://twitter.com/erkaman2/status/1042474582949732352?s=03  BLOOM EFFECT
+
+https://twitter.com/godsgreg/status/1042794634542501888  LIQUAD POTION SHADER
+
+https://www.youtube.com/watch?v=i2w0p_mV8_g  Animated Sphere Shield Effect 
 
 https://twitter.com/etiennepov/status/969703381471256576?s=03
 
@@ -411,6 +455,9 @@ https://www.youtube.com/watch?v=vZp0ETdD37E
 
 https://www.youtube.com/watch?v=rQG9aUWarwE 2D Over the TOP Field of view, VERY COOL.
 
+
+https://inconvergent.net/generative/ AWESOME ALGORITHUMS
+
 .......................................................
 Armature Kinematics Inverse Forward
 http://physicsforgames.blogspot.com/2010/06/blending-walkrun-cycle.html
@@ -450,10 +497,18 @@ https://www.youtube.com/watch?v=cH4oBoXkE00
 
 https://turanszkij.wordpress.com/2018/05/21/scalabe-gpu-fluid-simulation/
 
+
+https://codepen.io/rachsmith/post/hack-physics-and-javascript-part-3-springs-and-some-other-things
+https://github.com/schteppe/p2.js/blob/master/src/constraints/PrismaticConstraint.js
+https://processing.org/examples/chain.html  SPRING
+
 .......................................................
 MATH
 https://www.youtube.com/watch?v=8fm8wXa2x5k
 https://www.algorithm-archive.org/chapters/convolutions/convolutions.html
+
+
+https://github.com/Jam3/math-as-code   Learn to read math for programmers
 
 
 https://github.com/mattatz/ShibuyaCrowd/blob/master/source/shaders/common/quaternion.glsl
@@ -488,6 +543,9 @@ Voxels
 http://www.gedge.ca/dev/2014/08/17/greedy-voxel-meshing   Improvements to Rendering
 
 https://sites.google.com/site/letsmakeavoxelengine/
+
+https://stackoverflow.com/questions/46915997/why-does-transvoxel-make-blocky-terrain
+https://gamedev.stackexchange.com/questions/139307/how-does-transvoxel-algorithm-work-and-how-can-i-implement-it
 
 .......................................................
 Vector Field Textures

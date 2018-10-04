@@ -6,7 +6,7 @@ import ArmaturePreview	from "./ArmaturePreview.js";
 const QUERY_COM = ["Armature"];
 
 class ArmatureSystem extends System{
-	static init(){ Fungi.ecs.addSystem(new ArmatureSystem, 91); }
+	static init( priority = 91 ){ Fungi.ecs.addSystem(new ArmatureSystem, priority); }
 
 	constructor(){ super(); }
 	update(ecs){
@@ -14,10 +14,18 @@ class ArmatureSystem extends System{
 		for( e of ary ){
 			if(!e.com.Armature.isModified) continue;
 
-			Armature.updateOffsets( e ).flattenData( e );
+			//...........................................
+			//If Armature is active, Update the offsets.
+			if(e.com.Armature.isActive){
+				console.log("x",e.name);
+				Armature.updateOffsets( e ).flattenData( e );
+			}
 
+			//...........................................
 			//If Preview Exists
-			if(e.com.ArmaturePreview) ArmaturePreview.flattenData( e ).updateBuffer( e );
+			if(e.com.ArmaturePreview){
+				ArmaturePreview.flattenData( e ).updateBuffer( e );
+			}
 
 			e.com.Armature.isModified = false;
 		}

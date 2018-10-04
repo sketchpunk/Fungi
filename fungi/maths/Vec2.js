@@ -40,7 +40,7 @@ class Vec2 extends Float32Array{
 			return this;
 		}
 
-
+		setLength(len){ return this.normalize().scale(len); }
 	//endregion
 
 
