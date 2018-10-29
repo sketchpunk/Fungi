@@ -101,7 +101,7 @@
 
 		//..................................................
 		var chunk 		= eChunk.com.VoxelChunk,
-			offsetPos	= eChunk.com.Transform._position,	// Help Move inPos to Local Space from World Space
+			offsetPos	= eChunk.com.Transform.position,	// Help Move inPos to Local Space from World Space
 			inPos		= ray.getPos( Math.max(tBox.min, 0) ).nearZero(),	// Entry point for chunk, Clean up vals near zero. If Min < 0, origin is in AABB
 			inPosLoc	= Vec3.sub(inPos, offsetPos),		// Move inPos which is world space, to local space.
 			cellSize	= chunk.scale,

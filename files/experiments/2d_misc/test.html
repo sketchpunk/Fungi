@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<style>
+			html,body{margin:0px; padding:0px; width:100%; height:100%;}
+			body{background-color:#606060;}
+			canvas{border:0px solid green;}
+			div.win{display:flex; width:100%; height:100%; align-items:center; justify-content:center;}
+			#lblFPS{position:absolute; top:0px; left:0px; width:40px; padding:5px 5px;
+				background:gray; color:white; font-weight:bold; text-align:center; font-family:arial; font-size:13px; }
+		</style>
+		<title>Bezier Splines - Planetary Rocket Attack</title>
+
+		<script type="module">
+			import Overlay 		from "/lib/Overlay/Overlay.js";
+
+			import Canvas2D		from "/lib/Canvas2D.js";
+			//import {Easing}		from "/lib/Tween.js";
+			import RenderLoop	from "/fungi/RenderLoop.js";
+			import Vec2			from "/fungi/maths/Vec2.js";
+			//import Maths 		from "/fungi/Maths.js";
+
+			//========================================================
+			var gCanvas, gLoop;
+
+			window.addEventListener("load",function(){
+				//----------------------------------
+				//Setup
+				gCanvas	= new Canvas2D("FungiCanvas").center().flipY();
+				//gLoop	= new RenderLoop(onRender, 30);
+
+				//gCanvas.lineDash([5,5], 2);
+				
+				//----------------------------------
+				Overlay.init()
+					.range("pA", 0, 0, 360, 1, function(e){ radA = Maths.toRad(this.value); calc(); })
+					.range("pB", 180, 0, 360, 1, function(e){ radB = Maths.toRad(this.value); calc(); })
+				;
+
+				var cLen = 270;
+				var pntA = new Vec2(-100, 0);
+				var pntB = new Vec2(100, 0);
+
+				gCanvas.vecCircle("stroke", 5, pntA);
+				gCanvas.vecCircle("stroke", 5, pntB);
+				gCanvas.vecLine("stroke", [-200,0], [200,0]);
+
+				var a = c_a(pntA, pntB, cLen);
+				//return;
+
+
+				
+				var dir = Vec2.sub(pntB, pntA)
+				var dist = dir.length();
+				dir.normalize();
+
+				console.log("distance", dist);
+
+
+
+				var max = 10;
+				var v = new Vec2();
+				var slope = new Vec2();
+				var distHalf = dist / 2;
+				var offset = catenary(a, -distHalf);
+				var inc = dist / max;
+				
+
+				console.log("offset", offset);
+
+				for(let i=0; i <= max; i++){
+					Vec2.lerp(pntA, pntB, i/max, v);
+					//Vec2.scale(dir, i * inc, slope);
+					//Vec2.add(pntA, slope, v);
+
+					var x = i * inc - distHalf;
+
+					//float x = i * wireResolution - distance / 2;
+
+					var c = catenary(a, x);
+					//var c = catenary(cLen, x-v.x);
+					//console.log(v.y, offset,  c);
+
+					//v.x = ;
+					v.y = v.y - (offset - c);
+					//v.y = c;
+
+					//console.log(c);
+
+					gCanvas.vecCircle("stroke", 1, v);
+				}
+				/**/
+
+
+				//----------------------------------
+				//Finish Up
+				//calc();
+				//draw(1.5);
+				//gLoop.start();
+			});
+
+			function catenary(a, x){ return a * Math.cosh( x / a ); }
+
+			function c_a(pos0, pos1, s){
+				//....................................
+				let yDelta = pos1.y - pos0.y; //v = p1.z - p0.z 
+
+				if(yDelta < 0){
+					// (p0, p1 = p1, p0; v *= -1) if v < 0  -- Think this means flip the points around.
+				}
+
+				if(yDelta > s){
+					console.log("yDelta ? aryLen");
+					return;
+				}
+
+				let pos2 = new Vec2(pos1.x, pos0.y); //p2 = [p1.x, p1.y, p0.z]
+				let h = Vec2.length(pos0, pos2);
+
+				console.log("Height", h, s);
+
+				//console.log(pos2, h);
+				//h = p0.distance(p2)
+
+				//console.log(yDelta, h);
+
+				//....................................
+  				const max_iterations = 1000; //to stop the recursion if something goes wrong
+  				let a2	= 0,
+  					a	= 100,
+  					e	= Number.MAX_VALUE; //Float::MAX;
+				 
+  				//let iteration = 0;
+				for(let i=0; i < max_iterations; i++){
+  				//while(e >= 0.001 && iteration <= max_iterations){
+  					//iteration++;
+  					a2	= 0.5 * h / ( Math.asinh( 0.5 * Math.sqrt(s**2 - yDelta**2) / a ) );
+  					e	= Math.abs( (a2-a) / a );
+				    a	= a2;
+				    console.log("e",i, a , e);
+				    if(e < 0.001) break;
+  				}
+
+  				//....................................
+  				//numeric solution for <x0> (Newton)
+				let x0 = 0,
+					x02 = 0;
+				e = Number.MAX_VALUE;
+
+				for(let i=0; i < max_iterations; i++){
+    				x02	= x0 + a*(   ( Math.cosh((0-x0)/a) - Math.cosh((h-x0)/a) + (yDelta-0)/a ) / ( Math.sinh((0-x0)/a) - Math.sinh((h-x0)/a) )   )
+    				e	= ((x02-x0)/x0).abs
+ 					x0	= x02;
+ 					if(e < 0.001) break;
+  				}
+
+  				 //solution for <y0>
+  				let y0 = - a * Math.cosh( (0-x0)/a );
+
+  				console.log( a, x0, y0 );
+
+  				//....................................
+  				let dir = Vec2.sub(pos2, pos0);//.normalize();
+  				let segCnt = 8;
+  				let segInc = s / segCnt;
+  				let inc;
+  				let x;
+  				let p = new Vec2();
+
+  				for(let i=1; i < segCnt; i++){
+  					inc = i * segInc;
+  					//inc =  i * s / segCnt;
+
+  					// get the x value for the current arc length
+    				x = Math.asinh( inc / a ) / Math.asinh( s / a);
+
+    				p.x = pos0.x + dir.x * x;
+    				console.log("x", dir.x, x);
+    				//p.z = (pos0.z + dir.z * x) ;
+    				//p.y = p.y + a * Math.cosh( ( x * h - x0 ) / a ) + y0;
+    				p.y = pos0.y + a * Math.cosh( (x* h - x0)/a ) + y0
+
+    				//p.y = p.y + a * Math.cosh( ( x * h - x0 ) / a ) + y0;
+
+    				gCanvas.vecCircle("stroke", 3, p);
+  				}
+
+/*
+  # Calculate points
+  vec = p0.vector_to(p2) # horizontal vector towards target
+  return nil if !vec.valid?
+  point_array = [p0]          # first point: use the requested point to avoid discrepancy
+  (segments).times{|i|
+    # divide the arc length s into equal segments and get the arc length to the current position
+    si = (i+1)*s/(segments).to_f
+    # get the x value for the current arc length
+    x = Math.asinh(si/a) / Math.asinh(s/a)
+    p = p0 + sc(vec, x)
+    # f(x)
+    p.z = p0.z + a * Math.cosh( (x*h-x0)/a ) + y0
+    point_array << p
+  }
+  point_array[-1] = p1        # last point: use the requested point to avoid discrepancy
+  return point_array
+end
+
+# scalar product
+def sc(vec, float)
+  return Geom::Vector3d.new(vec.x*float, vec.y*float, vec.z*float)
+end
+
+
+
+*/
+
+
+  				return a;
+
+			}
+
+		</script>
+	</head>
+<body>
+	<div class="win"><canvas id="FungiCanvas"></canvas></div>
+</body>
+</html>

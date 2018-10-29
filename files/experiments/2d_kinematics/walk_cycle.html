@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<style>
+			html,body{margin:0px; padding:0px; width:100%; height:100%;}
+			body{background-color:#606060;}
+			canvas{border:0px solid green;}
+			div.win{display:flex; width:100%; height:100%; align-items:center; justify-content:center;}
+			#lblFPS{position:absolute; top:0px; left:0px; width:40px; padding:5px 5px;
+				background:gray; color:white; font-weight:bold; text-align:center; font-family:arial; font-size:13px; }
+		</style>
+
+		<script type="module">
+			//https://www.youtube.com/watch?v=4oCo1j8xGew
+
+			import App, { Vec2, Draw, Components } from "/lib/Canvas2D/App.js";
+			import Maths	from "/fungi/Maths.js";
+			import Hier		from "/lib/Canvas2D/components/Hierarchy.js";
+			
+			//========================================================
+
+			let aryChainA, aryChainB;
+
+			window.addEventListener("load",function(){
+				App.launch( onRender ).useHierarchy().then( ()=>onInit() );
+			});
+
+			function onInit(){
+				let xCenter = App.canvas.width * 0.5;
+				let yCenter = App.canvas.height * 0.7;
+				let lowerLeg = Maths.toRad(35);
+
+				//----------------------------------
+				aryChainA = createChain(3, 100);
+				setPosition(aryChainA, 0, xCenter, yCenter);
+				initJoint(aryChainA[0], -Maths.PI_H, Maths.PI_Q, 0, 0);
+				initJoint(aryChainA[1], -lowerLeg, lowerLeg, 0, -1.5);
+				initJoint(aryChainA[2], Maths.PI_Q, Maths.PI_Q, 0, -0.75);
+				aryChainA[2].Draw.info.length = 20;
+
+				/**/
+				aryChainB = createChain(3, 100);
+				setPosition(aryChainB, 0, xCenter, yCenter);
+				initJoint(aryChainB[0], -Maths.PI_H, Maths.PI_Q, 	Math.PI, 0);
+				initJoint(aryChainB[1], -lowerLeg, lowerLeg, 	Math.PI, -1.5);
+				initJoint(aryChainB[2], Maths.PI_Q, Maths.PI_Q, 	Math.PI, -0.75);
+				aryChainB[2].Draw.info.length = 20;
+				
+				//initJoint(aryChain[1], 0.87, 0.87);
+
+				//setAngle(aryChainA, 0, -Maths.PI_H);
+				//setAngle(aryChainA, 1, -Maths.PI_Q);
+				//setAngle(aryChainA, 2, Maths.PI_Q);
+			
+
+
+				//----------------------------------
+				App.loop.start();
+				App.ecs.updateSystems();
+			}
+
+
+			function onRender(dt,ss){
+				//----------------------------------
+				animateChain(aryChainA);
+				animateChain(aryChainB);
+
+				//----------------------------------
+				App.ecs.updateSystems();
+			}
+			const PHASE_SPEED = 0.08;
+			const SPEED = 1.0;
+			function animateChain(ary){
+				let t, e, d, j;
+
+				for(e of ary){
+					d = e.Draw;
+					j = e.Joint;
+
+					j.phase += PHASE_SPEED;
+					t = Math.sin(j.phase + j.phaseOffset);
+
+					d.info.angle = j.angleInitial + t * j.angleRange;
+					d.isModified = true;
+				}
+			}
+
+			function setAngle(ary, i, angle){
+				ary[i].Draw.info.angle = angle;
+				ary[i].Draw.isModified = true;
+			}
+
+			function setPosition(ary, i, x, y){
+				ary[i].Draw.position.set(x, y);
+				ary[i].Draw.isModified = true;
+			}
+
+			function initJoint(e, ini, rng, phase = 0, phOffset = 0){
+				let c = (e instanceof Joint)? e : e.Joint;
+				c.angleInitial	= ini;
+				c.angleRange	= rng;
+				c.phase			= phase;
+				c.phaseOffset	= phOffset;
+				return e;
+			}
+
+			////////////////////////////////////////////////////////////////////
+			// 
+			////////////////////////////////////////////////////////////////////
+			function createChain(n, len){
+				let i, bone, pBone = null, ary = new Array();
+
+				for(i=0; i < n; i++){
+					bone = newBone("B"+i, len, 0);
+					if(i != 0)	Hier.addChild(pBone, bone);
+
+					ary.push(bone);
+					pBone = bone;
+				}
+
+				return ary;
+			}
+
+			function newBone(eName, len, angle = 0, range = 1){ 
+				let e = Draw.initLine( App.ecs.newAssemblage("HDraw", eName), len, angle );
+				e.addCom( new Joint(angle) );
+
+				return e;
+			}
+
+			class Joint{
+				constructor(){
+					this.angleInitial	= 0;
+					this.angleRange		= 0;
+					this.phase			= 0;
+					this.phaseOffset	= 0;
+				}
+			} Components(Joint);
+		</script>
+	</head>
+<body>
+	<div class="win"><canvas id="FungiCanvas"></canvas></div>
+</body>
+</html>
+
+<!--
+	https://www.youtube.com/watch?v=senmYqnOYz8
+
+
+-->

@@ -23,7 +23,7 @@
 
 			import Renderable	from "/fungi/rendering/Renderable.js";
 			import Renderer		from "/fungi/rendering/Renderer.js";
-			import Camera		from "/fungi/data/Camera.js";
+			import Camera		from "/fungi/data/Camera_Perspective.js";
 
 			window.addEventListener("load",function(){
 				gl.init("FungiCanvas");
@@ -36,7 +36,7 @@
 					vao			= Vao.standardRenderable("Quad", 3, qVert.vertices, null, qVert.uv, qVert.index);
 
 				//.....................
-				var camera = new Camera().setPerspective();
+				var camera = new Camera();
 				camera.setPosition(0,0,0);
 				camera.setDegrees(30,"y");
 				camera.updateMatrix();

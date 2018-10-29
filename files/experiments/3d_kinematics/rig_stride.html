@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<style>
+			html,body{margin:0px; padding:0px; width:100%; height:100%;}
+			body{background-color:#404040;}
+			canvas{border:0px solid green;}
+			div{display:flex; width:100%; height:100%; align-items:center; justify-content:center;}
+			#lblFPS{position:absolute; top:0px; left:0px; width:40px; padding:5px 5px;
+				background:gray; color:white; font-weight:bold; text-align:center; font-family:arial; font-size:13px; }
+		</style>
+
+		<script type="module">
+			import Fungi		from "/fungi/Fungi.js";
+			import App			from "/fungi/App.js";
+			import Api			from "/fungi/Api.js";
+			import Maths, {Vec3, Quat}		from "/fungi/Maths.js";
+
+			import TNode 			from "/fungi/components/TransformNode.js";
+
+			import Armature			from "/fungi.mod/armature_e/Armature.js";
+			import ArmaturePreview	from "/fungi.mod/armature_e/ArmaturePreview.js";
+
+			import IKChain, { IKChainState, IKChainPose }		from "/fungi.mod/armature_e/IKChain.js";
+			import IKChainSolver, { IKTarget, TransformData }	from "/fungi.mod/armature_e/IKChainSolver.js";
+			import IKChainAnimator								from "/fungi.mod/armature_e/IKChainAnimator.js";
+			
+
+			import DVao from "/fungi/components/DynamicVao.js";
+			let ePoint, eLine;
+			let gRig, gTarget, gAnim;
+
+
+			window.addEventListener("load",function(){
+				App.launch(onRender, [
+					{ type:"shader", file:"/fungi/shaders/VecWColor.txt" },
+					{ type:"shader", file:"/fungi.mod/armature_e/shaders/ArmaturePreview.txt" },
+					//{ type:"shader", file:"/fungi.mod/armature_e/shaders/ArmatureSkin.txt" },
+				])	.then( ()=>App.useDynamicVao(true, true).then(function(rtn){ ePoint = rtn.point; eLine = rtn.line; }) ) 
+					.then( ()=>App.useTransformNode() )
+					.then( ()=>App.useArmature() )
+					.then( ()=>App.loadScene() )
+					.then( ()=>onInit() )
+					.catch( err=>console.log("err", err) );
+			});
+
+
+			function onRender(dt, ss){
+				animate();
+				Fungi.ecs.updateSystems();
+			}
+
+			let stride_a = null,
+				stride_b = null,
+				stride_active = false,
+				stride_len = 0;
+
+			let gFTrack_L, gFTrack_R, FootVelocity = 0;
+
+			//https://livehealthy.chron.com/stride-length-affect-speed-walk-8028.html
+			function animate(){
+				//DVao.reset( ePoint, eLine );
+
+				//....................................................
+				// ANIMATION DATA
+				gAnim.next();
+
+				/*....................................................*/
+				gAnim.applyTarget( gTarget );
+				IKChainSolver.twoBone( gRig.lLeg, gTarget, gRig.lLeg_Pose );
+
+				//gFTrack_L.update( gRig.lLeg, gRig.lLeg_Pose, gRig.preview.com.Transform.position );
+
+				gAnim.applyTarget( gTarget, Math.PI );
+				IKChainSolver.twoBone( gRig.rLeg, gTarget, gRig.rLeg_Pose );
+
+				//gFTrack_R.update( gRig.rLeg, gRig.rLeg_Pose, gRig.preview.com.Transform.position );
+
+				//if( gFTrack_L.isGrounded ){
+				//	FootVelocity = gFTrack_L.velocity.z;
+				//} else if( gFTrack_R.isGrounded ){
+				//	FootVelocity = gFTrack_R.velocity.z;
+				//}
+
+				//gRig.preview.com.Transform.position.z += FootVelocity;
+				//gRig.preview.com.Transform.isModified = true;
+				
+				
+				var strideLen = 1.61439878605;
+				//var strideLen = 5.86708727032;
+
+				var s = strideLen / gAnim.cycle.spc;
+				//console.log( s );
+
+				gRig.preview.com.Transform.position.z += s * Fungi.deltaTime;
+				gRig.preview.com.Transform.isModified = true;
+				/**/
+
+
+				//if(gAnim.cycle.cycle <= Maths.PI_2){
+					//console.log( gTarget.scale );
+					//var p = IKChainSolver.chainEndPosition( gRig.rLeg, gRig.rLeg_Pose );
+
+					//if(stride_a == null) stride_a = p.z; else stride_a = Math.min(stride_a, p.z);
+					//if(stride_b == null) stride_b = p.z; else stride_b = Math.max(stride_b, p.z);
+
+					/*
+					if(p.y <= STRIDE_LIMIT_Y && !stride_active){
+						stride_active = true;
+						stride_a = p;
+						console.log("START");
+					}else if(p.y > STRIDE_LIMIT_Y && stride_active){
+						stride_active = false;
+						stride_b = p;
+
+						console.log("End");
+						DVao.vecPoint(ePoint, stride_a, 0);
+						DVao.vecPoint(ePoint, stride_b, 2);
+						stride_len = stride_a.length( stride_b );
+						//console.log("len", stride_a.length( stride_b ) );
+					}
+					console.log(p.y, gAnim.cycle.spc);
+
+					*/
+					//console.log(stride_a, stride_b);
+				//}
+
+				//if(gAnim.cycle.cycle > Maths.PI_2 && !stride_active){
+				//	stride_active = true;
+				//	stride_len = (stride_b - stride_a) * 2 / (gAnim.cycle.spc);
+				//	console.log(stride_len, gAnim.cycle.spc, (stride_b - stride_a));
+
+				//	DVao.vecPoint(ePoint, new Vec3(0, 0, stride_a), 0);
+				//	DVao.vecPoint(ePoint, new Vec3(0, 0, stride_b), 2);
+				//}
+
+
+				//if(stride_len != 0){
+				//	gRig.preview.com.Transform.position.z += stride_len * Fungi.deltaTime;
+				//	gRig.preview.com.Transform.isModified = true;
+				//}
+
+				//......................................
+				gRig.updatePose();
+			}
+
+
+			function onInit(){
+				//........................				
+				Fungi.camera.com.Transform//.setPosition(0,2,5).setDegrees(-20,"x");
+				.setPosition(4.974831581115723, 0.9137678146362305, 1.8482614755630493)
+				.setAxisAngle([-0.12156421241836649,0.9889786328840693,0.08451896698760844], 1.2254865874475849);
+
+				//........................
+				gTarget	= new IKTarget();
+				gRig 	= new RigWalker();
+				gAnim 	= new IKChainAnimator( Anim_Walk );
+				//gAnim.cycle.infinite = false;
+
+				gFTrack_L = new FootTracker();
+				gFTrack_R = new FootTracker();
+
+				
+				//........................
+				animate();
+				Fungi.loop.start();
+			}
+
+			let Rig_Spec = [
+				{ name:"hip",		len:0.2, pos:[0,0.9,0] },
+				{ name:"thigh.L",	len:0.5, pos:[0.2, 0.1, 0],		rot:[-0, -0, -1, 8.948966567778882e-10], parent:"hip" },
+				{ name:"thigh.R",	len:0.5, pos:[-0.2, 0.1, 0],	rot:[-0, -0, -1, 8.948966567778882e-10], parent:"hip" },
+				{ name:"shin.L",	len:0.5, parent:"thigh.L" },
+				{ name:"shin.R",	len:0.5, parent:"thigh.R" },
+			];
+
+			let Anim_Jog = { 
+				cyclePerSec:3.5,
+				dir:[0,-1,0], bendDir:[0,0,1],
+				rotateCurve:"sin01", rotateCycleOffset:0,
+				axis:[1,0,0], axisFrom:-45, axisTo:70,
+				scaleFrom: 0.5, scaleTo: 1.0, scaleCycleOffset: 1.95, scaleCurve: "sin01"
+			};
+
+			let Anim_Walk = { 
+				cyclePerSec:2.0,
+				dir:[0,-1,0], bendDir:[0,0,1],
+				rotateCurve:"sin01", rotateCycleOffset:0,
+				axis:[1,0,0], axisFrom:-10, axisTo:25,
+				scaleFrom: 0.9, scaleTo: 1.0, scaleCycleOffset: 1.95, scaleCurve: "sin01"
+			};
+
+			class RigWalker{
+				constructor(){
+					this.armature	= null;
+					this.preview	=  null;
+
+					//..........................................
+					ArmatureBuilder(Rig_Spec, this);
+
+					this.hip	= Armature.getBone(this.armature, "hip");
+
+					this.lLeg	= IKChain.create(
+						Armature.getBone(this.armature, "thigh.L"),
+						Armature.getBone(this.armature, "shin.L"),
+					);
+
+					this.rLeg	= IKChain.create(
+						Armature.getBone(this.armature, "thigh.R"),
+						Armature.getBone(this.armature, "shin.R"),
+					);
+
+					this.lLeg_Pose = new IKChainPose( this.lLeg, false );
+					this.rLeg_Pose = new IKChainPose( this.rLeg, false );
+				}
+
+				updatePose(){
+					IKChainPose.applyTransform( this.lLeg, this.lLeg_Pose );
+					IKChainPose.applyTransform( this.rLeg, this.rLeg_Pose );
+					this.armature.isModified = true;
+				}
+			}
+
+
+			const STRIDE_LIMIT_Y = 0.013;
+			class FootTracker{
+				constructor(){
+					this.prevPos	= new Vec3();
+					this.velocity	= new Vec3();
+					this.isGrounded = false;
+
+					this.cnt = 0;
+					this.total = 0;
+				}
+
+				update(chain, pose, wpos){
+					var pos = IKChainSolver.chainEndPosition( chain, pose );
+					this.prevPos.sub( pos, this.velocity );
+
+					if( gAnim.cycle.cycle > Maths.PI_2){
+
+						if(pos.y <= STRIDE_LIMIT_Y && !this.isGrounded){
+							this.isGrounded = true;
+							DVao.vecPoint( ePoint, Vec3.add( pos, wpos ), 0);
+
+							this.cnt++;
+							this.total = pos.z + wpos.z;
+
+							if(this.cnt == 10) console.log("Avg Stride:", this.total / this.cnt);
+						}else if(pos.y > STRIDE_LIMIT_Y && this.isGrounded){
+							this.isGrounded = false;
+							//DVao.vecPoint( ePoint, pos, 2);
+						}
+
+					}
+
+					this.prevPos.copy( pos );
+				}
+			}
+
+
+			function ArmatureBuilder(spec, rig){
+				let arm 	= new Armature(),
+					p, s, eBone;
+
+				for(let i=0; i < spec.length; i++){
+					s = spec[i];
+					p = (s.parent)? Armature.getBone(arm, s.parent) : null;
+
+					eBone = Armature.newBone(arm, s.name, s.len, p);
+					if(s.pos) eBone.com.Transform.position.copy( s.pos );
+					if(s.rot) eBone.com.Transform.rotation.copy( s.rot );
+				}
+
+				arm.isActive = false;
+				arm.isModified = true;
+				Armature.finalize( arm );
+
+				//...................................
+				// Build Preview Rendering Entity
+				let entity = Api.newDraw("TentacleRig", "ArmaturePreview");
+				entity.addCom( arm );	// Add Armature Component to Preview Rig.
+				ArmaturePreview.init( entity );	// Setup
+				ArmaturePreview.useDiamondWire( entity, "armPreview" );
+
+				//...................................
+				rig.armature	= arm;
+				rig.preview		= entity;
+			}
+
+		</script>
+	</head>
+<body>
+	<div><canvas id="FungiCanvas"></canvas></div>
+	<span id="lblFPS">0</div>
+</body>
+</html>
