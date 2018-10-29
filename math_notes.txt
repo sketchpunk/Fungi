@@ -97,3 +97,41 @@ Closet Point on a plane from a point.
 Intersection Point between a Plane and a Ray
 
 	dot( planePos-rayOrigin, planeNorm ) / dot(rayVecLen, planeNorm);
+
+
+...........................................
+Kinematic / suvat Equations
+https://www.youtube.com/watch?v=v1V3T5BPd7E
+https://www.youtube.com/watch?v=phMZQNu0ZFM
+https://www.youtube.com/watch?v=IvT8hjy6q4o
+
+s = displacement (distance)
+u = inital velocity
+v = final velocity
+a = acceleration
+t = total time
+
+1. s = (( u + v ) / 2) * t
+	Average Velocity = displacement / time 
+	(inital v + final v) / 2 = displayment / time
+
+2. v = u + a * t
+	a = (v - u) / t
+	t = (v - u) / a
+	Constant Accel = (change of velocity) / time
+	Constant Accel = (final vel - initial vel) / time
+
+3. s = (u * t) + (( a * t^2 ) / 2)
+
+4. s = v * t - ((a * t^2) / 2 )
+
+5. v^2 = u^2 + 2 * a * s
+	u^2 = v^2 - 2 * a * s
+
+6. s = (v^2 - u^2) / (2 * a)
+
+
+
+
+
+

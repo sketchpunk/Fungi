@@ -232,4 +232,4 @@ async function useMovement( priority=30 ){
 }
 
 
-export default { launch, loadScene, loadFPS, useBehaviours, useDynamicVao, useTransformHierarchy, useTransformNode, useArmature, useMovement };
+export default { Components, launch, loadScene, loadFPS, useBehaviours, useDynamicVao, useTransformHierarchy, useTransformNode, useArmature, useMovement };

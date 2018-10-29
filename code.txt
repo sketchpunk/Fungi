@@ -1,0 +1,83 @@
+class RotationMotor{
+	constructor(sec, offset=0){
+		this.cycle			= offset;	// Current Cycle Value
+		this.cycleInc		= 0;		// How much to move per millisecond
+		this.cycleOffset	= offset;	// How much to offset the cycle (this sets cycles when restarting)
+
+		this.speedScale		= 1.0;		// Scale the rate of the cycle
+		this.setCycleBySeconds(sec);
+	}
+
+	setCycleBySeconds(s){ this.cycleInc	= Maths.PI_2 / ( s * 1000 ); }
+
+	backwards(){	if( this.speedScale > 0 ) this.speedScale *= -1; }
+	forwards(){		if( this.speedScale < 0 ) this.speedScale *= -1; }
+
+	next(){
+		this.cycle = (this.cycle + (Fungi.deltaTime * 1000 * this.speedScale) * this.cycleInc) % Maths.PI_2;
+		return this.cycle;
+	}
+}
+
+			// inc = this.tDiff / (itemCount-1)
+			// offset = tMin + inc * i;
+			class TimeCycle{
+				constructor( min=0, max=3){
+					this.isActive	= false;
+					this.time		= 0;
+					this.tMin		= 0;
+					this.tMax		= 0;
+					this.tDiff		= 0;
+
+					this.set( min, max );
+				}
+				set( min, max ){
+					this.tMin = min;
+					this.tMax = max;
+					this.tDiff = max - min;
+					return this;					
+				}
+				reset( start = false ){ 
+					this.time = 0; 
+					if(start) this.isActive = true;
+					return this;
+				}
+				next(){
+					this.time = Math.min(this.time + Fungi.deltaTime, this.tMax);
+
+					if(this.time >= this.tMax) this.isActive = false;
+
+					return this.isActive;
+				}
+				getInc(cnt){ return this.tDiff / cnt; }
+				getMinOffset(tOffset=0){ return Math.min( this.time / (this.tMin + tOffset)); }
+				getGrad(){ return Math.min( this.time / this.tMax ); }
+			}
+
+			class TCycle{
+				static newStruct(min, max){ return { tMin:min, tMax:max, tDiff:max-min, time:0 }; }
+				static next(data){
+					data.time =  Math.min( data.time + Fungi.deltaTime, data.tMax );
+					return (this.time >= data.tMax);
+				}
+				static reset(data){ data.time = 0; }
+				static grad(data){ return data.time / data.tMax; }
+			}
+
+
+			function arrayShuffle(ary){
+  				var i = ary.length,
+  					ii, t;
+
+  				//From End to start, Swop last element with a random earlier element.
+  				while (0 !== i ) {
+					ii = Math.floor(Math.random() * i);
+					i--;
+
+					//Swap Data
+					t			= ary[ i ];
+					ary[ i ]	= ary[ ii ];
+					ary[ ii ]	= t;
+				}
+  				return ary;
+			}

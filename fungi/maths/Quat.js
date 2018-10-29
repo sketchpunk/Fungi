@@ -294,48 +294,80 @@ class Quaternion extends Float32Array{
 			out[2] = z;
 			out[3] = w;
 			return out;
-
-			/*
-			var num8 = (m00 + m11) + m22;
-			if (num8 > 0.0){
-				var num = Math.sqrt(num8 + 1.0);
-				out.w = num * 0.5;
-				num = 0.5 / num;
-				out.x = (m12 - m21) * num;
-				out.y = (m20 - m02) * num;
-				out.z = (m01 - m10) * num;
-				return out;
-			}
-
-			if((m00 >= m11) && (m00 >= m22)){
-				var num7 = Math.sqrt(1.0 + m00 - m11 - m22);
-				var num4 = 0.5 / num7;
-				out.x = 0.5 * num7;
-				out.y = (m01 + m10) * num4;
-				out.z = (m02 + m20) * num4;
-				out.w = (m12 - m21) * num4;
-				return out;
-			}
-
-			if(m11 > m22){
-				var num6 = Math.sqrt(((1.0 + m11) - m00) - m22);
-				var num3 = 0.5 / num6;
-				out.x = (m10 + m01) * num3;
-				out.y = 0.5 * num6;
-				out.z = (m21 + m12) * num3;
-				out.w = (m20 - m02) * num3;
-				return out;
-			}
-
-			var num5 = Math.sqrt(((1.0 + m22) - m00) - m11);
-			var num2 = 0.5 / num5;
-			out.x = (m20 + m02) * num2;
-			out.y = (m21 + m12) * num2;
-			out.z = 0.5 * num5;
-			out.w = (m01 - m10) * num2;
-			return out;
-			*/
 		}
+
+		static fromAxis(xAxis, yAxis, zAxis, out = null){
+			var m00 = xAxis.x, m01 = xAxis.y, m02 = xAxis.z,
+				m10 = yAxis.x, m11 = yAxis.y, m12 = yAxis.z,
+				m20 = zAxis.x, m21 = zAxis.y, m22 = zAxis.z,
+				t = m00 + m11 + m22,
+				x, y, z, w, s;
+
+			if(t > 0.0){
+				s = Math.sqrt(t + 1.0);
+				w = s * 0.5 ; // |w| >= 0.5
+				s = 0.5 / s;
+				x = (m12 - m21) * s;
+				y = (m20 - m02) * s;
+				z = (m01 - m10) * s;
+			}else if((m00 >= m11) && (m00 >= m22)){
+				s = Math.sqrt(1.0 + m00 - m11 - m22);
+				x = 0.5 * s;// |x| >= 0.5
+				s = 0.5 / s;
+				y = (m01 + m10) * s;
+				z = (m02 + m20) * s;
+				w = (m12 - m21) * s;
+			}else if(m11 > m22){
+				s = Math.sqrt(1.0 + m11 - m00 - m22);
+				y = 0.5 * s; // |y| >= 0.5
+				s = 0.5 / s;
+				x = (m10 + m01) * s;
+				z = (m21 + m12) * s;
+				w = (m20 - m02) * s;
+			}else{
+				s = Math.sqrt(1.0 + m22 - m00 - m11);
+				z = 0.5 * s; // |z| >= 0.5
+				s = 0.5 / s;
+				x = (m20 + m02) * s;
+				y = (m21 + m12) * s;
+				w = (m01 - m10) * s;
+			}
+
+			out = out || new Quaternion();
+			out[0] = x;
+			out[1] = y;
+			out[2] = z;
+			out[3] = w;
+			return out;
+		}
+
+		//Using unit vectors, Shortest rotation from Direction A to Direction B
+		//http://glmatrix.net/docs/quat.js.html#line548
+		static rotationTo(a, b, out = null){
+			let dot = Vec3.dot(a, b);
+			out = out || new Quat();
+
+		    if (dot < -0.999999) {
+		      let tmp = Vec3.cross(Vec3.LEFT, a);
+		      //if(Vec3.len(tmp) < 0.000001) Vec3.cross(Vec3.UP, a, tmp);
+		      if(tmp.length() < 0.000001) Vec3.cross(Vec3.UP, a, tmp);
+		      out.setAxisAngle( tmp.normalize(), Math.PI);
+		    }else if(dot > 0.999999){
+		      out[0] = 0;
+		      out[1] = 0;
+		      out[2] = 0;
+		      out[3] = 1;
+		    }else{
+		      let v = Vec3.cross(a, b);
+		      out[0] = v[0];
+		      out[1] = v[1];
+		      out[2] = v[2];
+		      out[3] = 1 + dot;
+		      out.normalize();
+		    }
+		    return out;
+		}
+
 
 		//https://github.com/toji/gl-matrix/blob/master/src/gl-matrix/quat.js
 		static rotateX(q, rad, out = null){

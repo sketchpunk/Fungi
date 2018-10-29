@@ -47,3 +47,67 @@ function quickSort(ary){
 		if(pos.start+1 < pos.end)	partition.push( {start:pos.start+1,end:pos.end} );	//Right Partition
 	}
 }
+
+
+
+
+/*
+let xhr = new XhrPromise();
+xhr.get(url, "json").then( r=>console.log(r) ).catch(err=>console.log(err));
+*/
+class XhrPromise{
+	constructor(){
+		this.xhr = new XMLHttpRequest();
+		this.xhr.addEventListener("load",		this.onXhrComplete.bind(this)	,false);
+		this.xhr.addEventListener("error",		this.onXhrError.bind(this)		,false);
+		this.xhr.addEventListener("abort",		this.onXhrAbort.bind(this)		,false);
+		this.xhr.addEventListener("timeout",	this.onXhrTimeout.bind(this)	,false);
+		
+		this.inUse			= false;
+		this.promiseReject	= null;
+		this.promiseResolve	= null;
+
+		//Start request in promise and save Resolve/Reject reference to call later
+		//when the async xhr call is complete.
+		this._onPromise = (resolve, reject)=>{
+			this.inUse			= true;
+			this.promiseResolve	= resolve;
+			this.promiseReject	= reject;
+
+			try{		
+				this.xhr.send();
+			}catch(err){
+				console.log("xhr err",err);
+				reject(err);
+			}
+		};
+	}
+
+	_complete(isSuccess, err){
+		if(isSuccess){
+			this.promiseResolve( this.xhr.response );
+		}else{
+			this.promiseReject( err );
+		}
+
+		this.inUse			= false;
+		this.promiseReject	= null;
+		this.promiseResolve	= null;
+	}
+
+	get(url, type="text"){ // "json"
+		this.xhr.open("GET", url);
+		this.xhr.responseType = type; //https://developer.mozilla.org/en-US/docs/Web/API/XMLHttpRequest/responseType
+		return new Promise(this._onPromise);
+	}
+
+	onXhrComplete(e){	//console.log( e, e.currentTarget.response );
+		if(this.xhr.status != 200)
+			this._complete( false, "http status : " + this.xhr.status + " " + this.xhr.statusText );
+		else
+			this._complete( true );
+	}
+	onXhrError(e){		this._complete( false ); console.log("onXhrError"); }
+	onXhrAbort(e){		this._complete( false ); console.log("onXhrAbort"); }
+	onXhrTimeout(e){	this._complete( false ); console.log("onXhrTimeout"); }
+}

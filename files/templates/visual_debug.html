@@ -14,19 +14,17 @@
 			import Fungi		from "/fungi/Fungi.js";
 			import App			from "/fungi/App.js";
 			import Api			from "/fungi/Api.js";
-
 			import DVao 		from "/fungi/components/DynamicVao.js";
 
+			var ePoint, eLine;
 			window.addEventListener("load",function(){
 				App.launch(onRender, [
 					{ type:"shader", file:"/fungi/shaders/VecWColor.txt" },
-				])	.then( ()=>App.useDynamicVao() )
+				])	.then( ()=>App.useDynamicVao(true, true).then(function(rtn){ ePoint = rtn.point; eLine = rtn.line; }) ) 
 					.then( ()=>App.loadScene() )
 					.then( ()=>onInit() )
 					.catch( err=>console.log("err", err) );
 			});
-
-			var ePoint, eLine;
 
 			function onRender(dt, ss){ Fungi.ecs.updateSystems(); }
 			function onInit(){
@@ -34,10 +32,7 @@
 				Fungi.camera.com.Transform.setPosition(0,2,5).setDegrees(-20,"x");
 
 				//........................
-				eLine = DVao.initLine( Api.newDraw("eLine", "VecWColor") );
 				DVao.rawLine(eLine, 0,0,0, 0,1,0, 6);
-
-				ePoint = DVao.initPoint( Api.newDraw("ePoint", "VecWColor") );
 				DVao.rawPoint(ePoint, 0,1,0, 0);
 
 				//........................

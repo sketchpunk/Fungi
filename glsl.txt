@@ -1,0 +1,24 @@
+https://www.geeks3d.com/20141201/how-to-rotate-a-vertex-by-a-quaternion-in-glsl/
+
+mat3 rotAxis(vec3 axis, float a) {
+float s=sin(a);
+float c=cos(a);
+float oc=1.0-c;
+vec3 as=axis*s;
+mat3 p=mat3(axis.x*axis,axis.y*axis,axis.z*axis);
+mat3 q=mat3(c,-as.z,as.y,as.z,c,-as.x,-as.y,as.x,c);
+return p*oc+q;
+}
+
+mat4 rotationMatrix(vec3 axis, float angle)
+{
+    axis = normalize(axis);
+    float s = sin(angle);
+    float c = cos(angle);
+    float oc = 1.0 - c;
+    
+    return mat4(oc * axis.x * axis.x + c,           oc * axis.x * axis.y - axis.z * s,  oc * axis.z * axis.x + axis.y * s,  0.0,
+                oc * axis.x * axis.y + axis.z * s,  oc * axis.y * axis.y + c,           oc * axis.y * axis.z - axis.x * s,  0.0,
+                oc * axis.z * axis.x - axis.y * s,  oc * axis.y * axis.z + axis.x * s,  oc * axis.z * axis.z + c,           0.0,
+                0.0,                                0.0,                                0.0,                                1.0);
+}

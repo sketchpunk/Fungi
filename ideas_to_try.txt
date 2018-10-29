@@ -47,6 +47,20 @@ http://schteppe.github.io/cannon.js/docs/files/src_objects_Spring.js.html#l5  SP
 
 https://jsfiddle.net/cs00L0ok/  Curve Path
 
+
+
+https://www.blog.drewcutchins.com/blog/2018-8-16-flocking  FLOCKING
+
+
+https://tdhooper.github.io/dragon-snake/preview/  DRAGON SNAKE
+https://github.com/tdhooper/dragon-snake
+https://github.com/spite/looper
+
+
+https://gist.github.com/gordonbrander/2ca91ac14beeb804e867  1D Spring
+https://hackernoon.com/the-spring-factory-4c3d988e7129
+
+
 .......................................................
 CURVE INTERFACE??
 http://scaledinnovation.com/analytics/nonlinear/about.html
@@ -98,6 +112,10 @@ Following the example, the number of revolutions per minute is equal to:
 Triplanar Shaders
 https://medium.com/@bgolus/normal-mapping-for-a-triplanar-shader-10bf39dca05a
 
+
+.......................................................
+INTERIOR Mapping
+https://github.com/Gaxil/Unity-InteriorMapping
 
 .......................................................
 http://aross.io/play/recognizer-levenshtein/

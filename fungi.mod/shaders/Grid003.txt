@@ -1,0 +1,174 @@
+<shader>{ 
+	"name"		: "Grid003",
+	"options"	: { "modelMatrix":true, "normalMatrix":false },
+	"ubo"		: [ "UBOTransform" ],
+	"uniforms"	: [
+
+	]
+}<\shader>
+		{ "name":"u_majorCellSize",		"type":"float" },
+		{ "name":"u_minorCellSize",		"type":"float" },
+		{ "name":"u_majorPixelScale",	"type":"float" },
+		{ "name":"u_minorPixelScale",	"type":"float" },
+		{ "name":"u_majorStrength",		"type":"float" },
+		{ "name":"u_minorStrength",		"type":"float" },
+		{ "name":"u_baseColor",			"type":"vec4" },
+		{ "name":"u_lineColor",			"type":"vec4" }
+<materials> [
+	{	"name"		: "Grid003",
+		"options"	: { "blend":true,"sampleAlphaCoverage":false, "depthTest":true },
+		"uniforms"	: [ 
+
+		] }
+] <\materials>
+			{ "name":"u_majorCellSize",		"value":1.0 },
+			{ "name":"u_minorCellSize",		"value":0.2 },
+			{ "name":"u_majorPixelScale",	"value":0.5 },
+			{ "name":"u_minorPixelScale",	"value":0.1 },
+			{ "name":"u_majorStrength",		"value":1.0 },
+			{ "name":"u_minorStrength",		"value":1.0 },
+			{ "name":"u_baseColor",			"value":"#ffffffff", "type":"rgba" },
+			{ "name":"u_lineColor",			"value":"#e6e6e6ff", "type":"rgba" }
+<vertex>
+	#version 300 es
+	layout(location=0) in vec3 a_position;
+	layout(location=2) in vec2 a_uv;
+
+	uniform UBOTransform{
+		mat4 	projViewMatrix;
+		vec3	cameraPos;
+		float	globalTime;
+		vec2	screenSize;
+	};
+
+	uniform mat4 u_modelMatrix;
+
+	out vec2 v_uv;
+	out vec3 v_worldPos;
+
+	void main(void){
+		//..............................
+		vec4 worldPos	= u_modelMatrix * vec4(a_position,1.0);
+
+		//..............................
+		v_uv			= a_uv;
+		v_worldPos		= worldPos.xyz;
+
+		//..............................
+		gl_Position		= projViewMatrix * worldPos;
+	}
+<\vertex>
+https://cdn1.epicgames.com/ue/item/Store_CustomizableGrid_screenshot_05-1920x1080-ea1527c25d22f3060150521815deeb37.png
+https://cdn1.epicgames.com/ue/item/Store_CustomizableGrid_Featured-476x246-0f16477508b1d162db52de5b1aaf7c0e.png
+<fragment>
+	#version 300 es
+	precision mediump float;
+
+	in vec2 v_uv;
+	in vec3 v_worldPos;
+
+	uniform float u_majorCellSize;
+	uniform float u_minorCellSize;
+	uniform float u_majorPixelScale;
+	uniform float u_minorPixelScale;
+	uniform float u_majorStrength;
+	uniform float u_minorStrength;
+
+	uniform vec4 u_baseColor;
+	uniform vec4 u_lineColor;
+
+	out vec4 oFragColor;
+
+	float smoothGridLines(vec2 pos, float pixScale){
+		vec2 fwPos		= fwidth(pos);							// Pixel Size based on Cell size
+		vec2 gradPos	= abs( fract(pos - 0.5) - 0.5 );		// Create gradient to generate lines
+		vec2 line 		= (gradPos - fwPos * pixScale) / fwPos;	// Use pixel size to limit gradient to make smooth lines
+		return clamp(min(line.x, line.y), 0.0, 1.0);			// Smallest gradient value is best for pixel length
+	}
+
+/*
+https://gist.github.com/gregkepler/8898825  diagnoal
+
+
+vec3 checker(in float u, in float v)
+{
+  float checkSize = 2;
+  float fmodResult = mod(floor(checkSize * u) + floor(checkSize * v), 2.0);
+  float fin = max(sign(fmodResult), 0.0);
+  return vec3(fin, fin, fin);
+}
+
+void main(void)
+{
+    ivec2 size = textureSize2D(Texture0,0);
+    float total = floor(texCoord.x*float(size.x)) +
+                  floor(texCoord.y*float(size.y));
+    bool isEven = mod(total,2.0)==0.0;
+    vec4 col1 = vec4(0.0,0.0,0.0,1.0);
+    vec4 col2 = vec4(1.0,1.0,1.0,1.0);
+    gl_FragColor = (isEven)? col1:col2;
+}
+
+	//smooth circle
+			vec2 uv = v_uv * 2.0 - 1.0; // remap 0,1 to -1,1
+			float r = dot(uv, uv); //radius, in quad 1.0 would be the max.
+			float fwR = fwidth(r) * Feather; //how much of the radius would equal pixel plus feathering
+
+			oFragColor = mix(
+					vec4(0.0, 0.0, 0.0, 1.0),
+					vec4(0.0, 0.0, 0.0, 0.0),
+					//step(Radius, r)
+					smoothstep( Radius - fwR, Radius + fwR, r)
+			);
+*/
+	/*
+	const mat2 rad45 = mat2(0.70710678118,0.70710678118,-0.70710678118,0.70710678118);
+	
+	const float PI_Q = 0.7853981633974483;
+	mat2 rotateMatrix(float r){
+		float c = cos(r), s = sin(r);
+		return mat2(c,s,-s,c);
+	}
+
+
+	*/
+
+	void main(void){
+		vec2 pos = v_worldPos.xz / 2.0;
+		vec2 fwPos		= fwidth(pos);	
+
+		vec2 gradPos = abs( fract(pos - 0.5) - 0.5 );
+		
+		//NOTES: a Gradient creates a value between 0 and 1. A pixel worth of change will be less then one.
+		// So dividing pixel size by distance, which is distance is over the pixel length will generate a number greater then 1
+		//which is white. So long as the distance is less then the pixel length, will get a value between 0  and 1 which
+		//will result in black.
+		vec2 grad		=  gradPos / fwPos;	//(gradPos - fwPos * 1.0) //use pixel size to limit gradient to make smooth lines
+		
+		//As long as one dimension is les then the pixel size, we can draw black else we draw white, since the division will result
+		// in a number greater then 1
+		float w			= min(grad.x, grad.y); 
+
+		
+		//oFragColor = vec4(vec3(fractCell.x), 1.0);
+		oFragColor = vec4(vec3( gradPos.x ), 1.0);
+		//oFragColor = vec4(gradPos.x, gradPos.x,0.0, 1.0);
+		//oFragColor = mix( vec4(0.0,0.0,0.0, 1.0), vec4(1.0,1.0,1.0, 1.0), w );
+
+		//if(fwPos.x > 0.01) oFragColor = vec4(1.0, 0.0, 0.0, 1.0);
+
+
+		//oFragColor = vec4(1.0, 0.0, 0.0, 1.0);
+
+		/*
+		vec2 cellSize	= v_worldPos.xz / u_majorCellSize;
+		float gradMajor	= (1.0 - smoothGridLines(cellSize, u_majorPixelScale)) * u_majorStrength;
+		float gradMinor	= (1.0 - smoothGridLines(cellSize / u_minorCellSize, u_minorPixelScale)) * u_minorStrength;
+		float gridMask	= gradMajor + gradMinor;
+
+		//.........................................
+		oFragColor = mix( u_baseColor, u_lineColor, gridMask );
+		//oFragColor = vec4( vec3( gridMask  ), 1.0);
+		*/
+	}
+<\fragment>

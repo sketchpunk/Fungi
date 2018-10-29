@@ -1,4 +1,4 @@
-import {Quat, Vec3 }	from "../../fungi/Maths.js";
+import Maths, {Quat, Vec3 }	from "../../fungi/Maths.js";
 
 
 ///////////////////////////////////////////////////////////////////////
@@ -46,7 +46,7 @@ class IKChain{
 
 
 ///////////////////////////////////////////////////////////////////////
-// CHAIN STATE
+// CHAIN POSE / STATE
 // A non-destructive copy of an chain. Allow to play around with the chain's
 // transform data before appling it back to the chain.
 ///////////////////////////////////////////////////////////////////////
@@ -256,5 +256,8 @@ class IKChainState{
 }
 
 
+const QUAT_FWD2UP = new Quat().setAxisAngle(Vec3.LEFT, Maths.toRad(90));
+
+
 export default IKChain;
-export { IKChainState, IKChainPose, BoneState };
+export { IKChainState, IKChainPose, BoneState, QUAT_FWD2UP };

@@ -1,1 +1,13 @@
+Transform
+.Position
+.Rotation
+.Scale
+.LocalMatrix
+.WorldMatrix
+.Parent
+
+Renderable - Dependance ( Transform )
+.vao
 .drawMode
+.material
+.options

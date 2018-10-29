@@ -125,6 +125,42 @@ class TransformNode{
 			wScale.copy( tScale);
 		}
 	}
+
+	static getWorldPosition(e, out){
+		var ary	= [e.com.Transform],
+			t	= e.com.TransformNode;
+
+		//.............................................
+		//Get the parent tree of the entity
+		while(t.parent != null){
+			ary.push( t.parent.com.Transform );
+			t = t.parent.com.TransformNode;
+		}
+
+		//.............................................
+		let last 	= ary.length - 1,
+			pos  	= new Vec3(),
+			pPos	= new Vec3( ary[last].position ),
+			pRot 	= new Quat( ary[last].rotation ),
+			pScale 	= new Vec3( ary[last].scale );
+
+		for(let i= last-1; i >= 0; i--){
+			t = ary[i];
+
+			// parent.position + ( parent.rotation * ( parent.scale * child.position ) )
+			Vec3.mul( pScale, t.position, pos ); // p.scale * c.position;
+			pPos.add( Vec3.transformQuat(pos, pRot, pos) );
+
+			if(i != 0){ //if last item, dont bother with the rest.
+				pScale.mul( t.scale );
+				pRot.mul( t.rotation );
+			}
+		}
+
+		//.............................................
+		out = out || new Vec3();
+		return out.copy( pPos );
+	}
 } Components(TransformNode);
 
 
