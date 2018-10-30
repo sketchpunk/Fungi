@@ -59,7 +59,7 @@
 					console.log("hit", mat.uniforms.get("u_spots"));
 				}
 
-				System.update();
+				System.update().renderScene();
 			}
 		</script>
 	</head>
@@ -80,7 +80,7 @@
 	]
 }<\shader>
 
-{ "name":"u_colorTex", "type":"sample2D" },
+{ "name":"u_colorTex", "type":"sampler2D" },
 { "name":"u_lightPos", "type":"vec3" },
 { "name":"u_diffuseStength", "type":"float" },
 	

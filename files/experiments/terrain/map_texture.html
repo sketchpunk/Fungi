@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<style>
+			html,body{margin:0px; padding:0px; width:100%; height:100%;}
+			body{background-color:#404040;}
+			canvas{border:0px solid green;}
+			#FungiDiv{display:flex; width:100%; height:100%; align-items:center; justify-content:center;}
+			#lblFPS{position:absolute; top:0px; left:0px; width:40px; padding:5px 5px;
+				background:gray; color:white; font-weight:bold; text-align:center; font-family:arial; font-size:13px; }
+		</style>
+
+		<script type="module">
+			import Fungi		from "/fungi/Fungi.js";
+			import System		from "/fungi/System.js";
+
+			import { Vec3 }		from "/fungi/Maths.js";
+			import Points		from "/fungi/primitives/Points.js";
+			//import Lines		from "/fungi/primitives/Lines.js";
+
+			import Geometry		from "/fungi/data/Geometry.js";
+			import Renderable	from "/fungi/rendering/Renderable.js";
+			import Vao			from "/fungi/Vao.js";
+
+			import Overlay 			from "/lib/Overlay/Overlay.js";
+
+			import Terrain		from "/fungi.mod/terrain/Terrain_Grid.js";
+			import Canvas2D		from "/lib/Canvas2D.js";
+			import Noise		from "/lib/Noise.js";
+			import NoiseOctave, { NOctave }	from "/lib/NoiseOctave.js";
+
+function LCG(seed) {
+    function lcg(a) {return a * 48271 % 2147483647}
+    seed = seed ? lcg(seed) : lcg(Math.random());
+    return function() {return (seed = lcg(seed)) / 2147483648}
+}
+			const hpSize = 256;
+			var gHeightmap, gColorMap, gColorRamp;
+
+			window.addEventListener("load",function(){
+				gHeightmap	= new Canvas2D("HeightMap", hpSize, hpSize).preparePixelDrawing();
+				gColorMap	= new Canvas2D("ColorMap", hpSize, hpSize).preparePixelDrawing();
+
+				gColorRamp = [
+					{max:0.3, color:"2f53a5"},
+					{max:0.4, color:"3a65c2"},
+					{max:0.45, color:"d1d680"},
+					{max:0.55, color:"5ea51b"},
+					{max:0.6, color:"437515"},
+					{max:0.7, color:"56433f"},
+					{max:0.9, color:"4a3a39"},
+					{max:1.0, color:"fefefe"}
+				];
+
+				/*
+				var freq = 0.02, n, c;
+				for(var y=0; y < hpSize; y++){
+					for(var x=0; x < hpSize; x++){
+						n = Noise.perlin2(x * freq, y* freq) * 0.5 + 0.5;
+						c = n * 255;
+						gHeightmap.setPixel(x,y, c,c,c);
+					}
+				}
+				gHeightmap.updatePixels();
+				*/
+
+				//----------------------------------
+				Overlay.init()
+					.title("Octave Noise Texture")
+					.range("Seed", 1, 1, 20, 1, function(e){ gSeed	= parseFloat(this.value); })
+					.range("Scale", 40, 1, hpSize, 1, function(e){ gScale	= parseFloat(this.value); createTexture(); })
+					.range("Octaves", 3, 1, 6, 1, function(e){ gOctaves		= parseFloat(this.value); })
+					.range("Persistance", 0.5, 0, 1, 0.01, function(e){ gPersistance	= parseFloat(this.value); })
+					.range("Lacunarity", 2, 1, 10, 0.01, function(e){ gLacunarity	= parseFloat(this.value); })
+					.range("OffsetX", 0, -10, 20, 1, function(e){ gOffsetX = parseFloat(this.value); })
+					.range("OffsetY", 0, -10, 20, 1, function(e){ gOffsetY = parseFloat(this.value); })
+					.button("Gen", function(e){ createTexture(); })
+				;
+
+				//----------------------------------
+				createTexture();
+			});
+
+			var gSeed			= 1,
+				gScale			= 40,
+				gOctaves		= 3,
+				gPersistance	= 0.5,
+				gLacunarity		= 2,
+				gOffsetX		= 0,
+				gOffsetY		= 0;
+
+			function createTexture(){
+				//var no = new NoiseOctave(Noise.perlin2, 2);
+				//var noct = no.getOctave3(hpSize, hpSize, 3, 0.9, 1, 0.01);
+				//w, h, scale = 1, octaves = 1, persistance = 1, lacunarity = 1,
+				var nmap = NOctave.fullMap(Noise.perlin2, hpSize, hpSize, gSeed, gScale, gOctaves, gPersistance, gLacunarity, gOffsetX, gOffsetY);
+
+				var n,c,r,x,y;
+				for(y=0; y < hpSize; y++){
+					for(x=0; x < hpSize; x++){
+						n = nmap[y][x];// * 0.5 + 0.5;
+						c = n * 255;
+						//c = ( c > 100 ) ? 255 : 0;
+						gHeightmap.setPixel(x,y, c,c,c);
+
+						for(r=0; r < 8; r++){
+							if(n <= gColorRamp[r].max){
+								gColorMap.setPixelColor(x, y, gColorRamp[r].color);
+								break;
+							}
+						}
+					}
+				}
+				gHeightmap.updatePixels();
+				gColorMap.updatePixels();
+			}
+		</script>
+	</head>
+<body>
+	<div id="FungiDiv"><canvas id="FungiCanvas"></canvas></div>
+	<span id="lblFPS">0</div>
+
+	<canvas id="HeightMap" style="position:fixed; left:200px; top:0px; background-color:red;"></canvas>
+	<canvas id="ColorMap" style="position:fixed; left:500px; top:0px; background-color:red;"></canvas>
+</body>
+</html>

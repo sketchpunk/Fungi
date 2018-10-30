@@ -25,7 +25,7 @@
 			}).catch( err=>console.log("Catch",err) );
 		});
 
-		function onRender(dt, ss){ System.update(); }
+		function onRender(dt, ss){ System.update().renderScene(); }
 		function onInit(){
 			Fungi.camera.setPosition(0,1,1.9).setDegrees(-0,"x");
 			var quad = Quad("MatShader").setPosition(0,1,0);//.setDegrees(45,"z");
@@ -51,7 +51,7 @@
 		"uniforms"	: []
 	}<\shader>
 	/*
-		{ "name":"u_", "type":"sample2D" },
+		{ "name":"u_", "type":"sampler2D" },
 		{ "name":"u_", "type":"vec3" },
 		{ "name":"u_", "type":"float" },
 	*/

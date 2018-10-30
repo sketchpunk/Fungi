@@ -90,7 +90,7 @@
 
 				mat.updateUniform("u_lightPos", point._position);
 				
-				System.update();
+				System.update().renderScene();
 			}
 
 		</script>
@@ -105,7 +105,7 @@
 	"ubo"		: [ "UBOTransform" ],
 	"options"	: { "modelMatrix":true, "normalMatrix":true },
 	"uniforms"	: [
-		{ "name":"u_normTex",	"type":"sample2D" },
+		{ "name":"u_normTex",	"type":"sampler2D" },
 		{ "name":"u_lightPos",	"type":"vec3" }
 	]
 }<\shader>

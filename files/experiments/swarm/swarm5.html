@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<style>
+			html,body{margin:0px; padding:0px; width:100%; height:100%;}
+			body{background-color:#404040;}
+			canvas{border:0px solid green;}
+			div{display:flex; width:100%; height:100%; align-items:center; justify-content:center;}
+			#lblFPS{position:absolute; top:0px; left:0px; width:40px; padding:5px 5px;
+				background:gray; color:white; font-weight:bold; text-align:center; font-family:arial; font-size:13px; }
+		</style>
+
+		<script type="module">
+			import Fungi		from "/fungi/Fungi.js";
+			import App			from "/fungi/App.js";
+			import Api			from "/fungi/Api.js";
+			import DVao 		from "/fungi/components/DynamicVao.js";
+			import Maths, {Vec3, Quat} from "/fungi/Maths.js";
+			import Vao from "/fungi/Vao.js";
+			import Shader, { LoadInlineShader } from "/fungi/Shader.js";
+
+			import { Components, System }	from "/fungi/Ecs.js";
+			import gl from "/fungi/gl.js";
+			import {Easing} from "/lib/Tween.js";
+
+
+			//https://cmikavac.net/2011/10/22/swarm-intelligence-in-html5-canvas/
+			//https://gfycat.com/gifs/detail/greenbronzedove
+
+			//https://gist.github.com/mbostock/22c3971eed37127f2ba8 cullmull - rom plus other
+			//https://stackoverflow.com/questions/9489736/catmull-rom-curve-with-no-cusps-and-no-self-intersections
+
+			//https://twitter.com/winkerVSbecks/status/1049352245249286144?s=03
+			//https://github.com/spite/looper/tree/master/loops
+			//https://spite.github.io/looper/#200
+
+			//https://github.com/spite/looper/blob/master/third_party/THREE.CurveExtras.js
+
+			// https://github.com/spite/looper/blob/master/loops/233.js#L124  lissajous curve
+			var ePoint, eLine;
+			window.addEventListener("load",function(){
+				App.launch(onRender, [
+					{ type:"shader", file:"/fungi/shaders/VecWColor.txt" },
+					{ type:"shader", file:"/fungi/shaders/LowPolyPhong.txt" },
+				])	.then( ()=>{ 
+						LoadInlineShader("inline_shader");
+						ParticleSystem.init();
+					})
+					.then( ()=>App.useDynamicVao(true, true).then(function(rtn){ ePoint = rtn.point; eLine = rtn.line; }) ) 
+					.then( ()=>App.loadScene() )
+					.then( ()=>onInit() )
+					.catch( err=>console.log("err", err) );
+			});
+
+
+			window.addEventListener("keyup", function(e){
+				//console.log(e.keyCode);
+				if(e.keyCode == 32){
+					var v = new Vec3( Maths.rnd(-4,4), Maths.rnd(-4,4), Maths.rnd(-4,4) );
+
+					eParticles.com.Particles.position.copy( v );
+					ePoint.com.Transform.position.copy( v );
+					ePoint.com.Transform.isModified = true;
+				}
+			});
+
+			var eParticles, gPState;
+			let gStack;
+			let gTmp;
+			function onRender(dt, ss){
+				/*
+					Swarm
+
+				
+				new PState_Circle().apply( eParticles, gPState );
+				new PState_Follow().apply( eParticles, gPState );
+				gPState.apply( eParticles );
+				*/
+
+				//gStack.update();
+				gTmp();
+				Fungi.ecs.updateSystems(); 
+			}
+			function onInit(){
+				//........................				
+				Fungi.camera.com.Transform
+					.setPosition(0, 3.6074962615966797, 9.416558265686035)
+					.setAxisAngle([-0.9999992445646765,0,0], 0.34906611865540826);
+					//.setPosition(0,2,5).setDegrees(-20,"x");
+
+				//........................
+				//DVao.rawLine(eLine, 0,0,0, 0,2,0, 6);
+				DVao.rawPoint(ePoint, 0,0,0, 0);
+
+				let pCnt = 10;
+				eParticles	= Particles.init( Api.newDraw("Particles", "LowPolyPart"), "Particles", pCnt);
+				gPState		= new ParticleState( eParticles );
+
+				//for(let i of gPState.items){
+				//	i.position.y = 1;
+				//}
+				//new PState_Circle().apply( eParticles, gPState );
+				//new PState_Follow().apply( eParticles, gPState );
+				//gPState.apply( eParticles );
+
+				//console.log( gPState );
+				//console.log( eParticles.com.Particles.items );
+
+
+				var psCircle = new PState_Circle();
+				console.log();
+
+				var psFollow = new PState_Follow(psCircle.cycle.speed + 0.01, 0.4);
+
+				gTmp = function(){ 
+					psCircle.apply( eParticles, gPState );
+
+					psFollow.apply( eParticles, gPState );
+					gPState.apply( eParticles );
+				};
+
+
+				/*
+				gStack = new RunStack();
+				gStack.add( 10, function(){ 
+					psCircle.apply( eParticles, gPState );
+					psFollow.apply( eParticles, gPState );
+					gPState.apply( eParticles );
+				});
+				*/
+
+
+				//let itm_PFollow = new ParticleFollow( eParticles );
+				//let itm_NewTarget = { update:function(){
+				//	var v = new Vec3( Maths.rnd(-4,4), Maths.rnd(-4,4), Maths.rnd(-4,4) );
+				//	eParticles.com.Particles.position.copy( v );
+				//	ePoint.com.Transform.position.copy( v );
+				//	ePoint.com.Transform.isModified = true;
+
+				//	return true;
+				//}};
+
+				//gStack = new RunStack()
+				//	.add( 2, itm_PFollow )
+				//	.add( 0, itm_NewTarget )
+				//	.add( 4, itm_PFollow )
+				//	.start();
+
+
+				//........................
+				Fungi.loop.start();
+			}
+
+
+
+
+			class Cycle{
+				constructor( sec ){
+					this.value	= 0;
+					this.time	= 0;
+					this.speed	= 0;
+					this.loop	= 0;
+					this.setTime( sec );
+				}
+
+				reset(){
+					this.value = 0;
+					this.loop = 0;
+					return;
+				}
+
+				setTime( sec ){
+					this.time	= sec;
+					this.speed	= Maths.PI_2 / sec;
+					return this;
+				}
+				
+				next( rtnGrad = false ){
+					let t = this.value + this.speed * Fungi.deltaTime;
+					if( t >= Maths.PI_2 ) this.loop++;
+
+					this.value = t % Maths.PI_2;
+					return ( rtnGrad )? this.value / Maths.PI_2 : this; 
+				}
+			}
+
+			class Clock{
+				constructor( sec ){
+					this.value		= 0;
+					this.limit		= sec;
+					this.isActive	= false;
+				}
+
+				start(){
+					this.value		= 0;
+					this.isActive	= true;
+					return this;
+				}
+
+				setTime( sec ){ this.limit = sec; return this; }
+				
+				next( rtnGrad = false ){
+					this.value += Fungi.deltaTime;
+					if(this.value >= this.limit) this.isActive = false;
+					return ( rtnGrad )? Math.min(1, this.value / this.limit) : this.isActive; 
+				}
+			}
+
+			class RunStack{
+				constructor(){
+					this.queue = new Array();
+					this.clock = new Clock();
+					this.activeIdx = 0;
+				}
+
+				add( sec, obj ){
+					var itm = { sec, obj };
+
+					this.queue.push( itm );
+					return this;
+				}
+
+				start(){
+					this.activeIdx = 0;
+
+					let itm = this.queue[ this.activeIdx ];
+					this.clock.setTime( itm.sec ).start();
+
+					return this;
+				}
+
+				update(){
+					if( this.activeIdx >= this.queue.length ) return;
+
+					//..................................
+					let itm = this.queue[ this.activeIdx ];
+					if( itm.obj() ){
+						//console.log("all together");
+					}
+					
+					//..................................
+					this.clock.next();
+
+					if( !this.clock.isActive ){
+						console.log("switch stack");
+						if( ++this.activeIdx >= this.queue.length ) return;
+
+						//this.activeIdx = (this.activeIdx + 1) % this.queue.length;
+						
+						itm = this.queue[ this.activeIdx ];
+						this.clock.setTime( itm.sec ).start();
+					}
+				}
+			}
+
+
+			class PState_Circle{
+				constructor( sec=2, radius=1 ){
+					this.cycle	= new Cycle( sec );
+					this.radius	= radius;
+				}
+				apply(e, state){
+					let i, ang,
+						com	= e.com.Particles,
+						cnt	= com.itemCount,
+						inc	= Maths.PI_2 / cnt;
+
+					this.cycle.next();
+					var v = new Vec3();
+					var vv = new Vec3();
+
+					for(i=0; i < state.items.length; i++){
+						ang = i * inc + this.cycle.value;
+						//v.copy( state.items[ i ].position );
+						state.items[ i ].position.set(
+							com.position.x + this.radius * Math.cos( ang ),
+							com.position.y,
+							com.position.z + this.radius * Math.sin( ang )
+						);
+
+						//console.log(i, Vec3.sub(state.items[ i ].position,v,vv) );
+					}
+				}
+			}
+
+			const PARTICLE_FOLLOW_MIN = 0.001;
+			const PARTICLE_FOLLOW_MIN_SQR = PARTICLE_FOLLOW_MIN * PARTICLE_FOLLOW_MIN;
+			class PState_Follow{
+				constructor(sMin=0.1, sInc=0.2){
+					//this.sMin = sMin;
+					//this.sMax = sMax;
+					//this.sRng = sMax - sMin;
+
+					this.speedMin = sMin;
+					this.speedInc = sInc;
+				}
+				apply(e, state){
+					let i, si, oi, speed,
+						v	= new Vec3(),
+						com	= e.com.Particles,
+						cnt	= com.itemCount;
+
+					let lenSqr;
+
+					let ii;
+
+					for(i=0; i < cnt; i++){
+						si		= state.items[i];
+						oi		= com.items[i];
+						ii		= com.order[i];
+						//oi		= com.itemsr[i];
+						//speed	= this.sMin + this.sRng * (1 - i / cnt);
+						//speed	= (i+1) * 2;
+						//speed	= 3.0;// + i * 0.5;
+						speed	= (this.speedMin + ii * this.speedInc) * Fungi.deltaTime;
+
+						
+						//.............................................
+						Vec3.sub( si.position, oi.position, v);
+
+						lenSqr = v.lengthSqr();
+						
+						//checking for a distance
+						if(lenSqr > PARTICLE_FOLLOW_MIN_SQR){
+
+							if(lenSqr > speed * speed){	// Try to prevent over shooting target, it adds jitter to the animation.
+								v.normalize().scale(speed);
+							}else{
+								v.scale( 0.7 );
+							}
+
+							//console.log(i, v.length(), speed * Fungi.deltaTime);
+
+						//	si.position.copy( oi.position );
+						//	//console.log(i, "inrange");
+						//}else{
+//console.log(  speed * Fungi.deltaTime );
+						//.............................................
+						//v.scale( speed * Fungi.deltaTime );
+						//v.normalize().scale(speed * Fungi.deltaTime)
+
+						//console.log(v.length(), v.normalize().scale(speed * Fungi.deltaTime).length() );
+
+						//console.log( v );
+							Vec3.add( oi.position, v, si.position );
+
+						 //console.log( si.position );
+						}
+
+						//.............................................
+						//pAry[ i ].position.copy( itm.position );
+
+					}
+
+					return this;
+				}
+			}
+
+
+			class Additive_CircleXX{
+				constructor(cnt, sec=2, radius=1){
+					this.cycle	= new Cycle( sec );
+					this.radius	= radius;
+					this.inc	= Maths.PI_2 / cnt;
+				}
+				apply(inAry, outAry){
+					let i, ang;
+					this.cycle.next();
+					for(i=0; i < inAry.length; i++){
+						ang = i * this.inc + this.cycle.value;
+						outAry[ i ].position.set(
+							inAry[i].position.x + this.radius * Math.cos( ang ),
+							inAry[i].position.y,
+							inAry[i].position.z + this.radius * Math.sin( ang )
+						);
+					}
+				}
+			}
+
+			class Additive_Spiral{
+				constructor(cnt, sec=5, radius=0.1, yInc=-0.1){
+					this.cycle	= new Cycle( sec );
+					this.radius	= radius;
+					this.inc	= Maths.PI_2 / cnt;
+					this.yInc	= yInc;
+				}
+				apply(inAry, outAry){
+					let i, ang;
+					this.cycle.next();
+					for(i=0; i < inAry.length; i++){
+						ang = i * this.inc;
+
+						outAry[ i ].position.set(
+							inAry[i].position.x + this.radius * ang * Math.cos( ang + this.cycle.value ),
+							inAry[i].position.y + this.yInc * ang,
+							inAry[i].position.z + this.radius * ang * Math.sin( ang + this.cycle.value )
+						);
+
+						/*
+						ang = i * this.inc + this.cycle.value;
+						outAry[ i ].position.set(
+							inAry[i].position.x + this.radius * Math.cos( ang ),
+							inAry[i].position.y,
+							inAry[i].position.z + this.radius * Math.sin( ang )
+						);
+						
+						p = ary[i];
+						t = i * inc;
+
+						p.x = 0.1 * t * Math.cos( t + offset );
+						p.z = 0.1 * t * Math.sin( t + offset );
+						p.y = -0.1 * t;
+						*/
+					}
+				}
+			}
+
+
+
+
+			class ParticleFollow{
+				constructor( e, saveResult = true, sMin=1.0, sMax=2.5 ){
+					this.entity		= e;
+					this.com		= e.com.Particles;
+					//this.additive	= new Additive_Circle( this.com.itemCount );
+					this.additive	= new Additive_Spiral( this.com.itemCount );
+					
+
+					//........................................
+					//Build Some Basic Data
+					var cnt		= this.com.itemCount,
+						sRng	= sMax - sMin,
+						g;
+
+					this.items = new Array( cnt );
+
+					for(let i=0; i < cnt; i++){
+						g = 1 - i / cnt; //What first particles to be faster then last, so flip gradient.
+						//console.log("g",g);
+						this.items[ i ] = { 
+							position	: new Vec3( this.com.items[ i ].position ), 
+							speed		: sMin + sRng * g, //0.3 + 0.2 * g//0.7 + 0.3 * Math.random() 
+						};
+					}
+				}
+
+				update(){
+					let pAry	= this.com.items,
+						rngCnt	= 0,
+						v		= new Vec3(),
+						itm;
+
+					for(let i=0; i < this.com.itemCount; i++){
+						itm = this.items[ i ];
+
+						//.............................................
+						Vec3.sub(this.com.position, itm.position, v);
+
+						//checking for a distance
+						if(v.lengthSqr() <= PARTICLE_FOLLOW_MIN_SQR) rngCnt++;
+
+						//.............................................
+						v.scale( itm.speed * Fungi.deltaTime );
+						itm.position.add( v );
+
+						//.............................................
+						//pAry[ i ].position.copy( itm.position );
+					}
+
+					this.additive.apply( this.items, this.com.items );
+					this.com.isModified = true;
+					return (rngCnt == this.com.itemCount); // Return if all particles are in close range to target.
+				}
+			}
+
+			class ParticleState{
+				constructor( e ){
+					let cnt = e.com.Particles.itemCount;
+
+					this.items = new Array(cnt);
+					for(let i=0; i < cnt; i++) this.items[ i ] = Particles._newItem();
+				}
+
+				apply( e ){
+					let com		= e.com.Particles,
+						cnt 	= com.itemCount,
+						iAry 	= com.items;
+
+					com.isModified = true;
+					for(let i=0; i < cnt; i++){
+						iAry[i].position.copy( this.items[i].position );
+					}
+				}
+			}
+
+
+			function arrayShuffle(ary){
+  				var i = ary.length,
+  					ii, t;
+
+  				//From End to start, Swop last element with a random earlier element.
+  				while (0 !== i ) {
+					ii = Math.floor(Math.random() * i);
+					i--;
+
+					//Swap Data
+					t			= ary[ i ];
+					ary[ i ]	= ary[ ii ];
+					ary[ ii ]	= t;
+				}
+  				return ary;
+			}
+
+
+			const PARTICLE_POSITION_LOC = 10;
+			class Particles{
+				constructor(){
+					this.itemCount	= 0;
+					this.items		= null;
+					this.order		= null;
+					this.isModified	= false;
+					this.position	= new Vec3(0,0,0);
+				}
+
+				static _newItem(){ return { position : new Vec3(0,0,0) }; }
+				static init(e, name, cnt = 1){
+					//----------------------------------------
+					let com = null;
+					if(e.com.Particles)	com = e.com.Particles;
+					else 				e.addCom( com = new Particles() );
+
+					com.itemCount		= cnt;
+					com.items			= new Array( cnt );
+					com.order			= new Array( cnt );
+					for(let i=0; i < cnt; i++){
+						com.items[ i ]	= Particles._newItem();
+						com.order[ i ]	= i;
+					}
+					arrayShuffle( com.order );
+
+
+					//----------------------------------------
+					const	s = 0.13,
+							ss = 0.1;
+
+					const verts	= [
+						 0, -s,  0,		// 0 Bottom
+						 0,  s,  0,		// 1 Top
+						-ss,  0,  ss, 	// 2 Bot Left
+						 ss,  0,  ss, 	// 3 Bot Right
+						 ss,  0, -ss, 	// 4 Top Right
+						-ss,  0, -ss, 	// 5 Top Left
+					];
+
+					const faces = [ 1,2,3, 1,3,4,  1,4,5,  1,5,2,
+									 0,3,2, 0,4,3,  0,5,4,  0,2,5 ];
+					
+					e.com.Drawable.vao			= Particles.vao(e, name, verts, faces);
+					e.com.Drawable.drawMode		= Fungi.TRI; //Fungi.PNT;
+					return e;
+				}
+
+
+				////////////////////////////////////////////////////////////////////
+				//
+				////////////////////////////////////////////////////////////////////
+					static vao(e, vName, verts, faces = null){
+						let com				= e.com.Particles,
+							itmPositions	= Particles.flattenData( e ),
+							oVao 			= new Vao().create()
+							.floatBuffer("bVertices",	verts, Shader.ATTRIB_POSITION_LOC, 3)
+							.floatBuffer("bPosition",	itmPositions, PARTICLE_POSITION_LOC, 3, 0, 0, true, true)
+							.setInstanced( com.itemCount );
+
+						if(faces) oVao.indexBuffer("bIndex", faces);
+
+						let vao = oVao.finalize(name);
+						oVao.cleanup();
+
+						return vao;
+					}
+
+				////////////////////////////////////////////////////////////////////
+				//
+				////////////////////////////////////////////////////////////////////
+					static flattenData(e){
+						let i, ii, iii, n, 
+							com = e.com.Particles,
+							pos = new Float32Array( com.itemCount * 3 );
+
+						for(i=0; i < com.items.length; i++){
+							n	= com.items[ i ].position;
+							iii	= i * 3;
+
+							pos[iii  ]	= n[0];
+							pos[iii+1]	= n[1];
+							pos[iii+2]	= n[2];
+						}
+
+						return pos;
+					}
+
+					static updateBuffer(e){
+						let pos	= Particles.flattenData( e );
+
+						gl.ctx.bindBuffer(gl.ctx.ARRAY_BUFFER, e.com.Drawable.vao.bPosition.id);
+						gl.ctx.bufferSubData(gl.ctx.ARRAY_BUFFER, 0, pos, 0, null);
+						gl.ctx.bindBuffer(gl.ctx.ARRAY_BUFFER, null);
+
+						return this;
+					}
+			} Components( Particles );
+
+			const QUERY_COM = ["Particles"];
+			class ParticleSystem extends System{
+				static init( priority = 20 ){ Fungi.ecs.addSystem(new ParticleSystem(), priority); }
+				constructor(){ super(); }
+				update(ecs){
+					let e, ary = ecs.queryEntities( QUERY_COM );
+					for( e of ary ){
+						if( e.com.Particles.isModified ){
+							Particles.updateBuffer( e );
+							e.com.Particles.isModified = false;
+						}
+					}
+				}
+			}
+
+		</script>
+	</head>
+<body>
+	<div><canvas id="FungiCanvas"></canvas></div>
+	<span id="lblFPS">0</div>
+
+
+	<script id="inline_shader" type="plain/text">
+		<shader>{
+			"name":"LowPolyPart",
+			"ubo":[ "UBOTransform", "UBOLighting", "UBOModel" ],
+			"options": { "modelMatrix":true },
+			"uniforms":[
+				{ "name":"u_basecolor", "type":"vec3" }
+			]
+		}<\shader>
+
+		<materials> [ 
+			{ "name":"LowPolyPart",	"uniforms":[
+				{ "name":"u_basecolor", "type":"rgb", "value": "ff7f7f" }
+			]}
+	 	]<\materials>
+		<vertex>
+			#version 300 es
+			layout(location=0) in vec3 a_position;
+			layout(location=10) in vec3 a_pos;
+
+			uniform UBOTransform{
+				mat4 	projViewMatrix;
+				vec3	cameraPos;
+				float	globalTime;
+				vec2	screenSize;
+			};
+
+			uniform UBOModel{
+				mat4 	modelMatrix;
+				mat3	normalMatrix;
+			};
+
+			out vec3 v_cameraPos;
+			out vec3 v_worldPos;
+
+			void main(void){
+				//Need to pass Camera pos turned to WorldSpace avoid inverse
+				//vCameraPos 	= (inverse(matCameraView) * vec4(posCamera,1.0)).xyz;  
+
+				v_cameraPos = cameraPos;
+
+				vec4 wpos	= modelMatrix * vec4(a_position + a_pos,1.0);
+				v_worldPos	= wpos.xyz;
+
+				gl_Position	= projViewMatrix * wpos;
+			}
+		<\vertex>
+
+		<fragment>
+			#version 300 es
+			precision mediump float;
+
+			uniform UBOLighting{
+				vec3 lightPosition;
+				vec3 lightDirection;
+				vec3 lightColor;
+			};
+
+			uniform vec3 u_basecolor;
+			
+			in vec3 v_cameraPos;
+			in vec3 v_worldPos;
+
+			out vec4 oFragColor;
+
+			//const vec3 uLightPos			= vec3(1.0, 6.0, -4.0);
+			//const vec3 uLightColor			= vec3(1.0, 1.0, 1.0);
+
+			const float uAmbientStrength	= 0.5;
+			const float uDiffuseStrength	= 0.5;
+			const float uSpecularStrength	= 0.2f;	//0.15
+			const float uSpecularShininess	= 1.0f; //256.0
+
+			void main(void){
+				vec3 pixelNorm = normalize( cross( dFdx(v_worldPos), dFdy(v_worldPos) ) ); //Calc the Normal of the Rasterizing Pixel
+
+				//Ambient Lighting
+				vec3 cAmbient		= lightColor * uAmbientStrength;
+				
+				//Diffuse Lighting
+				vec3 lightVector	= normalize(lightPosition - v_worldPos);		//light direction based on pixel world position
+				float diffuseAngle	= max( dot(pixelNorm,lightVector) ,0.0);	//Angle between Light Direction and Pixel Direction (1==90d)
+				vec3 cDiffuse		= lightColor * diffuseAngle * uDiffuseStrength;
+
+				//Specular Lighting
+				vec3 camVector		= normalize(v_cameraPos - v_worldPos);	//Camera Direction based on pixel world position
+				vec3 reflectVector	= reflect(-lightVector, pixelNorm);		//Reflective direction of line from pixel direction as pivot.
+				float specular		= pow( max( dot(reflectVector,camVector) ,0.0), uSpecularShininess ); //Angle of reflected light and camera eye
+				vec3 cSpecular		= lightColor * specular * uSpecularStrength;
+
+				//Final Color
+				oFragColor = vec4(u_basecolor * (cAmbient + cDiffuse + cSpecular), 1.0);
+				//oFragColor = vec4(1.0, 0.0, 0.0, 1.0);
+			}
+		<\fragment>
+	</script>
+
+</body>
+</html>

@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html><head>
+	<style>
+		html,body{margin:0px; padding:0px; width:100%; height:100%;}
+		body{background-color:#404040;}
+		canvas{border:0px solid green;}
+		div{display:flex; width:100%; height:100%; align-items:center; justify-content:center;}
+		#lblFPS{position:absolute; top:0px; left:0px; width:40px; padding:5px 5px;
+			background:gray; color:white; font-weight:bold; text-align:center; font-family:arial; font-size:13px; }
+	</style>
+
+	<script type="module">
+		import Fungi		from "/fungi/Fungi.js";
+		import System		from "/fungi/System.js";
+		import Quad			from "/fungi/primitives/Quad.js";
+		import { LoadInlineShader } from "/fungi/Shader.js";
+
+		window.addEventListener("load",function(){
+			System.beginWithResources([
+				{ type:"shader", file:"/fungi/shaders/VecWColor.txt" },
+				{ type:"shader", file:"/fungi.mod/shaders/Grid003.txt" },
+			]).then( async()=>{ 
+				await System.startUp(onRender,3); 
+				//LoadInlineShader("inline_shader");
+				onInit();
+			}).catch( err=>console.log("Catch",err) );
+		});
+
+		function onRender(dt, ss){ System.update().renderScene(); }
+		function onInit(){
+			Fungi.camera.setPosition(0,2.5,3).setDegrees(-40,"x");
+			console.log( -0.5 - Math.floor(-0.5) )
+			//matName, name="Quad", bx0=-1, by0=-1, bz0=0, bx1=1, by1=1, bz1=0
+			var floor = Quad("Grid003", "FungiQuadFloor", -1,0,1, 1,0,-1, false).setPosition(0,0.01,0).setScale(2);
+			
+			Fungi.scene.add( floor );
+			Fungi.loop.start();
+		}
+	</script>
+</head><body>
+
+<div><canvas id="FungiCanvas"></canvas></div>
+<span id="lblFPS">0</div>
+
+
+
+<script id="inline_shader" type="plain/text">
+	<shader>{ 
+		"name"		: "Grid001",
+		"options"	: { "modelMatrix":true, "normalMatrix":false },
+		"ubo"		: [ "UBOTransform" ],
+		"uniforms"	: [
+			{ "name":"u_cellSize", "type":"float" }
+		]
+	}<\shader>
+	/*
+		{ "name":"u_", "type":"sampler2D" },
+		{ "name":"u_", "type":"vec3" },
+		{ "name":"u_", "type":"float" },
+	*/
+	<materials> [ { 
+		"name"		: "Grid001",
+		"options"	: { "blend":true,"sampleAlphaCoverage":false, "depthTest":true },
+		"uniforms"	: [ 
+			{ "name":"u_cellSize", "value":0.2 }
+		]
+	} ] <\materials>
+	/*
+		{ "name":"u_", "type":"tex", "value":"tex01"},
+		{ "name":"u_", "value":[5,1,0] },
+		{ "name":"u_", "type":"rgb", "value":"#ffffff"},
+	*/		
+	<vertex>
+		#version 300 es
+		layout(location=0) in vec3 a_position;
+		layout(location=2) in vec2 a_uv;
+
+		uniform UBOTransform{
+			mat4 	projViewMatrix;
+			vec3	cameraPos;
+			float	globalTime;
+			vec2	screenSize;
+		};
+
+		uniform mat4 u_modelMatrix;
+
+		out vec2 v_uv;
+		out vec3 v_worldPos;
+
+		void main(void){
+			//..............................
+			vec4 worldPos	= u_modelMatrix * vec4(a_position,1.0);
+
+			//..............................
+			v_uv			= a_uv;
+			v_worldPos		= worldPos.xyz;
+
+			//..............................
+			gl_Position		= projViewMatrix * worldPos;
+		}
+	<\vertex>
+
+	http://madebyevan.com/shaders/grid/
+	http://codeflow.org/entries/2012/aug/02/easy-wireframe-display-with-barycentric-coordinates/
+	https://www.gamedev.net/forums/topic/529926-terrain-contour-lines-using-pixel-shader/
+	https://realtimemike.wordpress.com/2012/02/07/anti-aliasing-and-edge-lines/
+	<fragment>
+		#version 300 es
+		precision mediump float;
+
+		in vec2 v_uv;
+		in vec3 v_worldPos;
+
+		uniform float u_cellSize;
+
+		out vec4 oFragColor;
+
+		void main(void){
+			//vec3 fractWorldPos = fract(v_worldPos);
+			//vec3 floorWorldPos = floor(v_worldPos);
+
+			//vec3 pixelNorm = normalize( cross( dFdx(v_worldPos), dFdy(v_worldPos) ) ); //Calc the Normal of the Rasterizing Pixel
+
+			//vec2 coord = v_worldPos.xz;
+			//if(fwidth(coord).x > 0.01) oFragColor = vec4(1.0, 0.0, 0.0, 1.0);
+			//else oFragColor = vec4(0.0, 0.0, 0.0, 1.0);
+
+			/*
+			//fwidth abs(dFdx) + abs(dFdy)
+			//float c = dFdx(gl_FragCoord.x);
+			float c = dFdx(v_worldPos.x);
+			oFragColor = vec4(c, c, c, 1.0);
+
+			if(c >= 1.0) oFragColor = vec4(1.0, 0.0, 0.0, 1.0);
+			if(c <= 0.01) oFragColor = vec4(0.0, 1.0, 0.0, 1.0);
+			*/
+
+			//float c = 0.0;
+			//vec2 coord = v_worldPos.xz;
+			//c = coord.x - 0.5;
+			//oFragColor = vec4(c,c,c,1.0);
+
+
+			//vec2 coord = v_worldPos.xz;
+
+			// Compute anti-aliased world-space grid lines
+			//vec2 grid = abs(fract(coord - 0.5) - 0.5) / fwidth(coord);
+			//vec2 grid = abs(1.0 - fract(coord)) / fwidth(coord);
+			//float line = min(grid.x, grid.y);
+			
+			// Just visualize the grid lines directly
+			//oFragColor = vec4(vec3(1.0 - min(line, 1.0)), 1.0);
+
+			//float c = clamp( ( gridFracYA - gridDeriY * (wLine-1.0) ) / gridDeriY , 0.0 ,1.0);
+
+			//float x = v_worldPos.x;
+			//float g = abs( fract(x - 0.5) - 0.5 ) / fwidth( x );
+			//float fwX = fwidth( x );
+			//float gX = abs( fract(x - 0.5) - 0.5 ); 
+			
+			//float g = ( gX - fwX * 0.0 ) / fwX;
+			//float g = abs( fract(x - 0.5) - 0.5  ) / fwX;
+			//oFragColor = vec4( 1.0 - min(g, 1.0) );
+
+
+			// Fract(x) = x - floor(x)
+			// x is -0.5:: -0.5 - (-1) == -0.5 + 1 == 0.5
+			// x is 0.5:: 0.5 - (0) == 0.5;
+
+			float cellSize	= 0.2;
+			float pixelSize	= 0.4;
+			vec4 baseColor	= vec4(1.0, 1.0, 1.0, 1.0);
+			vec4 lineColor	= vec4(0.9, 0.9, 0.9, 1.0);
+			vec4 xAxisColor	= vec4(1.0, 0.0, 0.0, 1.0);
+			vec4 yAxisColor	= vec4(0.0, 1.0, 0.0, 1.0);
+			
+			//.........................................
+			vec2 pos 		= v_worldPos.xz / cellSize;					//Divide the World up by Cells
+			vec2 fwPos		= fwidth(pos);								//Pixel Size based on Cell size
+			vec2 gradPos	= abs( fract( pos - 0.5 ) - 0.5 );			//Create gradient to generate lines
+			vec2 grad		= (gradPos - fwPos * pixelSize) / fwPos;	//use pixel size to limit gradient to make smooth lines
+			float w			= min(grad.x, grad.y);						//Smallest gradient value is best for pixel length
+
+			//.........................................
+			// How which of the 3 colors to use for the line
+			// ( yPix < Pix )? xColor : ( xPix < Pix)? yColor : defaultColor;
+			vec4 lColor = mix(
+				xAxisColor, 
+					mix( yAxisColor, 
+						lineColor, 
+						step( fwPos.x * 0.9, abs(pos.x) )
+					),			
+				step( fwPos.y * 0.9, abs(pos.y) )
+			);
+
+			//.........................................
+			//Fade btween Line Color and Base Color
+			oFragColor = mix( lColor, baseColor, w );
+
+
+
+
+			/*
+			vec2 coord = v_worldPos.xz;
+
+			// Compute anti-aliased world-space grid lines
+			vec2 grid = abs(fract(coord - 0.5) - 0.5) / fwidth(coord);
+			float line = min(grid.x, grid.y);
+			
+			// Just visualize the grid lines directly
+			oFragColor = vec4(vec3(1.0 - min(line, 1.0)), 1.0);
+			
+*/
+			/*
+			float gsize = 1.0;
+			float gwidth = 1.0;
+			vec3 worldPos = v_worldPos;
+
+			//vec3 f  = abs(fract (worldPos * gsize)-0.5);
+			//vec3 df = fwidth(worldPos * gsize);
+			//vec3 g = smoothstep(-gwidth*df,gwidth*df , f);
+			//float c = g.x * g.y * g.z; 
+			//oFragColor = vec4(c, c, c, 1.0);// * gl_Color;
+
+
+			vec3 f  = abs(fract (worldPos * gsize)-0.5);
+			vec3 df = fwidth(worldPos * gsize);
+
+			float mi=max(0.0,gwidth-1.0), ma=max(1.0,gwidth);//should be uniforms
+			vec3 g=clamp((f-df*mi)/(df*(ma-mi)),max(0.0,1.0-gwidth),1.0);//max(0.0,1.0-gwidth) should also be sent as uniform
+			float c = g.x * g.y * g.z;
+			oFragColor = vec4(c, c, c, 1.0);
+			*/
+
+
+			/*
+			// Pick a coordinate to visualize in a grid
+			vec2 coord = v_worldPos.xz;
+
+			// Compute anti-aliased world-space grid lines
+			vec2 grid = abs(fract(coord - 0.5) - 0.5) / fwidth(coord);
+			float line = min(grid.x, grid.y);
+
+			// Just visualize the grid lines directly
+			oFragColor = vec4(vec3(1.0 - min(line, 1.0)), 1.0);
+			*/
+
+
+			//float c = smoothstep(0.5, 0.49, abs(fractWorldPos.x - 0.5));
+			//float c = smoothstep(0.5, 0.49, abs(fractWorldPos.z - 0.5));
+			//c += smoothStep(floorWorldPos.x+1.0-0.05, floorWorldPos.x+1.0, v_worldPos.x);
+
+			//oFragColor = vec4(c, c, c, 1.0);
+			//oFragColor = vec4(1.0,0.0,0.0,1.0);
+		}
+	<\fragment>
+</script>
+</body></html>

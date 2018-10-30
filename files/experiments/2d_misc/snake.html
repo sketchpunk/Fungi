@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<style>
+			html,body{margin:0px; padding:0px; width:100%; height:100%;}
+			body{background-color:#606060;}
+			canvas{border:0px solid green;}
+			div.win{display:flex; width:100%; height:100%; align-items:center; justify-content:center;}
+			#lblFPS{position:absolute; top:0px; left:0px; width:40px; padding:5px 5px;
+				background:gray; color:white; font-weight:bold; text-align:center; font-family:arial; font-size:13px; }
+		</style>
+		<title>Catenary Curve - Weightless Rope / Chain</title>
+
+		<script type="module">
+			//import Overlay 		from "/lib/Overlay/Overlay.js";
+
+			import Canvas2D		from "/lib/Canvas2D.js";
+			//import {Easing}		from "/lib/Tween.js";
+			import RenderLoop	from "/fungi/RenderLoop.js";
+			import Vec2			from "/fungi/maths/Vec2.js";
+			//import Maths 		from "/fungi/Maths.js";
+
+
+//https://codepen.io/falldowngoboone/pen/PwzPYv
+//https://codepen.io/pimskie/pen/PbYxXJ  Spring Trail
+			//========================================================
+			var gCanvas, gLoop;
+			var snake;
+			var mPos = new Vec2();
+
+			window.addEventListener("load",function(){
+				//----------------------------------
+				//Setup
+				gCanvas	= new Canvas2D("FungiCanvas");
+				gLoop	= new RenderLoop(onRender, 30);
+
+				gCanvas.mouseEvents(null, onMouseMove, null);
+
+				//gCanvas.lineDash([5,5], 2);
+				
+				//----------------------------------
+				/*
+				var cLen = 270,	 //Rope/Chain Length.
+					pntA = new Vec2(-70, 100),
+					pntB = new Vec2(100, 0);
+
+				gCanvas.style(null, "#000000", 1)
+					.vecLine("stroke", [-200,0], [200,0])
+					.vecLine("stroke", [0,-5], [0,5]);
+
+				gCanvas.style(null, "#00ff00", 1.5)
+					.vecCircle("stroke", 7, pntA)
+					.vecCircle("stroke", 7, pntB);
+*/
+				snake = new Snake();
+
+				//----------------------------------
+				//Finish Up
+				//calc();
+				//draw(1.5);
+				gLoop.start();
+			});
+
+			function onMouseMove(e, x, y){
+				mPos.set(x, y);
+			}
+
+			function onRender(dt,ss){
+				gCanvas.clear();
+				//snake.pos.x += 3;
+
+				//snake.drawFollow();
+				//snake.drawPrevious();
+				snake.drawLength();
+			}
+
+			class Snake{
+				constructor(){
+					this.dots = new Array();
+					for(var i=0; i < 15; i++){
+						this.dots.push( new Vec2() );
+					}
+				}
+
+
+				drawLength(){
+					gCanvas.style(null, "#00ff00", 1.5);
+
+					var d		= this.dots[0], 
+						len		= new Vec2(),
+						prev	= new Vec2();
+
+					//.......................................
+					Vec2.sub( mPos, d, len).scale(0.3);
+					d.add( len );
+					prev.copy( d );
+
+					gCanvas.vecCircle("stroke", 7, this.dots[0]);
+
+					//.......................................
+					for(var i=1; i < this.dots.length; i++){
+						d = this.dots[i];
+
+						Vec2.sub( prev, d, len ).setLength( 20 );
+						d.copy( prev.sub( len ) );
+
+						gCanvas.vecCircle("stroke", 7, d);
+						prev.copy( d );
+					}
+
+				}
+
+
+				drawPrevious(){
+					gCanvas.style(null, "#00ff00", 1.5);
+
+					var c,p;
+					for(var i=this.dots.length-1; i > 0; i--){
+						this.dots[i].copy( this.dots[i-1] );
+
+						gCanvas.vecCircle("stroke", 7, this.dots[i]);
+					}
+
+					this.dots[0].copy(mPos);
+					gCanvas.vecCircle("stroke", 7, this.dots[0]);
+				}
+
+
+				drawFollow(){
+					gCanvas.style(null, "#00ff00", 1.5);
+
+					var v = new Vec2();
+					var to = new Vec2(mPos);
+					var d;
+					for(var i=0; i < this.dots.length; i++){
+						d = this.dots[i];
+
+						Vec2.sub(to, d, v).scale(0.3);
+						d.add(v);
+
+						gCanvas.vecCircle("stroke", 7, d);
+
+						to.copy(d);
+					}
+				}
+			}
+
+		</script>
+	</head>
+<body>
+	<div class="win"><canvas id="FungiCanvas"></canvas></div>
+</body>
+</html>

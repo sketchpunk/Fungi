@@ -93,7 +93,7 @@
 
 				mat.updateUniform("u_lightPos", point._position);
 				
-				System.update();
+				System.update().renderScene();
 			}
 
 
@@ -287,7 +287,7 @@ class NormalMapping{
 	"ubo"		: [ "UBOTransform" ],
 	"options"	: { "modelMatrix":true, "normalMatrix":false },
 	"uniforms"	: [
-		{ "name":"u_normTex",	"type":"sample2D" },
+		{ "name":"u_normTex",	"type":"sampler2D" },
 		{ "name":"u_lightPos",	"type":"vec3" }
 	]
 }<\shader>
