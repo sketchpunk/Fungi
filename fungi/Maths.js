@@ -25,6 +25,10 @@ class Maths{
 			return x*x*(3-2*x);
 		}
 
+		static gradient010( t ){
+			var tt = t * 2;
+			return ( tt > 1 )? 1 - (tt - 1) : tt;
+		}
 
 	////////////////////////////////////////////////////////////////////
 	// RANDOM NUMBERS
