@@ -1,3 +1,10 @@
+http://hacksoflife.blogspot.com/2011/01/derivatives-i-discontinuities-and.html
+https://www.kadenze.com/courses/the-nature-of-code-ii/sessions/genetic-algorithms
+https://www.scratchapixel.com/index.php?redirect
+https://www.gameprogrammingpatterns.com/contents.html
+
+//....................................
+
 https://github.com/redxdev/ECS
 http://cowboyprogramming.com/2007/01/05/evolve-your-heirachy/
 
@@ -98,6 +105,16 @@ http://aross.io/play/casteljau/
 https://gist.github.com/mckamey/3783009  CSS bezier curve in JS 01 to 11;
 https://github.com/gre/bezier-easing#readme
 
+
+https://www.particleincell.com/2012/bezier-splines/
+https://fjorgedigital.com/insights/blog/can-bezier-curves-be-quickly-parameterized-by-arc-length/
+https://stackoverflow.com/questions/31600441/bezier-curve-arc-lengths
+http://jsfiddle.net/MadLittleMods/thcstaay/
+https://gist.github.com/BonsaiDen/670236 bezier arc lengths
+https://gamedev.stackexchange.com/questions/6009/bezier-curve-arc-length
+https://gamedev.stackexchange.com/questions/5373/moving-ships-between-two-planets-along-a-bezier-missing-some-equations-for-acce/5427#5427
+
+
 .......................................................
 Calculate the circumference of the wheel. Use the formula: c = 2_pi_r, where c is the circumference, r is the radius, and pi can be approximated by 3.14. Following the example, if the car wheel has a radius of 0.3 meters, then the circumference is equal to:
 0.3 x 3.14 x 2 = 1.89 meters.
@@ -164,6 +181,8 @@ https://www.youtube.com/watch?v=6M-BnuJMuQE
 
 .......................................................
 Effects
+
+https://thebookofshaders.com/13/ AWESOME HOW TO USE NOISE TO MAKE SMOKE and WARPING.
 
 https://www.nutty.ca/?page_id=352&link=glow  BETTER GLOW AND BLOOM
 https://www.nutty.ca/?page_id=352&link=refraction  REFRACTION

@@ -1,5 +1,5 @@
 import Maths, {Quat, Vec3 }	from "../../fungi/Maths.js";
-
+import Armature from "./Armature.js";
 
 ///////////////////////////////////////////////////////////////////////
 // Main Chain Class
@@ -22,6 +22,22 @@ class IKChain{
 		for(let i=0; i < cnt; i++){
 			chain.links[ i ] = arguments[ i ];
 			len += arguments[ i ].com.Bone.length;
+		}
+
+		chain.length = len;
+		return chain;
+	}
+
+	static createByNames( arm ){
+		let cnt		= arguments.length - 1,
+			chain	= new IKChain( cnt ),
+			len		= 0,
+			b;
+
+		for(let i=0; i < cnt; i++){
+			b = Armature.getBone( arm, arguments[ i+1 ] );
+			chain.links[ i ] = b;
+			len += b.com.Bone.length;
 		}
 
 		chain.length = len;

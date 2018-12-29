@@ -2,6 +2,10 @@ import Vec3		from "./maths/Vec3.js";
 import Mat4		from "./maths/Mat4.js";
 import Quat		from "./maths/Quat.js";
 
+// +++NOTES+++
+// How to increment but still get 0 or 1 value by using bitwie AND and checking for 1
+// 0 & 1 = 0, 1 & 1 = 1, 2 & 1 = 0
+
 class Maths{
 	////////////////////////////////////////////////////////////////////
 	// 
@@ -20,10 +24,12 @@ class Maths{
 		static step(edge, x){ return (x < edge)? 0 : 1; }
 
 		static nearZero(v){ return (Math.abs(v) <= Maths.EPSILON)? 0 : v; }
+		static smoothTStep(t){ return t * t * (3 - 2 * t); }
 		static smoothStep(edge1, edge2, val){ //https://en.wikipedia.org/wiki/Smoothstep
 			var x = Math.max(0, Math.min(1, (val-edge1)/(edge2-edge1)));
 			return x*x*(3-2*x);
 		}
+		
 
 		static gradient010( t ){
 			var tt = t * 2;
@@ -365,6 +371,12 @@ function closestPointS_2Segments(A0,A1,B0,B1){
         a += x* 2601229460539.0/4365681093774000000000.0;   // x^10
         return Math.sqrt(a);
     }
+
+
+	static float Fade(float t)
+        {
+            return t * t * t * (t * (t * 6 - 15) + 10);
+        }
 */
 
 

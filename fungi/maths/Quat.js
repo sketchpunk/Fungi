@@ -125,8 +125,10 @@ class Quaternion extends Float32Array{
 
 	//----------------------------------------------
 	//region
-		normalize(out){
+		normalize(out = null){
 			var len =  this[0]*this[0] + this[1]*this[1] + this[2]*this[2] + this[3]*this[3];
+			out = out || this;
+
 			if(len > 0){
 				len = 1 / Math.sqrt(len);
 				out = out || this;
@@ -135,7 +137,7 @@ class Quaternion extends Float32Array{
 				out[2] = this[2] * len;
 				out[3] = this[3] * len;
 			}
-			return this;
+			return out;
 		}
 
 		mul(q, out){ return Quaternion.mul( out || this, this, q ); }	 	// THIS * Q
@@ -414,13 +416,13 @@ class Quaternion extends Float32Array{
 		}
 
 		//https://github.com/mrdoob/three.js/blob/dev/src/math/Quaternion.js
-		static fromEuler(out, x, y, z, order="YZX"){
-			var c1 = Math.cos(x/2),
-				c2 = Math.cos(y/2),
-				c3 = Math.cos(z/2),
-				s1 = Math.sin(x/2),
-				s2 = Math.sin(y/2),
-				s3 = Math.sin(z/2);
+		static fromEuler(out, x, y, z, order="YXZ"){			
+			var c1 = Math.cos(x*0.5), //Math.cos(x/2)
+				c2 = Math.cos(y*0.5), //Math.cos(y/2),
+				c3 = Math.cos(z*0.5), //Math.cos(z/2),
+				s1 = Math.sin(x*0.5), //Math.sin(x/2),
+				s2 = Math.sin(y*0.5), //Math.sin(y/2)
+				s3 = Math.sin(z*0.5); //Math.sin(z/2)
 
 			out = out || new Quaternion();
 			switch(order){
@@ -677,7 +679,28 @@ export default Quaternion;
 
 /*
 
+	//https://github.com/Unity-Technologies/UnityCsReference/blob/master/Runtime/Export/Quaternion.cs
+        // Rotates the point /point/ with /rotation/.
+        public static Vector3 operator*(Quaternion rotation, Vector3 point)
+        {
+            float x = rotation.x * 2F;
+            float y = rotation.y * 2F;
+            float z = rotation.z * 2F;
+            float xx = rotation.x * x;
+            float yy = rotation.y * y;
+            float zz = rotation.z * z;
+            float xy = rotation.x * y;
+            float xz = rotation.x * z;
+            float yz = rotation.y * z;
+            float wx = rotation.w * x;
+            float wy = rotation.w * y;
+            float wz = rotation.w * z;
 
-
+            Vector3 res;
+            res.x = (1F - (yy + zz)) * point.x + (xy - wz) * point.y + (xz + wy) * point.z;
+            res.y = (xy + wz) * point.x + (1F - (xx + zz)) * point.y + (yz - wx) * point.z;
+            res.z = (xz - wy) * point.x + (yz + wx) * point.y + (1F - (xx + yy)) * point.z;
+            return res;
+}
 
 */

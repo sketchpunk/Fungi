@@ -5,14 +5,22 @@ import Fungi from "../fungi/Fungi.js";
 // Timing that loops from 0 to PI*2. Good for controlling animations by cycles.
 // This class handles how long does it take to complete one cycle (360 degrees == PI*2)
 class Cycle{
-	constructor( sec ){
+	constructor( sec, isInfinite=true ){
 		this.value		= 0;
 		this.time		= 0;
 		this.speed		= 0;
 		this.loop		= 0;
-		this.infinite	= true;
+		this.infinite	= isInfinite;
 		this.setTime( sec );
 	}
+
+	get grad01(){ return this.value * Maths.PI_2_INV; }
+	get grad010(){
+		let t = this.value * Maths.PI_2_INV * 2;
+		return ( t > 1 )? 1 - (t - 1) : t;
+	}
+
+	get isActive(){ return ( !this.infinite && this.value < Maths.PI_2 ); }
 
 	reset(){
 		this.value = 0;
@@ -134,7 +142,7 @@ class RunStack{
 			//console.log("all together");
 		//}
 
-		if(itm.func() == false){
+		if(itm.func && itm.func() == false){
 			this.next();
 			return;
 		}

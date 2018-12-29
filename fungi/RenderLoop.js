@@ -84,6 +84,12 @@ class RenderLoop{
 		this._callBack(deltaTime,sinceStart);
 		if(this.isActive)	this._frameCaller.requestAnimationFrame(this._runPtr);
 	}
+
+	runFrame(dt){
+		Fungi.deltaTime = dt;
+		Fungi.sinceStart += dt;
+		this._callBack( dt, Fungi.sinceStart );
+	}
 }
 
 

@@ -14,6 +14,13 @@ class TransformData{
 		this.scale 		= new Vec3(1,1,1);
 	}
 
+	copy( t ){
+		this.rotation.copy( t.rotation );
+		this.position.copy( t.position );
+		this.scale.copy( t.scale );
+		return this;
+	}
+
 	set(r=null, p=null, s=null){
 		if( r )	this.rotation.copy( r );
 		if( p )	this.position.copy( p );
@@ -21,19 +28,34 @@ class TransformData{
 		return this;
 	}
 
-	add(cr, cp, cs){
+	add(cr, cp, cs = null){
+		//If just passing in Tranform Object
+		if(arguments.length == 1){
+			cr = arguments[0].rotation;
+			cp = arguments[0].position;
+			cs = arguments[0].scale;
+		}
+
 		//POSITION - parent.position + ( parent.rotation * ( parent.scale * child.position ) )
 		let v = new Vec3();
 		Vec3.mul( this.scale, cp, v ); // parent.scale * child.position;
 		this.position.add( Vec3.transformQuat( v, this.rotation, v ) );
 
 		// SCALE - parent.scale * child.scale
-		this.scale.mul( cs );
+		if(cs) this.scale.mul( cs );
 
 		// ROTATION - parent.rotation * child.rotation
 		this.rotation.mul( cr );
 
 		return this;
+	}
+
+	transformVec( v, out = null ){
+		out = out || v;
+		//GLSL - vecQuatRotation(model.rotation, a_position.xyz * model.scale) + model.position;
+		Vec3.mul( v, this.scale, out );
+		Vec3.transformQuat( out, this.rotation, out ).add( this.position );
+		return out;
 	}
 }
 
@@ -41,7 +63,6 @@ class TransformData{
 //###################################################################
 // Universal Data used by the solvers to align bones
 //###################################################################
-
 class IKTarget{
 	constructor(){
 		this.rotation = new Quat();	// Rotation toward the forward axis(z)
@@ -57,7 +78,7 @@ class IKTarget{
 	//////////////////////////////////////////////////////////////
 	//
 	//////////////////////////////////////////////////////////////
-	setEndPoints(p0, p1, vUp=null){
+	setEndPoints(p0, p1, vUp=null, chLen = null){
 		this.position.copy( p1 );
 		this.scale = null;
 		Vec3.sub(p1, p0, this.z); // Forward
@@ -71,6 +92,8 @@ class IKTarget{
 				vUp = (v.y >= 0)? Vec3.BACK : Vec3.FORWARD;
 			}else vUp = Vec3.UP;
 		}
+
+		if(chLen != null) this.scale = this.z.length() / chLen;
 
 		Vec3.cross(vUp, this.z.normalize(), this.x).normalize();	// Left
 		Vec3.cross(this.z, this.x, this.y).normalize();				// Up
@@ -115,6 +138,19 @@ class IKTarget{
 		DVao.vecPoint(ePoint, offset, 8);
 	}
 
+	static debug2(dBug, t, offset=null){
+		offset = offset || Vec3.ZERO;
+
+		//var zlen = Vec3.scale(t.z, t.scale).add(offset);
+		var zlen = new Vec3(t.z);
+		if(t.scale) zlen.scale( t.scale );
+		zlen.add( offset );
+
+		dBug.line( offset, Vec3.scale(t.x, 0.3).add(offset), 0 )
+			.line( offset, Vec3.scale(t.y, 0.3).add(offset), 2 )
+			.line( offset, zlen, 1 )
+			.point( offset, 8 );
+	}
 }
 
 
@@ -147,7 +183,7 @@ class IKChainSolver{
 		//.......................................
 		pose.links[0].rotation.copy( target.rotation );	// set the forward rotation of the bone toward the target.
 		pose.links[0].useRotation = true;
-		pose.links[1].rotation.setAxisAngle( target.x, cAngle );
+		pose.links[1].rotation.setAxisAngle( target.x, -cAngle ); //Change to negative recently, Shoud fix forward orientation but might cause other issues
 		pose.links[1].useRotation = true;
 
 		//------------------------------------
