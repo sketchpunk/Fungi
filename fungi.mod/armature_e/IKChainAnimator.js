@@ -146,7 +146,8 @@ class Cycle{
 
 	update( deltaTime ){
 		if(!this.infinite && this.cycle >= Maths.PI_2) return this;
-
+		
+		deltaTime = deltaTime || Fungi.deltaTime;
 		this.cycle += (deltaTime * 1000 * this.speedScale) * this.cycleInc;
 		return this;
 	}

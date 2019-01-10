@@ -30,6 +30,15 @@ class Maths{
 			return x*x*(3-2*x);
 		}
 		
+		// Loops between 0 and Len, once over len, starts over again at 0
+		static repeat(t, len){ return Maths.clamp(t - Math.floor( t / len ) * len, 0, len); }
+
+		// Loops back and forth between 0 and len, it functions like a triangle wave.
+		static pingpong( t, len ){
+			t = Maths.repeat( t, len * 2 );
+			return len - Math.abs( t - len );
+		}
+
 
 		static gradient010( t ){
 			var tt = t * 2;

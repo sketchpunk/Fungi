@@ -78,6 +78,12 @@ class Downloader{
 
 			return this._promise;
 		}
+
+		addRaw( data ){ this._queue.push( data ); return this; }
+		addItem(name, type, file){
+			this._queue.push( { type, name, file } );
+			return this;
+		}
 	//endregion
 
 	//+++++++++++++++++++++++++++++++++++++++++++++++++

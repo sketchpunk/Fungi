@@ -15,6 +15,7 @@ class Debug{
 	}
 
 	static point(v, color = 0){ DVao.vecPoint( ePoint, v, color ); return Debug; }
+	static rawPoint(x, y, z, color){ DVao.rawPoint( ePoint, x, y, z, color); return Debug; }
 
 	static line(v0, v1, color = 0){ DVao.vecLine( eLine, v0, v1, color); return Debug; }
 
