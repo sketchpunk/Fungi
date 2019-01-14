@@ -165,7 +165,7 @@ class Vao{
 	///////////////////////////////////////////////////////
 		
 		static finalize( vao, name, elmCount = null ){
-			vao.name		= name;
+			vao.name = name;
 
 			if( elmCount ) vao.elmCount = elmCount;
 

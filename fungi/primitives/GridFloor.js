@@ -1,5 +1,5 @@
-import gl 			from "../gl.js";
-import Vao 			from "../Vao.js";
+import gl 	from "../core/gl.js";
+import Vao 	from "../core/Vao.js";
 
 function GridFloor(){
 	//let model		= new Renderable("GridFloor", GridFloor.vao(), "MatGridFloor");

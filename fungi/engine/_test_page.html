@@ -1,0 +1,35 @@
+<!DOCTYPE html><html><head><title>Fungi</title></head><script type="module">
+
+import App			from "./App.js";
+import FacedCube	from "../primitives/FacedCube.js";
+
+//////////////////////////////////////////////////////////////////////
+App.launch([
+	{ type:"shader", file:"/fungi/shaders/VecWColor.txt" },
+])	//.then( x=>App.loadModules( [ "Draw" ] ))
+	.then( (x)=>{ console.log("woot",x); init(); } )
+	.catch( (err)=>console.error( err ) );
+
+function init(){
+	let cube = FacedCube("Cube");
+	//console.log( cube );
+
+	App.ecs.updateSystems();
+}
+
+
+
+/*
+
+				App.launch(onRender, [
+					{ type:"shader", file:"/fungi/shaders/VecWColor.txt" },
+				])	.then( ()=>App.loadScene() )
+					.then( ()=>onInit() )
+					.catch( err=>console.log("err", err) );
+*/
+
+
+//////////////////////////////////////////////////////////////////////
+
+
+</script><body></body></html>

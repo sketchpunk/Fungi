@@ -190,11 +190,11 @@ class Quaternion extends Float32Array{
 
 	//----------------------------------------------
 	//region Static Methods
-		static dot(a, b){
+		static dot( a, b ){
   			return a[0] * b[0] + a[1] * b[1] + a[2] * b[2] + a[3] * b[3];
 		}
 
-		static mul(out,a,b){
+		static mul( a, b, out ){
 			var ax = a[0], ay = a[1], az = a[2], aw = a[3],
 				bx = b[0], by = b[1], bz = b[2], bw = b[3];
 
@@ -217,7 +217,7 @@ class Quaternion extends Float32Array{
 			return out;
 		} */
 
-		static rotateVec3(qa, va, out = null){
+		static rotateVec3( qa, va, out = null ){
 			//https://gamedev.stackexchange.com/questions/28395/rotating-vector3-by-a-quaternion
 			//vprime = 2.0f * dot(u, v) * u
 			//			+ (s*s - dot(u, u)) * v
@@ -242,7 +242,7 @@ class Quaternion extends Float32Array{
 
 		//Ported to JS from C# example at https://pastebin.com/ubATCxJY
 		//Note, if Dir and Up are equal, a roll happends. Need to find a way to fix this.
-		static lookRotation(vDir, vUp, out = null){
+		static lookRotation( vDir, vUp, out = null ){
 			var zAxis	= new Vec3(vDir),	//Forward
 				up		= new Vec3(vUp),
 				xAxis	= new Vec3(),		//Right
@@ -345,7 +345,7 @@ class Quaternion extends Float32Array{
 
 		//Using unit vectors, Shortest rotation from Direction A to Direction B
 		//http://glmatrix.net/docs/quat.js.html#line548
-		static rotationTo(a, b, out = null){
+		static rotationTo( a, b, out = null ){
 			let dot = Vec3.dot(a, b);
 			out = out || new Quat();
 
@@ -416,7 +416,7 @@ class Quaternion extends Float32Array{
 		}
 
 		//https://github.com/mrdoob/three.js/blob/dev/src/math/Quaternion.js
-		static fromEuler(out, x, y, z, order="YXZ"){			
+		static fromEuler( out, x, y, z, order="YXZ" ){			
 			var c1 = Math.cos(x*0.5), //Math.cos(x/2)
 				c2 = Math.cos(y*0.5), //Math.cos(y/2),
 				c3 = Math.cos(z*0.5), //Math.cos(z/2),
@@ -469,7 +469,7 @@ class Quaternion extends Float32Array{
 
 		//http://bediyap.com/programming/convert-quaternion-to-euler-rotations/
 		//http://schteppe.github.io/cannon.js/docs/files/src_math_Quaternion.js.html
-		static toEuler(q, out){ //order="YZX"
+		static toEuler( q, out ){ //order="YZX"
 			var x		= q[0],
 				y		= q[1],
 				z		= q[2],
@@ -509,7 +509,7 @@ class Quaternion extends Float32Array{
 			return out;
 		}
 
-		static lerp(a, b, t, out){
+		static lerp( a, b, t, out ){
 			var ax = a[0],
 				ay = a[1],
 				az = a[2],

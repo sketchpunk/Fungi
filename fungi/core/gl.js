@@ -4,7 +4,13 @@ class gl{
 	static init( canvas ){
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		//Get Context
-		if(typeof canvas == "string") canvas = document.getElementById(canvas);
+		if(typeof canvas == "string"){
+			canvas = document.getElementById( canvas );
+			if( !canvas ){
+				console.error("Canvas element not found.");
+				return false;
+			}
+		}
 
 		gl.ctx = canvas.getContext("webgl2");
 		if(!gl.ctx){ console.error("WebGL context is not available."); return false; }

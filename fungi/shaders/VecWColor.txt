@@ -1,6 +1,6 @@
 <shader>{
 	"name"		: "VecWColor",
-	"ubo"		: [ "UBOTransform", "UBOModel", "UBOWorld" ],
+	"ubo"		: [ "UBOGlobal", "UBOModel" ],
 	"options"	: { "modelMatrix":true },
 	"uniforms"	: [
 		{ "name":"u_colorAry", "type":"vec3" }
@@ -31,18 +31,12 @@
 	#version 300 es
 	layout(location=0) in vec4 a_position;
 
-	uniform UBOTransform{
+	uniform UBOGlobal{
 		mat4	projViewMatrix;
 		vec3	cameraPos;
 		float	globalTime;
 		vec2	screenSize;
 	};
-
-	uniform UBOWorld{
-		vec4 rotation;
-		vec3 position;
-		vec3 scale;
-	} model;
 
 	uniform UBOModel{
 		mat4 	modelMatrix;
@@ -50,19 +44,12 @@
 	};
 
 	uniform vec3 u_colorAry[20];
-
 	out vec3 v_color;
 
-	vec3 vecQuatRotation(vec4 q, vec3 v){ return v + cross(2.0 * q.xyz, cross(q.xyz, v) + q.w * v); }
-
 	void main(void){
-		vec3 pos 		= vecQuatRotation(model.rotation, a_position.xyz * model.scale) + model.position;
-
 		v_color			= u_colorAry[ int(a_position.w) ];		
 		gl_PointSize 	= 10.0;
-
-		//gl_Position 	= projViewMatrix * modelMatrix * vec4(a_position.xyz, 1.0);
-		gl_Position 	= projViewMatrix * vec4(pos, 1.0);
+		gl_Position 	= projViewMatrix * modelMatrix * vec4(a_position.xyz, 1.0);
 	}
 <\vertex>
 

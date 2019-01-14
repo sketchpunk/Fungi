@@ -89,7 +89,7 @@
 	out vec4 oFragColor;
 
 	//const vec3 uLightPos			= vec3(1.0, 6.0, -4.0);
-	//const vec3 uLightColor			= vec3(1.0, 1.0, 1.0);
+	//const vec3 uLightColor		= vec3(1.0, 1.0, 1.0);
 
 	const float uAmbientStrength	= 0.5;
 	const float uDiffuseStrength	= 0.5;

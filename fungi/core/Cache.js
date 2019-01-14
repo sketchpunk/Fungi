@@ -26,6 +26,13 @@ export default {
 		return m;
 	},
 
+	hasVAO		: function( key ){ return this.vaos.has( key ); },
+	getVAO		: function( key ){
+		var m = this.vaos.get(key);
+		if(!m){ console.log( "VAO Not Found %s", key ); return null; }
+		return m;
+	},
+
 	getTexture	: function( key ){
 		var m = this.textures.get(key);
 		if(!m){ console.log( "Texture Not Found %s", key ); return null; }

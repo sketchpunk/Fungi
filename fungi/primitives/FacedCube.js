@@ -1,18 +1,14 @@
-//import gl			from "../gl.js";
-import Vao			from "../Vao.js";
-import Fungi		from "../Fungi.js";
-
+import App			from "../engine/App.js";
+import Vao			from "../core/Vao.js";
 
 function FacedCube(name ="FaceCube", matName = "VecWColor"){
-	var e = Fungi.ecs.newAssemblage("Draw",name);
-	e.com.Drawable.vao 		= FacedCube.vao( name );
-	e.com.Drawable.material	= Fungi.getMaterial(matName);
+	let e = App.newDraw( name );
+	e.Draw.add( FacedCube.vao( "FacedCube" ), App.cache.getMaterial( matName )  )
 	return e;
 }
 
-FacedCube.vao = function(name = "FungiFCube"){
-	let vao = Fungi.vaos.get(name);
-	if(vao) return vao;
+FacedCube.vao = function(){
+	if( App.cache.hasVAO( "FacedCube") ) return App.cache.getVAO( "FacedCube ");
 
 	//......................................................
 	let width = 1, height = 1, depth = 1, x = 0, y = 0, z = 0;
@@ -72,7 +68,7 @@ FacedCube.vao = function(name = "FungiFCube"){
 		 0, 1, 0,	 0, 1, 0,	 0, 1, 0,	 0, 1, 0		//Top
 	];
 
-	return Vao.standardRenderable(name, 4, aVert, aNorm, aUV, aIndex);
+	return Vao.buildStandard( "FacedCube", 4, aVert, aNorm, aUV, aIndex );
 }
 
 export default FacedCube;
