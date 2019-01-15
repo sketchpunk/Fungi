@@ -30,11 +30,10 @@ class Renderer{
 	////////////////////////////////////////////////////////////////////
 
 		beginFrame(){
-			console.log( "renderer.beginFrame ");
 			gl.clear();
 
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			// Update Main UBO
+			// Update Global UBO
 			this.UBOGlobal
 				.setItem("projViewMatrix",	App.camera.Camera.pvMatrix )
 				.setItem("cameraPos",		App.camera.Node.world.pos )
@@ -43,6 +42,9 @@ class Renderer{
 		}
 
 
+	////////////////////////////////////////////////////////////////////
+	// 
+	////////////////////////////////////////////////////////////////////
 		loadShader( s ){
 			if( this.shader !== s ){
 				this.shader = s;
@@ -63,7 +65,7 @@ class Renderer{
 			this.loadShader( mat.shader );
 
 			//...............................
-			mat.apply();			//Push any saved uniform values to shader.
+			mat.apply();						//Push any saved uniform values to shader.
 			this.loadOptions( mat.options );	//Enabled/Disable GL Options
 
 			return this;
@@ -92,6 +94,38 @@ class Renderer{
 			return this;
 		}
 
+		loadEntity( e ){ //console.log("Load Entity ", e.info.name);
+			this.UBOModel
+				.setItem( "modelMatrix", e.Node.modelMatrix )
+				.update();
+			return this;
+		}
+
+
+	////////////////////////////////////////////////////////////////////
+	// 
+	////////////////////////////////////////////////////////////////////
+		draw( d ){
+			//...............................
+			if(this.vao !== d.vao){
+				this.vao = d.vao;
+				gl.ctx.bindVertexArray( d.vao.id );
+				//console.log("Draw", r.entityPtr.name, r.vao.elmCount);
+			}
+
+			//...............................
+			if(!d.vao.isInstanced){
+				if(d.vao.isIndexed)	gl.ctx.drawElements( d.mode, d.vao.elmCount, gl.ctx.UNSIGNED_SHORT, 0); 
+				else				gl.ctx.drawArrays( d.mode, 0, d.vao.elmCount);
+			}else{
+				if(d.vao.isIndexed)	gl.ctx.drawElementsInstanced( d.mode, d.vao.elmCount, gl.ctx.UNSIGNED_SHORT, 0, d.vao.instanceCount); 
+				else				gl.ctx.drawArraysInstanced( d.mode, 0, d.vao.elmCount, d.vao.instanceCount);
+			}
+
+			//...............................
+			//gl.ctx.bindVertexArray(null);
+			return this;
+		}
 }
 
 export default Renderer;

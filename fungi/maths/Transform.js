@@ -6,7 +6,7 @@ class Transform{
 	constructor(){
 		this.rot	= new Quat();
 		this.pos	= new Vec3();
-		this.scl 	= new Vec3(1,1,1);
+		this.scl 	= new Vec3( 1, 1, 1 );
 	}
 
 	//////////////////////////////////////////////////////////////////////

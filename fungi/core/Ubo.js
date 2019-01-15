@@ -9,6 +9,7 @@ class Ubo{
 	constructor( bName = "undefined_ubo" ){
 		this.name		= bName;
 		this.items 		= new Map();
+		this.bindPoint	= null; 		// Need this to bind UBO to shaders later on.
 		this.bufferID	= null;
 		this.bufferSize	= 0;
 		this.byteBuffer = null;
@@ -76,6 +77,7 @@ class Ubo{
 			ubo.bufferSize	= Ubo.calculate( ubo.items );			// Calc all the Offsets and Lengths
 			ubo.bufferID 	= gl.ctx.createBuffer();				// Create Standard Buffer
 			ubo.byteBuffer	= new ByteBuffer( ubo.bufferSize );
+			ubo.bindPoint	= bindPoint;
 
 			// GPU Buffer
 			gl.ctx.bindBuffer(gl.ctx.UNIFORM_BUFFER, ubo.bufferID);							// Bind it for work

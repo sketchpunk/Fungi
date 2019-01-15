@@ -1,16 +1,18 @@
 import App			from "../engine/App.js";
 import Vao			from "../core/Vao.js";
 
-function FacedCube(name ="FaceCube", matName = "VecWColor"){
+const NAME = "FaceCube";
+
+function FacedCube(name = NAME, matName = "VecWColor"){
 	let e = App.newDraw( name );
 	e.Draw.add( FacedCube.vao( "FacedCube" ), App.cache.getMaterial( matName )  )
 	return e;
 }
 
 FacedCube.vao = function(){
-	if( App.cache.hasVAO( "FacedCube") ) return App.cache.getVAO( "FacedCube ");
+	if( App.cache.hasVAO( NAME ) ) return App.cache.getVAO( NAME );
 
-	//......................................................
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	let width = 1, height = 1, depth = 1, x = 0, y = 0, z = 0;
 	let w = width*0.5, h = height*0.5, d = depth*0.5;
 	let x0 = x-w, x1 = x+w, y0 = y-h, y1 = y+h, z0 = z-d, z1 = z+d;
@@ -50,14 +52,17 @@ FacedCube.vao = function(){
 		x1, y1, z0, 5	//4
 	];
 
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	//Build the index of each quad [0,1,2, 2,3,0]
 	let aIndex = [];
 	for(var i=0; i < aVert.length / 4; i+=2) aIndex.push(i, i+1, (Math.floor(i/4)*4)+((i+2)%4));
 
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	//Build UV data for each vertex
 	let aUV = [];
 	for(var i=0; i < 6; i++) aUV.push(0,0,	0,1,  1,1,  1,0);
 
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	//Build Normal data for each vertex
 	let aNorm = [
 		 0, 0, 1,	 0, 0, 1,	 0, 0, 1,	 0, 0, 1,		//Front
@@ -68,7 +73,8 @@ FacedCube.vao = function(){
 		 0, 1, 0,	 0, 1, 0,	 0, 1, 0,	 0, 1, 0		//Top
 	];
 
-	return Vao.buildStandard( "FacedCube", 4, aVert, aNorm, aUV, aIndex );
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	return Vao.buildStandard( NAME, 4, aVert, aNorm, aUV, aIndex );
 }
 
 export default FacedCube;

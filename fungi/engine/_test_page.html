@@ -2,6 +2,7 @@
 
 import App			from "./App.js";
 import FacedCube	from "../primitives/FacedCube.js";
+import GridFloor	from "../primitives/GridFloor.js";
 
 //////////////////////////////////////////////////////////////////////
 App.launch([
@@ -11,7 +12,14 @@ App.launch([
 	.catch( (err)=>console.error( err ) );
 
 function init(){
+	App.camera.Node
+		.setPos( 0, 1.5, 4 )
+		.setRotAxis( [1,0,0], -15 * Math.PI / 180 );
+
 	let cube = FacedCube("Cube");
+	let gfloor = GridFloor();
+	
+	cube.Node.setRotAxis( [0,1,0], 20 * Math.PI / 180 );
 	//console.log( cube );
 
 	App.ecs.updateSystems();

@@ -2,16 +2,15 @@
 // Private Functions
 ///////////////////////////////////////////////////////////////////////////////////
 
-function hashCode(str){ // Create an hash Int based on string input.
+function hashCode( str ){ // Create an hash Int based on string input.
 	let hash = 5381, i = str.length;
 	while(i) hash = (hash * 33) ^ str.charCodeAt(--i)
 	return hash >>> 0; // Force Negative bit to Positive;
 }
 
-
-function randomID(){
-	return (+new Date()) + (Math.random() * 100000000 | 0) + (++randomID.nextID);
-} randomID.nextID = 0;
+//function randomID(){
+//	return (+new Date()) + (Math.random() * 100000000 | 0) + (++randomID.nextID);
+//} randomID.nextID = 0;
 
 
 /*####################################################################################

@@ -150,6 +150,7 @@ class Shader{
 			let ubo = Cache.getUBO( uboName );
 			if( !ubo ){ console.log( "Can not find UBO in fungi cache : %s for %s", uboName, sh.name ); return this; }
 
+			console.log( "prepare UBO", uboName, ubo.bindPoint, bIdx );
 			gl.ctx.uniformBlockBinding( sh.program, bIdx, ubo.bindPoint );
 			return Shader;
 		}

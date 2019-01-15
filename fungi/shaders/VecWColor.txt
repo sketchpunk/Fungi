@@ -6,7 +6,7 @@
 		{ "name":"u_colorAry", "type":"vec3" }
 	]
 }<\shader>
-	
+		"ubo"		: [ "UBOGlobal", "UBOModel" ],
 <materials>[
 	{ "name":"VecWColor",	
 		"options"	: { "depthTest":true, "blend":false },
@@ -49,7 +49,9 @@
 	void main(void){
 		v_color			= u_colorAry[ int(a_position.w) ];		
 		gl_PointSize 	= 10.0;
+		//gl_Position 	= projViewMatrix * vec4(a_position.xyz, 1.0);
 		gl_Position 	= projViewMatrix * modelMatrix * vec4(a_position.xyz, 1.0);
+			
 	}
 <\vertex>
 

@@ -1,14 +1,19 @@
-import gl 	from "../core/gl.js";
-import Vao 	from "../core/Vao.js";
+import App	from "../engine/App.js";
+import Vao	from "../core/Vao.js";
 
-function GridFloor(){
-	//let model		= new Renderable("GridFloor", GridFloor.vao(), "MatGridFloor");
-	//model.name		= "GridFloor";
-	//model.drawMode	= gl.ctx.LINES;
-	//return model;
+const NAME = "GridFloor";
+
+function GridFloor( name=NAME, matName="MatGridFloor" ){
+	let e = App.newDraw( name );
+	e.Draw.add( GridFloor.vao( NAME ), App.cache.getMaterial( matName ), 1 ); // GL.LINES
+
+	return e;
 }
 
 GridFloor.vao = function(){
+	if( App.cache.hasVAO( NAME ) ) return App.cache.getVAO( NAME );
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	var GridSize	= 0.2,				//Distance between lines
 		len			= 70,				//How many lines to generate
 		t			= len * GridSize,	//Total Size of grid
@@ -23,9 +28,11 @@ GridFloor.vao = function(){
 				-t,0,-p,0, t,0,-p,0
 		);
 	}
+
 	v.push(-t,0.007,0,1, t,0.007,0,1, 0,0.007,t,2, 0,0.007,-t,2); //origin x,z lines
 
-	return Vao.standardRenderable("GridFloor", 4, v);
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	return Vao.buildStandard( NAME, 4, v );
 }
 
 export default GridFloor;

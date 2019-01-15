@@ -69,7 +69,7 @@ class Quaternion extends Float32Array{
 		ry(rad){ Quaternion.rotateY(this, rad); return this; }
 		rz(rad){ Quaternion.rotateZ(this, rad); return this; }
 		
-		setAxisAngle(axis, angle){ //AXIS MUST BE NORMALIZED.
+		setAxisAngle( axis, angle ){ //AXIS MUST BE NORMALIZED.
 			var halfAngle = angle * .5;
 			var s = Math.sin(halfAngle);
 

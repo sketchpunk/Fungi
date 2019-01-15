@@ -107,7 +107,7 @@ class Vao{
 		static buildStandard( name, vertCompLen, aryVert, aryNorm=null, aryUV=null, aryInd=null ){
 			let vao 		= new Vao(),
 				elmCount	= 0;
-			
+
 			// Vertices are mandatory
 			Vao	.bind( vao )
 				.floatBuffer( vao, "vertex", aryVert, Shader.POSITION_LOC, vertCompLen );

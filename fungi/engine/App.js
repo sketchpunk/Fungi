@@ -5,6 +5,7 @@ import Cache  		from "../core/Cache.js";
 
 import Page			from "./lib/Page.js";
 import RenderLoop 	from "./RenderLoop.js";
+import InputTracker from "./lib/InputTracker.js";
 
 import Ecs, { Assemblages } 	from "./Ecs.js";
 import Camera, { CameraSystem }	from "./ecs/Camera.js";
@@ -13,8 +14,7 @@ import { DrawSystem }			from "./ecs/Draw.js";
 
 /*
 System Notes
-
-
+001 - Input
 700 - Physics
 800 - Transform
 801 - Camera
@@ -22,10 +22,12 @@ System Notes
 1000 - Cleanup
 */
 
+const SleepAsync = ( ms ) => { return new Promise( resolve => setTimeout(resolve, ms) ) };
+
 //######################################################
 class App{
 	static async launch( dlAry = null ){
-		if( !init_gl() ) throw "GL Init Error";			// Create HTML Elements and GL Context
+		if( ! await init_gl() ) throw "GL Init Error";	// Create HTML Elements and GL Context
 		if( dlAry ) await init_resources( dlAry );		// Download and Load Up Resources
 
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -33,6 +35,8 @@ class App{
 
 		App.camera = App.ecs.newEntity( "MainCamera", [ "Node", "Camera" ] );		
 		Camera.setPerspective( App.camera );
+
+		App.input = new InputTracker();
 
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		console.log(" Run App ");
@@ -74,11 +78,17 @@ function loadModule( mod ){
 	}
 }
 
-function init_gl(){
+async function init_gl(){
 	Page.init();
+	await SleepAsync( 50 ); // Need time for the new html elements to render to properly finish loading GL.
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	if( !gl.init("pgCanvas") ) return false;
 
-	gl.setClearColor("#d0d0d0").clear();
+	let box = gl.ctx.canvas.getBoundingClientRect(); // if not enough sleep time, can not get correct size
+	gl.setClearColor("#d0d0d0")
+		.setSize( box.width, box.height )
+		.clear();
 
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Setup UBOs

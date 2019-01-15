@@ -20,6 +20,24 @@ class Node{
 	}
 
 	////////////////////////////////////////////////////////////////////
+	// SETTERS
+	////////////////////////////////////////////////////////////////////
+		setPos( x, y, z ){
+			if( arguments.length == 1 ) this.local.pos.copy( x );
+			else						this.local.pos.set( x, y, z);
+			
+			this.isModified = true;
+			return this;
+		}
+
+		setRotAxis( axis, ang ){
+			this.local.rot.setAxisAngle( axis, ang );
+			this.isModified = true;
+			return this;
+		}
+
+
+	////////////////////////////////////////////////////////////////////
 	// Child Management
 	////////////////////////////////////////////////////////////////////
 		static addChild( pe, ce ){
@@ -82,6 +100,7 @@ class NodeSystem extends System{
 
 		for( e of ary ){
 			cn = e.Node;
+
 
 			// if parent has been modified, then child should also be concidered modified.
 			if( cn.parent !== null && cn.parent.isModified ) cn.isModified = true;

@@ -29,59 +29,33 @@ class DrawSystem extends System{
 
 	update( ecs ){
 		let i, e, d, ary = ecs.queryEntities( QUERY_COM );
-		this.render.beginFrame();
+
+		this.render.beginFrame(); // Prepare to start rendering new frame
 
 		for( e of ary ){
 			// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			if( !e.info.active ) continue;
-			if( e.Draw.items.length == 0 ) continue;
+			// If entity isn't active Or there are no VAOs in the draw component
+			// then continue to the next entity for rendering.
+			if( !e.info.active || e.Draw.items.length == 0 ) continue;
 			
 			// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			d = e.Draw;
-			if( !d.onDraw ){
+			if( !d.onDraw ){ // No Custom Manual Control Over Rendering
+				
+				// Get ModelMatrix sent to GPU plus whatever else
+				this.render.loadEntity( e );
 
+				// Loop threw all available VAOs to draw
 				for( i of d.items ){
 					if( i.vao.elmCount == 0 ) continue;
-					console.log( i );
+
+					this.render.loadMaterial( i.material );
+					this.render.loadOptions( i.options );
+					this.render.draw( i );
 				}
 
-			}else d.onDraw( this, e );
+			}else d.onDraw( this.render, e ); // Run custom Rendering
 		}
-
-		//............................................
-		//Update Main UBO
-		/*
-		this.UBOTransform
-			.updateItem("projViewMatrix",	Camera.getProjectionViewMatrix( Fungi.camera.com.Camera ) )
-			.updateItem("cameraPos",		Fungi.camera.com.Transform.position )
-			.updateItem("globalTime",		Fungi.sinceStart )
-			.updateGL();
-		*/
-
-		//............................................
-		//let d, e, ary = ecs.queryEntities( QUERY_COM );
-		//gl.clear();	//Clear Frame Buffer
-
-		//Draw all active Entities
-		/*
-		for( e of ary ){
-			//......................................
-			if(!e.active) continue;
-			d = e.com.Drawable;
-
-			//......................................			
-			if(! d.draw){ //Use standard drawing
-
-				// Check if there is anything to render
-				if(!d.vao || d.vao.elmCount == 0) continue; //console.log("VAO has no index/vertices or null : ", e.name);
-
-				//Load and Draw
-				this.loadMaterial( d.material );
-				this.loadEntity( e );
-				this.draw( d );
-			
-			}else d.draw( this, e, d ); //Component has custom drawing instructions
-		*/
 	}
 }
 
