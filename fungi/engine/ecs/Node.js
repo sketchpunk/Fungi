@@ -1,6 +1,8 @@
 import { Components, System }	from "../Ecs.js";
 import Transform	from "../../maths/Transform.js";
 import Mat4			from "../../maths/Mat4.js";
+import Quat 		from "../../maths/Quat.js";
+import Vec3 		from "../../maths/Vec3.js";
 
 //#########################################################################
 class Node{
@@ -26,6 +28,17 @@ class Node{
 			if( arguments.length == 1 ) this.local.pos.copy( x );
 			else						this.local.pos.set( x, y, z);
 			
+			this.isModified = true;
+			return this;
+		}
+
+		addPos( x, y, z ){
+			if( arguments.length == 1 ) this.local.pos.add( x );
+			else{
+				this.local.pos.x += x;
+				this.local.pos.y += y;
+				this.local.pos.z += z;
+			}
 			this.isModified = true;
 			return this;
 		}
@@ -80,6 +93,62 @@ class Node{
 
 			return Node;
 		}
+
+	////////////////////////////////////////////////////////////////////
+	// WORLD SPACE
+	////////////////////////////////////////////////////////////////////
+		static getDir( e, dir=0, out=null ){
+			let q = Node.getWorldRot( e );
+			out = out || new Vec3();
+
+			switch( dir ){
+				case 0: Vec3.transformQuat( Vec3.FORWARD, q, out ); break; // Forward
+				case 1: Vec3.transformQuat( Vec3.LEFT, q, out ); break; // Left
+				case 2: Vec3.transformQuat( Vec3.UP, q, out ); break; // Up
+			}
+			return out;
+		}
+
+		static getWorldRot( e, out = null ){
+			out = out || new Quat();
+
+			if( !e.Node.parent ) return out.copy( e.Node.local.rot );
+
+			console.log( "TODO - Need to implement Node.getWorldRot" );
+
+			return out;
+		}
+
+		/*
+		static getWorldTransform(e, wPos, wRot, wScale){
+			var ary	= [e.com.Transform],
+				t	= e.com.TransformNode;
+
+			//Get the parent tree of the entity
+			while(t.parent != null){
+				ary.push( t.parent.com.Transform );
+				t = t.parent.com.TransformNode;
+			}
+
+			let last 	= ary.length - 1,
+				tPos	= new Vec3(),
+				tRot 	= new Quat(),
+				tScale 	= new Vec3();
+
+			wPos.copy( ary[last].position );
+			wRot.copy( ary[last].rotation );
+			wScale.copy( ary[last].scale );
+
+			for(let i= last-1; i >= 0; i--){
+				t = ary[i];
+				TransformNode.transform(t.position, t.rotation, t.scale, tPos, tRot, tScale, wPos, wRot, wScale);
+
+				wPos.copy( tPos );
+				wRot.copy( tRot );
+				wScale.copy( tScale);
+			}
+		}
+		*/
 } Components( Node );
 
 
