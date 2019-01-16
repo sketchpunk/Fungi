@@ -143,19 +143,20 @@ class Vao{
 			return vao;
 		}
 
-		static buildEmpty(name, vertCompLen=3, vertCnt=4, normLen=0, uvLen=0, indexLen=0){
-			var o = new Vao().create()
-				.emptyFloatBuffer("bVertices",
-					Float32Array.BYTES_PER_ELEMENT * vertCompLen * vertCnt, 
-					Shader.ATTRIB_POSITION_LOC, vertCompLen );
+		static buildEmpty( name, vertCompLen=3, vertCnt=4, normLen=0, uvLen=0, idxLen=0 ){
+			let vao = new Vao();
 
-			//if(aryNorm)	VAO.floatArrayBuffer(rtn,	"bNormal",	aryNorm,	ATTR_NORM_LOC,	3,0,0,true);
-			if(uvLen > 0)		o.emptyFloatBuffer("bUV", Float32Array.BYTES_PER_ELEMENT * 2 * uvLen, Shader.ATTRIB_UV_LOC, 2);
-			if(indexLen > 0)	o.emptyIndexBuffer("bIndex", Uint16Array.BYTES_PER_ELEMENT * indexLen, false);
+			// Vertices are mandatory
+			Vao.bind( vao ).emptyFloatBuffer( vao, "vertex",
+				Float32Array.BYTES_PER_ELEMENT * vertCompLen * vertCnt, 
+				Shader.POSITION_LOC, vertCompLen );
 
-			var vao = o.finalize(name);
-			o.cleanup();
+			// Build Optional Buffers
+			if( uvLen > 0 )		Vao.emptyFloatBuffer( vao, "uv", Float32Array.BYTES_PER_ELEMENT * 2 * uvLen, Shader.UV_LOC, 2 );
+			if( idxLen < 0 )	Vao.emptyIndexBuffer( vao, "index", Uint16Array.BYTES_PER_ELEMENT * idxLen, false );
 
+			// Done
+			Vao.finalize( vao, name, 0 );
 			return vao;
 		}
 

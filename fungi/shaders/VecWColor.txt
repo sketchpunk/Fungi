@@ -1,12 +1,12 @@
 <shader>{
 	"name"		: "VecWColor",
 	"ubo"		: [ "UBOGlobal", "UBOModel" ],
-	"options"	: { "modelMatrix":true },
 	"uniforms"	: [
 		{ "name":"u_colorAry", "type":"vec3" }
 	]
 }<\shader>
 		"ubo"		: [ "UBOGlobal", "UBOModel" ],
+		"options"	: { "modelMatrix":true },
 <materials>[
 	{ "name":"VecWColor",	
 		"options"	: { "depthTest":true, "blend":false },

@@ -1,26 +1,55 @@
 <!DOCTYPE html><html><head><title>Fungi</title></head><script type="module">
 
 import App			from "./App.js";
-import FacedCube	from "../primitives/FacedCube.js";
-import GridFloor	from "../primitives/GridFloor.js";
+//import FacedCube	from "../primitives/FacedCube.js";
+//import DVerts, { DynamicVertsSystem } from "./ecs/DynamicVerts.js";
+//import Debug from "./Debug.js";
+
 
 //////////////////////////////////////////////////////////////////////
-App.launch([
+App.launch( onDraw, [
 	{ type:"shader", file:"/fungi/shaders/VecWColor.txt" },
-])	//.then( x=>App.loadModules( [ "Draw" ] ))
-	.then( (x)=>{ console.log("woot",x); init(); } )
+])	//.then( ()=>App.loadModules( "./Debug.js" ) )
+	.then( ()=>App.loadScene( true ) )
+	.then( ()=>init() )
 	.catch( (err)=>console.error( err ) );
 
 function init(){
+	//DynamicVertsSystem.init( App.ecs );
+	//Debug.init( App.ecs );
+
 	App.camera.Node
 		.setPos( 0, 1.5, 4 )
 		.setRotAxis( [1,0,0], -15 * Math.PI / 180 );
 
-	let cube = FacedCube("Cube");
-	let gfloor = GridFloor();
+
+	App.debug.rawPoint(0, 0.5, 0, 2);
+	App.debug.line( [0,0,0], [0,0.5,0], 0 );
+
+	//cube = FacedCube("Cube");
+	//let gfloor = GridFloor();
 	
-	cube.Node.setRotAxis( [0,1,0], 20 * Math.PI / 180 );
+	//let e = DVerts.build( App.newDraw( "DVE" ), "Points", "VecWColor", 1 );
+	//e.Draw.add( vao, material=null, mode=4 );
+	
+	//DVerts.rawPoint( e, 0, 0.5, 0, 0 )
+	//		.rawPoint( e, 0, 0.0, 0, 0 )
+	//	;
+	//console.log( e );
+
+	//cube.Node.setRotAxis( [0,1,0], 20 * Math.PI / 180 );
 	//console.log( cube );
+
+	//console.log( App.node.getWorldRot( cube ) );
+
+	//App.ecs.updateSystems();
+	App.loopState( true );
+}
+
+let cube;
+function onDraw( dt, ss ){
+
+	//cube.Node.setRotAxis( [0,1,0], Math.sin( ss ) * Math.PI );
 
 	App.ecs.updateSystems();
 }

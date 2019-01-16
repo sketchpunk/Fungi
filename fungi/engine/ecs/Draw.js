@@ -1,5 +1,6 @@
 import { Components, System }	from "../Ecs.js";
 import Renderer from "../Renderer.js";
+import Cache	from "../../core/Cache.js";
 
 //#########################################################################
 class Draw{
@@ -7,7 +8,12 @@ class Draw{
 		this.items	= [];
 		this.onDraw	= null;
 	}
+
 	add( vao, material=null, mode=4 ){ // 4 == gl.TRIANGLE
+		if( material != null && typeof material == "string" ){
+			material = Cache.getMaterial( material );
+		}
+
 		this.items.push( { vao, material, mode, options:{ cullFace:true } } );
 		return this;
 	}

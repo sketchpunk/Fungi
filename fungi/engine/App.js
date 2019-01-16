@@ -47,18 +47,25 @@ class App{
 			if( onDraw ) App.loop = new RenderLoop( onDraw, 0, App );
 		}
 
-		static async loadModules( ary ){
-			let i, pAry = new Array( ary.length );
+		static async loadModules(){
+			let i, pAry = new Array( arguments.length );
 
-			for(i=0; i < ary.length; i++){
-				pAry[ i ] = import( "./ecs/" + ary[i] + ".js" ).then( loadModule );
+			for(i=0; i < arguments.length; i++){
+				pAry[ i ] = import( arguments[i] ).then( runModuleInit );
 			}
 
 			await Promise.all( pAry );
 		}
 
-		static async loadScene(){
-			await import( "../primitives/GridFloor.js").then( mod=>mod.default() );
+		static async loadScene( useDebug=false ){
+			let pAry = [];
+
+			pAry.push( import( "../primitives/GridFloor.js").then( mod=>mod.default() ) );
+
+			//Load up Visual Debugging Objects
+			if( useDebug) pAry.push( import( "./Debug.js").then( mod=>mod.default.init( App.ecs ) ) );
+
+			await Promise.all( pAry );
 		}
 
 
@@ -87,15 +94,21 @@ class App{
 //////////////////////////////////////////////
 	function SleepAsync( ms ){ return new Promise( resolve => setTimeout(resolve, ms) ); }
 
-	function loadModule( mod ){
-		//console.log( m );
+	function runModuleInit( mod ){
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		// Run any System Init function if it exists
 		let sys;
 		for( let m in mod ){
+			//console.log( m );
 			if( m.endsWith("System") ){
 				sys = mod[ m ];
 				if( sys.init ) sys.init( App.ecs );
 			}
 		}
+
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		// Check if the default has an init Static function
+		if( mod.default.init ) mod.default.init( App.ecs );
 	}
 
 
