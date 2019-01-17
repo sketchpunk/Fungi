@@ -1,3 +1,9 @@
+/**
+ * @module fungi/engine/ecs/Node
+ * @version 1.0.0
+ * @author Pedro S. <sketchpunk@gmail.com>
+ */
+
 import { Components, System }	from "../Ecs.js";
 import Transform	from "../../maths/Transform.js";
 import Mat4			from "../../maths/Mat4.js";
@@ -5,33 +11,89 @@ import Quat 		from "../../maths/Quat.js";
 import Vec3 		from "../../maths/Vec3.js";
 
 //#########################################################################
+
+/** ECS Component to handle Transform Heirarchy of Entities */
 class Node{
+	/**
+	* Create a Node Component
+	*/
 	constructor(){
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		// Position / Rotation / Scale		
-		this.isModified		= true;
-		this.local			= new Transform();	
-		this.world			= new Transform();
-		this.modelMatrix	= new Mat4();
+		// Position / Rotation / Scale
+
+		/**
+		 * A flag to tell systems that data has been modified and requires updating
+		 * @public @type {boolean}
+		 */
+		this.isModified = true;
+
+		/**
+		 * Local space transform data
+		 * @public @type {Transform}
+		 */
+		this.local = new Transform();
+
+		/**
+		 * World space transform data, calculated by NodeSystem Update based on Transform Hierachy
+		 * @private @type {Transform}
+		 */
+		this.world = new Transform();
+
+		/**
+		 * Model matrix used in shaders. Calculated by NodeSystem based on world space transform data
+		 * @private @type {Mat4}
+		 */
+		this.modelMatrix = new Mat4();
+
 
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		// Heirachy
-		this.level			= 0;			// What level in the Hierachy
-		this.parent			= null;			// Entity reference of the parent
-		this.children		= [];			// List of Children Entities
+
+		/**
+		 * Cache at what level of the hierachy the node exists. Used for Sorting in NodeSystem.
+		 * @private @type {number}
+		 */
+		this.level = 0;
+
+		/**
+		 * Reference to the Entity Parent. May be null if there is no parent.
+		 * @private @type {?Entity}
+		 */
+		this.parent = null;
+
+		/**
+		 * List to references of Entity Children
+		 * @private @type {Entity[]}
+		 */
+		this.children = [];
 	}
+
 
 	////////////////////////////////////////////////////////////////////
 	// SETTERS
 	////////////////////////////////////////////////////////////////////
+		/**
+		 * Set local space position and sets modified to true
+		 * @param {(number|Vec3)} x - X local position or Vec3 to set x,y,z
+		 * @param {?number} y - Y Local position
+		 * @param {?number} z - Z Local position
+		 * @public @return {Node}
+		 */
 		setPos( x, y, z ){
 			if( arguments.length == 1 ) this.local.pos.copy( x );
-			else						this.local.pos.set( x, y, z);
+			else						this.local.pos.set( x, y, z );
 			
 			this.isModified = true;
 			return this;
 		}
 
+		/**
+		 * Add values to the local position and sets modified to true
+		 * @param {(number|Vec3)} x - X local position or Vec3 to set x,y,z
+		 * @param {?number} y - Y Local position
+		 * @param {?number} z - Z Local position
+		 * @public @return {Node}
+		 */
 		addPos( x, y, z ){
 			if( arguments.length == 1 ) this.local.pos.add( x );
 			else{
@@ -43,8 +105,29 @@ class Node{
 			return this;
 		}
 
+		/**
+		 * Set rotation based on an Axis and angle in radians
+		 * @param {Vec3} axis - Unit vector of an axis of rotation
+		 * @param {number} ang - Angle in radians
+		 * @public @return {Node}
+		 */
 		setRotAxis( axis, ang ){
 			this.local.rot.setAxisAngle( axis, ang );
+			this.isModified = true;
+			return this;
+		}
+
+		/**
+		 * Sets local scale and sets modified to true
+		 * @param {number} x - X local scale, if the only value passed in then it will scale all axises by X
+		 * @param {?number} y - Y Local scale
+		 * @param {?number} z - Z Local scale
+		 * @public @return {Node}
+		 */
+		setScl( x, y, z ){
+			if( arguments.length == 1 ) this.local.scl.set( x, x, x );
+			else						this.local.scl.set( x, y, z );
+			
 			this.isModified = true;
 			return this;
 		}
@@ -53,6 +136,12 @@ class Node{
 	////////////////////////////////////////////////////////////////////
 	// Child Management
 	////////////////////////////////////////////////////////////////////
+		/**
+		 * Create a Parent-Child relationship between two Entities
+		 * @param {Entity} pe - Parent Entity
+		 * @param {Entity} ce - Child Entity
+		 * @public @return {Node}
+		 */
 		static addChild( pe, ce ){
 			let pn = pe.Node;
 
@@ -75,9 +164,15 @@ class Node{
 			//if child has its own children, update their level values
 			if(cn.children.length > 0) updateChildLevel( cn );
 
-			return TransformNode;
+			return Node;
 		}
 
+		/**
+		 * Remove the Parent-Child relationship between two entities.
+		 * @param {Entity} pe - Parent Entity
+		 * @param {Entity} ce - Child Entity
+		 * @public @return {Node}
+		 */
 		static removeChild( pe, ce ){
 			var idx = pe.Node.children.indexOf( ce );
 
@@ -97,6 +192,13 @@ class Node{
 	////////////////////////////////////////////////////////////////////
 	// WORLD SPACE
 	////////////////////////////////////////////////////////////////////
+		/**
+		 * Get direction of an Entity based on its World Rotation
+		 * @param {Entity} e - Entity that you want to get direction for.
+		 * @param {number} [dir=0] - Which direction you want, Forward:0, Left:1, Up:2
+		 * @param {?Vec3} [out=null] - Pass in a Vec3, else one will be created.
+		 * @public @return {Vec3}
+		 */
 		static getDir( e, dir=0, out=null ){
 			let q = Node.getWorldRot( e );
 			out = out || new Vec3();
@@ -109,6 +211,12 @@ class Node{
 			return out;
 		}
 
+		/**
+		 * Get the world rotation of an entity
+		 * @param {Entity} e - Entity you want get the rotation of.
+		 * @param {?Quat} [out=null] - Passin a Quaternion Reference, else a new one will be created.
+		 * @public @return {Quat}
+		 */
 		static getWorldRot( e, out = null ){
 			out = out || new Quat();
 
@@ -155,13 +263,30 @@ class Node{
 //#########################################################################
 const QUERY_COM = [ "Node" ];
 
+
+/**
+* ECS System that handles updating Transform Hierachy data along with create ModelMatrix based on World Space Transform
+* @extends System
+*/
 class NodeSystem extends System{
+
+	/**
+	 * Setup the system automaticly to an ECS reference
+	 * @param {Ecs} ecs - Instance of an Ecs object
+	 * @param {number} [priority=] - What the priority the system has compared to others during update.
+	 * @param {number} [priority2=] - Priority for the second system that handles cleanup for Nodes.
+	 */
 	static init( ecs, priority = 800, priority2 = 1000 ){ 
 		ecs.addSystem( new NodeSystem(), priority );
 		ecs.addSystem( new NodeCleanupSystem(), priority2 );
 	}
 
 	constructor(){ super(); }
+
+	/**
+	* System Update
+	* @param {Ecs} ecs
+	*/
 	update( ecs ){
 		let e,		// Entity
 			cn,		// Child Node ( only if parent node exists )
@@ -190,8 +315,17 @@ class NodeSystem extends System{
 
 
 //#########################################################################
+/**
+* ECS System that handles updating Transform Hierachy data along with create ModelMatrix based on World Space Transform
+* @extends System
+*/
 class NodeCleanupSystem extends System{
 	constructor(){ super(); }
+
+	/**
+	* System Update
+	* @param {Ecs} ecs
+	*/
 	update(ecs){
 		let e, ary = ecs.queryEntities( QUERY_COM, thSort );
 		for( e of ary ) if( e.Node.isModified ) e.Node.isModified = true;
@@ -200,7 +334,15 @@ class NodeCleanupSystem extends System{
 
 
 //#########################################################################
-//Compare function to sort entities based on the level of the hierarchy.
+// HELPER
+
+/**
+ * Compare function to sort entities based on the level of the hierarchy.
+ * @param {Entity} a
+ * @param {Entity} b
+ * @return {number}
+ * @private
+ */
 function thSort( a, b ){
 	//Sort by Hierarachy Levels so parents are calculated before children
 	let lvlA = a.Node.level,
@@ -211,7 +353,11 @@ function thSort( a, b ){
 	else					return  1;	// A > B
 }
 
-
+/**
+ * Update the level of all the child nodes of node
+ * @param {node} n
+ * @private
+ */
 function updateChildLevel( n ){
 	let c, cn;
 	for(c of n.children){

@@ -112,7 +112,7 @@ class DynamicVerts{
 const QUERY_COM = ["DynamicVerts"];
 
 class DynamicVertsSystem extends System{
-	static init( ecs, priority = 1 ){ ecs.addSystem( new DynamicVertsSystem(), priority ); }
+	static init( ecs, priority = 100 ){ ecs.addSystem( new DynamicVertsSystem(), priority ); }
 
 	constructor(){ super(); }
 	update( ecs ){

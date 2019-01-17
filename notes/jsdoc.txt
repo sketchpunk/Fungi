@@ -1,0 +1,26 @@
+/* 
+ * @module fungi/engine/ecs/Node
+ * @file Manages the configuration settings for the widget.
+ * @author Pedro S. <sketchpunk@gmail.com>
+ * @version 1.2.3
+ * @tutorial tutorial-1
+ * @see {@link foo} for further information.
+ * @see {@link http://github.com|GitHub}
+ */
+
+ /*
+TYPES
+{Array.<number>}
+{string}
+{number}
+{boolean}
+{myNamespace.MyClass}
+{Array.<MyClass>} or {MyClass[]}
+{Object.<string, number>} //Key Value Pair
+{?number} // number or null
+{!number} // number, never null
+@param {...number} num
+@param {number} [foo=1] // optional with default value
+@type {number}
+{(number|boolean)} // can be multiple types
+*/

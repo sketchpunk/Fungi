@@ -10,7 +10,7 @@ let eLine, ePoint;
 
 //#########################################################################
 class Debug{
-	static init( ecs, priority=1 ){
+	static init( ecs, priority=100 ){
 		ePoint	= DVerts.build( App.newDraw( "Debug_Point" ), "Debug_Points", "VecWColor", 0 );
 		eLine	= DVerts.build( App.newDraw( "Debug_Line" ), "Debug_Lines", "VecWColor", 1 );
 		DynamicVertsSystem.init( ecs, priority );

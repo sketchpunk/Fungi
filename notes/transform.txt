@@ -1,0 +1,332 @@
+http://gabormakesgames.com/blog_transforms_transforms.html
+
+// a = parent transform, b = child (or current) transform
+Transform CombineTransforms(Transform a, Transform b) {
+    Transform out;
+
+    out.scale = a.scale * b.scale;
+    out.rotation = a.rotation * b.rotation;
+
+    out.position = a.rotation * (a.scale * b.position);
+    out.position = a.position + out.position;
+
+    return out;
+}
+
+Transform GetWorldTransform(Transform transform) {
+    Transform worldTransform = transform; // This is acopy, not a reference
+
+    if (transform.parent != NULL) {
+        Transform worldParent = GetWorldTransform(transform.parent);
+
+        // Accumulate scale, Vector * Vector
+        worldTransform.scale = worldParent.scale * worldTransform.scale;
+
+        // Accumulate rotation, Quaternion * Quaternion
+        worldTransform.rotation = worldParent.rotation * worldTransform.rotation;
+
+        // Accumulate position: scale first, Vector * vector
+        worldTransform.position = worldParent.scale * worldTransform.position;
+        // Accumulate position: rotate next, Quaternion * vector
+        worldTransform.position = worldParent.rotation * worldTransform.position;
+        // Accumulate position: transform last, Vector + Vector
+        worldTransform.position = worldParent.position + worldTransform.position;
+    }
+
+    return worldTransform;
+}
+
+Matrix GetWorldMatrix(Transform transform) {
+    Transform worldSpaceTransform = GetWorldTransform(transform);
+    return ToMatrix(worldSpaceTransform);
+}
+
+Quaternion Transform_GetGlobalRotation (Transform t) {
+    Transform worldXForm = GetWorldTransform(t);
+    return worldXForm.rotation;
+}
+
+Vector3 Transform_GetGlobalPosition (Transform t) {
+    Transform worldXForm = GetWorldTransform(t);
+    return worldXForm.position;
+
+}
+
+Vector3 Transform_GetGlobalScale(Transform t) {
+    Transform worldXForm = GetWorldTransform(t);
+    return worldXForm.scale;
+}
+
+//http://gabormakesgames.com/blog_transforms_transform_world.html
+
+World Space Setters
+To set a world space transform component, we have to invert the parent of the transform (in world space) and combine it with the desired world space transform. We can invert a transform local to its-self (not taking the parent into consideration) by first inverting the rotation and scale then applying these to the inverted translation.
+
+Transform LocalInverse(Transform t) {
+    Quaternion invRotation = Inverse(t.rotation);
+
+    Vector3 invScale = Vector3(0, 0, 0);
+    if (t.scale.x != 0) { // Do epsilon comparison here
+        invScale.x = 1.0 / t.scale.x
+    }
+    if (t.scale.y != 0) { // Do epsilon comparison here
+        invScale.y = 1.0 / t.scale.y
+    }
+    if (t.scale.z != 0) { // Do epsilon comparison here
+        invScale.z = 1.0 / t.scale.z
+    }
+
+    Vector3 invTranslation = invRotation * (invScale * (-1 * t.translation));
+
+    Transform result;
+    result.position = invTranslation;
+    result.rotation = invRotation;
+    result.scale = invScale;
+
+    return result;
+}
+Now that we can invert a transform, making a function that sets the position, rotation and scale of a transform in world space becomes trivial. Find the parent's world space transform, invert it and multiply it by the desired world space transform. The resulting transform is in the local space of the parent, as expected.
+
+void SetGlobalSRT(Transform t, Vector3 s, Quaternion r, Vector3 p) {
+    if (t.parent == NULL) {
+        t.rotation = r;
+        t.position = p;
+        t.scale = s;
+        return;
+    }
+
+    var worldParent = GetWorldTransform(t.parent);
+    var invParent = LocalInverse(worldParent);
+
+    Transform worldXForm;
+    worldXForm.position = p;
+    worldXForm.rotation = r;
+    worldXForm.scale = s;
+
+    worldXForm = CombineTransforms(invParent, worldXForm);
+
+    t.position = worldXForm.position;
+    t.rotation = worldXForm.rotation;
+    t.scale = worldXForm.scale;
+}
+Let's make some conveniance functions that only set one component of the transform. To do so find the world space transform, substitute the desired component and call the SetGlobalSRT written above.
+
+void SetGlobalRotation (Transform t, Quaternion rotation) {
+    Transform worldXForm = GetWorldTransform(t);
+    SetGlobalSRT(t, worldXForm.scale, rotation, worldXForm.position);
+}
+
+void SetGlobalPosition (Transform t, Vector3 position) {
+    Transform worldXForm = GetWorldTransform(t);
+    SetGlobalSRT(t, worldXForm.scale, worldXForm.rotation, position);
+}
+
+void SetGlobalScale(Transform t, Vector3 scale) {
+    Transform worldXForm = GetWorldTransform(t);
+    SetGlobalSRT(t, scale, worldXForm.rotation, worldXForm.position);
+}
+
+
+Graphics API's expect the transformation of an object to be passed as a matrix. Therefore, we need a way to convert a Transform structure to a 4x4 Matrix. To do this conversion, first extract the basis vectors from the rotation of the transform. Next, scale the basis vectors by the scale of the transform. Finally, stuff the basis vectors and the position vector into a Matrix. The code below demonstrates how to do this:
+
+Matrix ToMatrix(Transform transform) {
+    // First, extract the rotation basis of the transform
+    Vector x = transform.rotation * Vector(1, 0, 0); // Quat * Vec3 (right vector)
+    Vector y = transform.rotation * Vector(0, 1, 0); // Quat * Vec3 (up vector)
+    Vector z = transform.rotation * Vector(0, 0, 1); // Quat * Vec3 (forward vector)
+    
+    // Next, scale the basis vectors
+    x = x * transform.scale.x; // Vector * float
+    y = y * transform.scale.y; // Vector * float
+    z = z * transform.scale.z; // Vector * float
+
+    // Extract the position of the transform
+    Vector t = transform.position;
+
+    // Create matrix
+    return Matrix(
+        x.x, x.y, x.z, 0, // X basis (& Scale)
+        y.x, y.y, y.z, 0, // Y basis (& scale)
+        z.x, z.y, z.z, 0, // Z basis (& scale)
+        t.x, t.y, t.z, 1  // Position
+    );
+}
+
+
+struct Transform {
+    Transform parent; // Reference
+
+    Vector position;
+    Quaternion rotation;
+    Vector scale;
+}
+
+
+Quaternion GetGlobalRotation(Transform t) {
+    Transform iterator = t.parent
+
+    while (iterator != NULL) {
+        rotation = iterator.rotation * t.rotation;
+        iterator = iterator.parent
+    }
+
+    return rotation;
+}
+
+
+
+Getting Global Position
+The easy way to get the world position of a transform would be to take the last row of the world matrix of the transform. However, we can save a few multiplications by calculating this value without any matrix operations. We need to take the position of the transform and apply it's parents transform to it in the same order as multiplying matrices would:
+
+scale first
+rotate next
+translate last:
+Vector GetGlobalPosition(Transform t) {
+    Vector worldPos = t.position; // Copy, not reference
+
+    Transform iter = t.Parent
+    while (iter != null) {
+        // First apply parent scale
+        worldPos = worldPos * iter.scale // Vec3 * Vec3
+        // Next apply parent rotation
+        worldPos = iter.rotation * worldPos; // Quat * Vec3
+        // Finally apply parent translation
+        worldPos += iter.position; // Vec3 + Vec3
+
+        iter = iter.parent
+    }
+
+    return worldPos;
+}
+
+
+
+Getting Global (lossy) Scale
+The rotation and scale of a parent transform affects the scale of it's child transforms, this can introduce skewing if a parent has a non-uniform scale. Because of this, retrieving the global scale of a transform is difficult. The first step in doing so is to find a 3x3 Matrix that holds both the rotation and scale of the transform. To find this matrix, convert the scale and rotation of the transform into matrices, combine them and recirsivley multiply with the parent transforms rotation and scale matrix.
+
+Matrix3 GetGlobalRotationAndScale(Transform t) {
+    Matrix3 scaleMat = Matrix3(
+        t.scale.x, 0, 0,
+        0, t.scale.y, 0,
+        0, 0, t.scale.z
+    );
+    Matrix3 rotationMat = ToMatrix(t.rotation);
+
+    Matrix3 worldRS = rotationMat * scaleMat;
+
+    // Recursivley concatenate with parent
+    if (t.parent != NULL) {
+        Matrix3 parentRS = GetGlobalRotationAndScale(t.parent);
+        worldRS = parentRS * worldRS;
+    }
+
+    // Return scale rotation
+    return worldRS
+}
+Now that we know the global rotation and scale of the transform, we can remove the rotation component, leaving us with just the scale and skew matrix. To do this, find just the global rotation of the transform, invert that quaternion and turn it into a matrix. This new matrix is the inverse global rotation matrix of the transform. Multiply it with the scale and rotation matrix to remove the rotation component. The main diagonal of the resulting scale and skew matrix is the global lossy scale of the transform.
+
+Vector3 GetGlobalLossyScale(Transform t) {
+    // Find inverse global rotation (rotation only) of transform
+    Quaternion rotation = GetGlobalRotation(t);
+    Matrix3 invRotation = ToMatrix(Inverse(rotation));
+
+    // Find global rotation and scale of transform
+    Matrix3 scaleAndRotation = GetGlobalRotationAndScale(t);
+
+    // Remove global rotation from rotation & scale
+    Matrix3 scaleAndSkew = invRotation * scaleAndRotation; // Mat3 * Mat3
+
+    // Return the main doagonal of the scale & skew matrix
+    return Vector3(scaleAndSkew[0], scaleAndSkew[4], scaleAndSkew[8]);
+}
+
+
+Setting Global Rotation
+Setting the global rotation of a transform is trivial, first find the world space rotation of the transforms parent and invert it. Next move the desired global rotation into the local space of the parent transform by multiplying the inverse of the parents rotation. Assign the result of this multiplication as the local rotation of the transform.
+
+void SetGlobalRotation(Transform t, Quaternion rotation)  {
+    if (t.parent == NULL) {
+        t.rotation = rotation;
+        return
+    }
+
+    Quaternion parentGlobal = GetGlobalRotation(t.parent)
+    Quaternion invParentGlobal = Inverse(parentGlobal);
+
+    t.rotation = invParentGlobal * rotation;
+}
+
+Setting Global Position
+To set the global position of a transform, we need to take the global point and transform it by the inverse of the parent transform (If there is one). We could either find the matrix representation of the global parent transform, invert it and multiply the point by that OR we can do it component wise, like the global position getter. Doing it component wise will save a few multiplications.
+
+To invert a point by a transform, the inverse of each component needs to be applied, in reverse order. Normally you'd transform a point by applying it's scale, rotation then position. To apply the inverse of a transform, apply the inverted position, inverted rotation, then inverted scale.
+
+inverted positon: position * -1
+inverted rotation: quaternion inverse (negative x, y, z)
+inverted scale: 1 / scale
+That was a very long winded explanation, the code is much simpler:
+
+Vector3 InverseTransformPoint(Transform t, Vector3 point) {
+    // Recursive function, apply inverse of parent transform first
+    if (t.parent != NULL) {
+        point = InverseTransformPoint(t.parent, point)
+    }
+
+    // First, apply the inverse translation of the transform
+    point = point - t.position;
+
+    // Next, apply the inverse rotation of the transform
+    Quaternion invRot = Inverse(t.rotation);
+    point =  invRot * point;
+
+    // Finally, apply the inverse scale
+    point = point / t.scale; // Component wise vector division
+
+    return point
+}
+Once we have a function for applying the inverse of a transform to a point, setting the global position of a transform is trivial.
+
+void SetGlobalPosition(Transform t, Vector3 position) {
+    if (t.parent != NULL) {
+        pos = InverseTransformPoint(t.parent, position);
+    }
+
+    t.position = position;
+}
+Setting Global Scale
+Working with global scale is probably the most complicated part of working with a transform hierarchy. Depending on the global basis vectors of the transform, it may contain skew data, not just scale. Because of this, we can't just set global scale. We have to set the entire 3x3 sub matrix where scale data may live.
+
+To set this matrix we need to find the global rotation and scale matrix of the transform, where the scale of this transform isn't taken into account but the scale of all parent transforms is. Invert this matrix, and mulyiply the desired 3x3 matrix by the inverted matrix. The main diagonal of this matrix is the new scale.
+
+void SetGlobalScaleFromRotationScaleMatrix(Transform t, Matrix3 rsMat) {
+    // Reset scale to 1, do this so we can get the  global rotation and scale 
+    // without the scale of this transform but with the scale of all parents
+    t.scale = Vector3(1, 1, 1); 
+
+    // Find inverse global matrix (scale of all parent tranforms, not this one)
+    Matrix3 globalRS = GetGlobalRotationAndScale(t);
+    Matrix3 inverseRS = Inverse(globalRS);
+
+    // Bring the rotation scale matrix into local space
+    Matrix3 localRS = inverseRS * rsMat;
+    
+    // Main diagonal is the new scale
+    t.scale = Vector3(localRS[0], localRS[4], localRS[8]);
+}
+Setting global scale with a 3x3 matrix that also contains rotation data is un-intuitive at best. We can make a simple wrapper function that takes the desired global scaling vector as an argument and constructs the rotation-scale matrix using the current global rotation of the transform:
+
+void SetGlobalScale(Transform t, Vector3 scale) {
+    Quaternion globalRotation = GetGlobalRotation(t)
+
+    var x = globalRotation * Vector3(scale.x, 0, 0);
+    var y = globalRotation * Vector3(0, scale.y, 0);
+    var z = globalRotation * Vector3(0, 0, scale.z);
+    
+    Matrix3 rotationAndScaleMat = Matrix3(
+        x.x, x.y, x.z,
+        y.x, y.y, y.z,
+        z.x, z.y, z.z
+    )
+
+    SetGlobalScaleFromRotationScaleMatrix(t, rotationAndScaleMat);
+}

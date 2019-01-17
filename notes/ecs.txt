@@ -1,0 +1,85 @@
+
+
+- Change Entity to no longer have COM, just throw things at the root and create an Info component.
+- Transform is going to be a Data Structure now to make life ezer when dealing with kinematric and heirarchy
+
+
+Transform
+.pos
+.rot
+.scl
+.add()
+.set()
+
+Entity
+.Info[ name ]
+.Node[ local, world, level, parent, child, parentModified, isModified ]
+.Draw[ matrix, vao, mode, material ]
+
+
+
+Fungi
+	Core
+	- Fungi.js
+	- gl.js
+	- Fbo.js
+	- Ubo.js
+	- Vao.js
+	- Shader.js
+	- RenderLoop.js
+	- DynamicBuffer.js
+	- render_test.html
+	
+	Engine
+	  components
+	  - Node.js
+	  - Draw.js
+	  - Camera.js
+	  - Movement.js
+	  system
+	  - Node.js
+	  - Draw.js
+	  - Movement.js
+	  - Render.js
+	  - DynamicVaoSystem.js
+	- Ecs.js
+	- Debug.js
+	- Page.js ??? Api, App Replacement
+
+	Math
+	- Transform.js
+	- Maths.js
+	- Vec2.js
+	- Vec3.js
+	- Axis.js
+	- Quat.js
+	- Mat4.js
+
+	Extra
+	  primatives
+	    - Cube
+	    - Sphere
+	    - Wedge
+	  - Downloader.js
+	  - InputTracker.js
+	  - Geometry.js
+	  - Loader.js
+
+Fungi.Misc
+- Curves.js
+- TestingMovement.js
+- Timing.js
+- NoiseCycle.js
+- GamepadTracker.js
+
+Fungi.Armature
+  shaders
+  - Preview
+- DualQuat.js
+- Axis.js
+- IKChain.js
+- IKChainSolver.js
+- Armature.js
+- ArmatureSystem.js
+- ArmaturePreview.js
+

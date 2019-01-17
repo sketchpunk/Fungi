@@ -1,7 +1,7 @@
 <!DOCTYPE html><html><head><title>Fungi</title></head><script type="module">
 
 import App			from "./App.js";
-//import FacedCube	from "../primitives/FacedCube.js";
+import FacedCube	from "../primitives/FacedCube.js";
 //import DVerts, { DynamicVertsSystem } from "./ecs/DynamicVerts.js";
 //import Debug from "./Debug.js";
 
@@ -10,7 +10,7 @@ import App			from "./App.js";
 App.launch( onDraw, [
 	{ type:"shader", file:"/fungi/shaders/VecWColor.txt" },
 ])	//.then( ()=>App.loadModules( "./Debug.js" ) )
-	.then( ()=>App.loadScene( true ) )
+	.then( ()=>App.loadScene( false ) )
 	.then( ()=>init() )
 	.catch( (err)=>console.error( err ) );
 
@@ -23,10 +23,15 @@ function init(){
 		.setRotAxis( [1,0,0], -15 * Math.PI / 180 );
 
 
-	App.debug.rawPoint(0, 0.5, 0, 2);
-	App.debug.line( [0,0,0], [0,0.5,0], 0 );
+	//App.debug.rawPoint(0, 0.5, 0, 2);
+	//App.debug.line( [0,0,0], [0,0.5,0], 0 );
 
-	//cube = FacedCube("Cube");
+	cube = FacedCube("Cube");
+	cube2 = FacedCube("Cube2");
+	cube2.Node.setPos(0,1,0).setScl( 0.5 );
+
+	App.node.addChild( cube, cube2 );
+
 	//let gfloor = GridFloor();
 	
 	//let e = DVerts.build( App.newDraw( "DVE" ), "Points", "VecWColor", 1 );
@@ -46,10 +51,11 @@ function init(){
 	App.loopState( true );
 }
 
-let cube;
+let cube, cube2;
 function onDraw( dt, ss ){
 
-	//cube.Node.setRotAxis( [0,1,0], Math.sin( ss ) * Math.PI );
+	cube.Node.setRotAxis( [0,1,0], Math.sin( ss ) * Math.PI );
+	cube2.Node.setRotAxis( [0,1,0], Math.sin( ss ) * Math.PI );
 
 	App.ecs.updateSystems();
 }

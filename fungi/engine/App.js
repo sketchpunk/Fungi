@@ -15,7 +15,8 @@ import InputSystem				from "./ecs/InputSystem.js";
 
 /*
 System Notes
-001 - Input
+001 - Input 
+100 - Misc : DynamicVerts
 700 - Physics
 800 - Transform
 801 - Camera

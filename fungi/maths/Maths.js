@@ -1,6 +1,6 @@
-import Vec3		from "./maths/Vec3.js";
-import Mat4		from "./maths/Mat4.js";
-import Quat		from "./maths/Quat.js";
+import Vec3		from "./Vec3.js";
+import Mat4		from "./Mat4.js";
+import Quat		from "./Quat.js";
 
 // +++NOTES+++
 // How to increment but still get 0 or 1 value by using bitwie AND and checking for 1
