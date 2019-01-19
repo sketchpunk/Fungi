@@ -27,7 +27,11 @@ class Ubo{
 
 			switch(itm.type){
 				case "float": case "mat3": case "mat4": case "vec2": case "vec3": case "vec4": case "mat2x4":
-					this.byteBuffer.setFloat( itm.offset, data );
+					let ary = ( Array.isArray( data ) && !(data instanceof Float32Array) )? 
+						new Float32Array( data ) : data;
+
+					//console.log( name, ary , Array.isArray( data ) );
+					this.byteBuffer.setFloat( itm.offset, ary );
 					break;
 
 				case "int":

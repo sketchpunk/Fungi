@@ -9,12 +9,20 @@ class Draw{
 		this.onDraw	= null;
 	}
 
-	add( vao, material=null, mode=4 ){ // 4 == gl.TRIANGLE
+	add( vao, material=null, mode=4, opt=null ){ // 4 == gl.TRIANGLE
 		if( material != null && typeof material == "string" ){
 			material = Cache.getMaterial( material );
 		}
 
-		this.items.push( { vao, material, mode, options:{ cullFace:true } } );
+		let itm = { vao, material, mode, options:{ cullFace:true } };
+
+		if( opt ){
+			let o;
+			for( o in opt ) 
+				if( itm.options[ o ] != undefined ) itm.options[ o ] = opt[ o ];
+		}
+
+		this.items.push( itm );
 		return this;
 	}
 } Components( Draw );

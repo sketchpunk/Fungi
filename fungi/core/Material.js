@@ -3,8 +3,10 @@ import Cache	from "./Cache.js";
 
 class Material{
 	constructor( name = "Untitled_Shader", shader = null ){
-		this.name		= name;
+		if( shader && typeof shader == "string"  ) shader = Cache.getShader( shader );
+
 		this.shader		= shader;
+		this.name		= name;
 		this.uniforms	= new Map();
 		this.options 	= {
 			depthTest			: true,
@@ -27,7 +29,7 @@ class Material{
 				this.shader.resetTextureSlot();
 
 				for( [ key, itm ] of this.uniforms ){
-					if(itm != null) this.shader.setUniform( key, itm );
+					if(itm.value != null) this.shader.setUniform( key, itm.value );
 				}
 			}
 			return this;
@@ -59,6 +61,28 @@ class Material{
 			return mat;
 		}
 
+		static clone( mat, name, cloneData=false ){
+			if( typeof mat == "string" ) mat = Cache.getMaterial( mat );
+
+			let key, itm, m = new Material( name, mat.shader );
+			Cache.materials.set( name, m );
+			
+			for( [ key, itm ] of mat.uniforms ){
+				//TODO, Create ability to clone data.
+				Material.addUniform( m, key, itm.type, null );
+			}		
+
+			return m;
+		}
+
+		static addUniform( mat, name, type, value = null ){
+			let dat = { type, value:null };
+			if( value ) dat.value = Material.parseData( value, type );
+
+			mat.uniforms.set( name, dat );
+			return Material;
+		}
+
 		// load initate materal from shader file
 		static loadJson( mat, shader, json ){
 			mat.shader	= shader;
@@ -79,7 +103,8 @@ class Material{
 				mat.uniforms.clear();
 
 				for( i of json.uniforms ){
-					mat.uniforms.set( i.name, Material.parseData( i.value, i.type ) );
+					Material.addUniform( mat, i.name, i.type, i.value );
+					//mat.uniforms.set( i.name, Material.parseData( i.value, i.type ) );
 				}
 			}
 		}
@@ -109,4 +134,4 @@ class Material{
 
 //##################################################################
 // Export
-export default Material;
+export default Material;	

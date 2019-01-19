@@ -50,7 +50,7 @@ function Components( com ){
 				object	: com 
 			});
 
-			console.info( "Registered Component : %s, TypeID: %s", com.name, typeID );
+			//console.info( "Registered Component : %s, TypeID: %s", com.name, typeID );
 
 			return Components;
 		break;
@@ -285,7 +285,7 @@ class Ecs{
 				this.Systems[saveIdx] = itm;							//Save new Item in its sorted location
 			}
 
-			console.info("Adding System: %s with priority: %s and insert order of %d", system.constructor.name, priority, order);
+			//console.info("Adding System: %s with priority: %s and insert order of %d", system.constructor.name, priority, order);
 			return this;
 		}
 

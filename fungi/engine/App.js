@@ -73,18 +73,18 @@ class App{
 	//////////////////////////////////////////////
 	// SETTER / GETTERS
 	//////////////////////////////////////////////
-		static loopState( state = true ){
-			if( state ) App.loop.start();
-			else 		App.loop.stop();
-			return App;
-		}
 
 
 	//////////////////////////////////////////////
 	// ENTITY MANAGEMENT
 	//////////////////////////////////////////////
-		static newDraw( name ){ return this.ecs.newAssemblage( "Draw", name ); }
 		static newNode( name ){ return this.ecs.newAssemblage( "Node", name ); }
+
+		static newDraw( name, vao = null, mat = null, mode = 4, opt = null ){ 
+			let e = this.ecs.newAssemblage( "Draw", name );
+			if( vao ) e.Draw.add( vao, mat, mode, opt);
+			return e;
+		}
 }
 
 
@@ -130,19 +130,28 @@ class App{
 
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		// Setup UBOs
-		let uboGlobal = Ubo.build( "UBOGlobal", 0, [
+		Ubo.build( "UBOGlobal", 0, [
 			"projViewMatrix",	"mat4",
 			"cameraPos",		"vec3",
 			"globalTime",		"float",
 			"screenSize",		"vec2"
-		]);
+		])	.setItem( "screenSize", [ gl.width, gl.height ] );
 
-		uboGlobal.setItem( "screenSize", new Float32Array( [ gl.width, gl.height ] ));
-
-		let uboModel = Ubo.build( "UBOModel", 1, [
+		//............................
+		Ubo.build( "UBOModel", 1, [
 			"modelMatrix",	"mat4",
 			"normalMatrix",	"mat3",
 		]);
+
+		//............................
+		Ubo.build( "UBOLighting", 2, [
+			"lightPosition",	"vec3",  
+			"lightDirection",	"vec3",
+			"lightColor",		"vec3"
+		])	.setItem( "lightPosition",	[  8.0,  4.0,  1.0 ] )
+			.setItem( "lightDirection",	[ -8.0, -4.0, -1.0 ] )
+			.setItem( "lightColor",		[  1.0,  1.0,  1.0 ] )
+			.update();
 
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		return true;

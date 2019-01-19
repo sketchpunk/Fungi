@@ -26,28 +26,35 @@ class Debug{
 	////////////////////////////////////////////////////////////////////
 	// LINES
 	////////////////////////////////////////////////////////////////////
-		static line(v0, v1, color = 0){ DVerts.vecLine( eLine, v0, v1, color); return Debug; }
+		static line( v0, v1, c0 = 0, c1 = null ){ DVerts.vecLine( eLine, v0, v1, c0, c1); return Debug; }
 
 
 	////////////////////////////////////////////////////////////////////
-	// MISC
+	// OTHER
+	////////////////////////////////////////////////////////////////////
+		static quat( q, offset = null, scale = 1 ){
+			let v = new Vec3();
+			offset = offset || Vec3.ZERO;
+			Debug
+				.line( offset, Vec3.transformQuat( Vec3.scale( Vec3.FORWARD, scale, v) , q, v).add( offset ), 1 )
+				.line( offset, Vec3.transformQuat( Vec3.scale( Vec3.UP, scale, v), q, v).add( offset ), 2 )
+				.line( offset, Vec3.transformQuat( Vec3.scale( Vec3.LEFT, scale, v), q, v).add( offset ), 0 );
+
+			return Debug;
+		}
+
+		static box( v0, v1, c=0 ){ DVerts.vecBox( eLine, v0, v1, c ); return Debug; }
+		static rawBox( x0, y0, z0, x1, y1, z1, c=0 ){ DVerts.rawBox( eLine, x0, y0, z0, x1, y1, z1, c ); return Debug; }
+
+
+	////////////////////////////////////////////////////////////////////
+	// SUPPORT
 	////////////////////////////////////////////////////////////////////
 		static reset( flag = 3 ){
 			if( (flag & 1) != 0 ) DVerts.reset( ePoint );
 			if( (flag & 2) != 0 ) DVerts.reset( eLine );
 			return Debug;
 		}
-
-		static quat( q, offset = null ){
-			let v = new Vec3();
-			offset = offset || Vec3.ZERO;
-			Debug
-				.line( offset, Vec3.transformQuat(Vec3.FORWARD, q, v).add( offset ), 1 )
-				.line( offset, Vec3.transformQuat(Vec3.UP, q, v).add( offset ), 2 )
-				.line( offset, Vec3.transformQuat(Vec3.LEFT, q, v).add( offset ), 0 );
-
-			return Debug;
-	}
 }
 
 
