@@ -12,6 +12,7 @@ class Material{
 			depthTest			: true,
 			blend				: false,
 			sampleAlphaCoverage : false,
+			cullFace			: true,
 		}
 	}
 

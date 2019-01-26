@@ -9,20 +9,12 @@ class Draw{
 		this.onDraw	= null;
 	}
 
-	add( vao, material=null, mode=4, opt=null ){ // 4 == gl.TRIANGLE
+	add( vao, material=null, mode=4 ){ // 4 == gl.TRIANGLE
 		if( material != null && typeof material == "string" ){
 			material = Cache.getMaterial( material );
 		}
 
-		let itm = { vao, material, mode, options:{ cullFace:true } };
-
-		if( opt ){
-			let o;
-			for( o in opt ) 
-				if( itm.options[ o ] != undefined ) itm.options[ o ] = opt[ o ];
-		}
-
-		this.items.push( itm );
+		this.items.push( { vao, material, mode } );
 		return this;
 	}
 } Components( Draw );
@@ -64,7 +56,6 @@ class DrawSystem extends System{
 					if( i.vao.elmCount == 0 ) continue;
 
 					this.render.loadMaterial( i.material );
-					this.render.loadOptions( i.options );
 					this.render.draw( i );
 				}
 
