@@ -4,7 +4,7 @@ import Vao	from "../core/Vao.js";
 const NAME = "GridFloor";
 
 function GridFloor( name=NAME, matName="MatGridFloor" ){
-	let e = App.newDraw( name );
+	let e = App.$Draw( name );
 	e.Draw.add( GridFloor.vao( NAME ), App.cache.getMaterial( matName ), 1 ); // GL.LINES
 
 	return e;

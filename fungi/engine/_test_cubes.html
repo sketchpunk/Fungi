@@ -44,10 +44,10 @@ function init(){
 	/* CREATE CUBES - STYLE 2 */
 	let vao = FacedCube.vao();
 
-	cubeA = App.newDraw( "CubeA", vao, "VecWColor", 4 );
+	cubeA = App.$Draw( "CubeA", vao, "VecWColor", 4 );
 	cubeA.Draw.add( vao, mat, 0 );
 
-	cubeB = App.newDraw( "CubeB" );
+	cubeB = App.$Draw( "CubeB" );
 	cubeB.Draw.add( vao, "VecWColor" ).add( vao, "Alt_VecWColor", 0 );
 	cubeB.Node.setPos(0,1,0).setScl( 0.5 );
 

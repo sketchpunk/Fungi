@@ -4,7 +4,7 @@ import Vao			from "../core/Vao.js";
 const NAME = "FaceCube";
 
 function FacedCube(name = NAME, matName = "VecWColor"){
-	let e = App.newDraw( name );
+	let e = App.$Draw( name );
 	e.Draw.add( FacedCube.vao( "FacedCube" ), App.cache.getMaterial( matName )  )
 	return e;
 }

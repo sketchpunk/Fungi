@@ -78,11 +78,11 @@ class App{
 	//////////////////////////////////////////////
 	// ENTITY MANAGEMENT
 	//////////////////////////////////////////////
-		static newNode( name ){ return this.ecs.newAssemblage( "Node", name ); }
+		static $Node( name ){ return this.ecs.newAssemblage( "Node", name ); }
 
-		static newDraw( name, vao = null, mat = null, mode = 4, opt = null ){ 
+		static $Draw( name, vao = null, mat = null, mode = 4 ){ 
 			let e = this.ecs.newAssemblage( "Draw", name );
-			if( vao ) e.Draw.add( vao, mat, mode, opt);
+			if( vao ) e.Draw.add( vao, mat, mode );
 			return e;
 		}
 }

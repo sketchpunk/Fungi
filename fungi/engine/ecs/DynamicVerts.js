@@ -20,7 +20,7 @@ class DynamicVerts{
 	////////////////////////////////////////////////////////////////////
 	// INITIALIZERS
 	////////////////////////////////////////////////////////////////////
-		static build( e, name, mat, mode=0, startSize=10, vecCompLen=4 ){
+		static $( e, name, mat, mode=0, startSize=10, vecCompLen=4 ){
 			if( !e.DynamicVerts ) Entity.addByName( e, "DynamicVerts" );
 
 			let vao = Vao.buildEmpty( name, vecCompLen, startSize );

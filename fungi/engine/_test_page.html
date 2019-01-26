@@ -2,6 +2,8 @@
 
 import App			from "./App.js";
 import FacedCube	from "../primitives/FacedCube.js";
+import Material 	from "../core/Material.js";
+
 //import DVerts, { DynamicVertsSystem } from "./ecs/DynamicVerts.js";
 //import Debug from "./Debug.js";
 
@@ -26,11 +28,32 @@ function init(){
 	//App.debug.rawPoint(0, 0.5, 0, 2);
 	//App.debug.line( [0,0,0], [0,0.5,0], 0 );
 
-	cube = FacedCube("Cube");
-	cube2 = FacedCube("Cube2");
-	cube2.Node.setPos(0,1,0).setScl( 0.5 );
+	// Clone Material and Change the colors
+	let mat = Material.clone( "VecWColor", "Alt_VecWColor" );
+	mat.updateUniform( "u_colorAry", ["000000","000000","000000","000000","000000","000000"] );
 
-	App.node.addChild( cube, cube2 );
+	let vao = FacedCube.vao();
+
+	cubeA = App.$Draw( "CubeA", vao, "VecWColor", 4 );
+	cubeA.Draw.add( vao, mat, 0 );
+
+	cubeB = App.$Draw( "CubeB" );
+	cubeB.Draw.add( vao, "VecWColor" ).add( vao, "Alt_VecWColor", 0 );
+	cubeB.Node.setPos(0,1,0).setScl( 0.5 );
+
+	App.node.addChild( cubeA, cubeB );
+
+/*
+	cubeA = FacedCube( "CubeA" );
+	cubeA.Draw.add( cubeA.Draw.items[0].vao, mat, 0 );
+
+	cubeB = FacedCube( "CubeB" );
+	cubeB.Draw.add( cubeB.Draw.items[0].vao, mat, 0 );
+	cubeB.Node.setPos(0,1,0).setScl( 0.5 );
+
+	App.node.addChild( cubeA, cubeB );
+*/
+
 
 	//let gfloor = GridFloor();
 	
@@ -48,14 +71,14 @@ function init(){
 	//console.log( App.node.getWorldRot( cube ) );
 
 	//App.ecs.updateSystems();
-	App.loopState( true );
+	App.loop.start();
 }
 
-let cube, cube2;
+let cubeA, cubeB;
 function onDraw( dt, ss ){
 
-	cube.Node.setRotAxis( [0,1,0], Math.sin( ss ) * Math.PI );
-	cube2.Node.setRotAxis( [0,1,0], Math.sin( ss ) * Math.PI );
+	cubeA.Node.setRotAxis( [0,1,0], Math.sin( ss ) * Math.PI );
+	cubeB.Node.setRotAxis( [0,1,0], Math.sin( ss ) * Math.PI );
 
 	App.ecs.updateSystems();
 }
