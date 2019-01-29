@@ -92,9 +92,11 @@ class Armature{
 		}
 
 		static getBone( arm, name ){
+			if( arm.Armature ) arm = arm.Armature; // An entity weas passed in.
+
 			let b;
 			for(b of arm.bones){
-				if( b.name == name ) return b;
+				if( b.info.name == name ) return b;
 			}
 			return null;
 		}

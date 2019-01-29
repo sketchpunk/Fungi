@@ -363,7 +363,6 @@ class ArmaturePreviewSystem extends System{
 		let e, ary = ecs.queryEntities( QUERY_COM );
 		for( e of ary ){
 			if( e.Armature.isModified ){
-				console.log("Update Preview");
 				ArmaturePreview.flattenData( e );
 				ArmaturePreview.updateBuffer( e );
 			}

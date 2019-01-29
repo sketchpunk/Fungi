@@ -231,7 +231,7 @@ class Node{
 			let n = e.Node;
 
 			// if parent has been modified, then child should also be concidered modified.
-			if( n.parent && n.parent.isModified ) n.isModified = true;
+			if( n.parent && n.parent.Node.isModified ) n.isModified = true;
 			if( !n.isModified ) return this;
 
 			// if parent exists, add parent's world transform to the child's local transform
@@ -314,7 +314,7 @@ class NodeSystem extends System{
 
 
 			// if parent has been modified, then child should also be concidered modified.
-			if( cn.parent !== null && cn.parent.isModified ) cn.isModified = true;
+			if( cn.parent !== null && cn.parent.Node.isModified ) cn.isModified = true;
 			if( !cn.isModified ) continue;
 
 			// if parent exists, add parent's world transform to the child's local transform
@@ -337,15 +337,13 @@ class NodeSystem extends System{
 * @extends System
 */
 class NodeCleanupSystem extends System{
-	constructor(){ super(); }
-
 	/**
 	* System Update
 	* @param {Ecs} ecs
 	*/
 	update(ecs){
 		let e, ary = ecs.queryEntities( QUERY_COM, thSort );
-		for( e of ary ) if( e.Node.isModified ) e.Node.isModified = true;
+		for( e of ary ) if( e.Node.isModified ) e.Node.isModified = false;
 	}
 }
 

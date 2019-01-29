@@ -14,8 +14,19 @@ App.launch( onDraw, [
 
 
 //#############################################################################
-function onDraw( dt, ss ){ App.ecs.updateSystems(); }
+function onDraw( dt, ss ){
 
+	
+	let be = Armature.getBone( gEntity, "b1" );
+	be.Node.local.rot.setAxisAngle( [0,0,1], Math.sin( ss*1.4 ) * 40 * Math.PI / 180 );
+	be.Node.isModified = true;
+	
+	gEntity.Armature.isModified = true;
+
+
+	App.ecs.updateSystems();
+}
+let gEntity;
 
 //#############################################################################
 function init(){
@@ -33,12 +44,16 @@ function init(){
 	Armature.finalize( e );
 	ArmatureSystem.init( App.ecs );
 
-	b1.Node.local.rot.rz( 45 * Math.PI / 180 );
-	b0.Node.local.rot.rz( 45 * Math.PI / 180 );
-	b2.Node.local.rot.rz( 45 * Math.PI / 180 );
+	//b1.Node.local.rot.rz( 45 * Math.PI / 180 );
+	//b0.Node.local.rot.rz( 45 * Math.PI / 180 );
+	//b2.Node.local.rot.rz( 45 * Math.PI / 180 );
 
 	ArmaturePreview.$( e, "ArmaturePreview" ); // VecWColor
 	ArmaturePreviewSystem.init( App.ecs );
+
+	//b1.Node.local.rot.rz( 45 * Math.PI / 180 );
+
+	gEntity = e;
 
 
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
