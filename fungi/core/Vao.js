@@ -27,7 +27,7 @@ class Buffer{
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		if( isInstance == true ) gl.ctx.vertexAttribDivisor( attrLoc, 1 );
 
-		return id;
+		return { id };
 	}
 
 	static empty( target, byteCount, isStatic, dataType, attrLoc, compLen=3, stride=0, offset=0, isInstance=false ){
@@ -48,7 +48,7 @@ class Buffer{
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		if( isInstance == true ) gl.ctx.vertexAttribDivisor( attrLoc, 1 );
 
-		return id;
+		return { id };
 	}
 
 	static partition( dataType, attrLoc, compLen=3, stride=0, offset=0, isInstance=false ){
@@ -85,7 +85,7 @@ class Buffer{
 			gl.ctx.vertexAttribDivisor( attrLoc+3,	1 );
 		}
 
-		return id;
+		return { id };
 	}
 }
 
@@ -206,11 +206,11 @@ class Vao{
 
 		static floatBuffer( vao, name, aryData, attrLoc, compLen=3, stride=0, offset=0, isStatic=true, isInstance=false ){
 			let ary		= ( aryData instanceof Float32Array )? aryData : new Float32Array( aryData ),
-				bufID	= Buffer.array( gl.ctx.ARRAY_BUFFER, 
-				ary, isStatic, gl.ctx.FLOAT, 
-				attrLoc, compLen, stride, offset, isInstance );
+				buf	= Buffer.array( gl.ctx.ARRAY_BUFFER, 
+					ary, isStatic, gl.ctx.FLOAT, 
+					attrLoc, compLen, stride, offset, isInstance );
 
-			vao.buf[ name ] = bufID;
+			vao.buf[ name ] = buf;
 			return Vao;
 		}
 
@@ -223,11 +223,11 @@ class Vao{
 		}
 
 		static emptyFloatBuffer( vao, name, byteCount, attrLoc, compLen, stride=0, offset=0, isStatic=false, isInstance=false){
-			let bufID = Buffer.empty( gl.ctx.ARRAY_BUFFER, 
+			let buf = Buffer.empty( gl.ctx.ARRAY_BUFFER, 
 				byteCount, isStatic, gl.ctx.FLOAT, 
 				attrLoc, compLen, stride, offset, isInstance );
 			
-			vao.buf[ name ] = bufID;
+			vao.buf[ name ] = buf;
 			return Vao;
 		}
 
@@ -238,9 +238,9 @@ class Vao{
 		
 		static indexBuffer( vao, name, aryData, isStatic=true){
 			let ary		= (aryData instanceof Uint16Array)? aryData : new Uint16Array(aryData),
-				bufID	= Buffer.array( gl.ctx.ELEMENT_ARRAY_BUFFER, ary, isStatic );
+				buf		= Buffer.array( gl.ctx.ELEMENT_ARRAY_BUFFER, ary, isStatic );
 
-			vao.buf[ name ] = bufID;
+			vao.buf[ name ] = buf;
 			vao.elmCount	= aryData.length;
 			vao.isIndexed	= true;
 			return Vao;
