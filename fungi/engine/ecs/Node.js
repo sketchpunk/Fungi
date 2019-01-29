@@ -227,6 +227,23 @@ class Node{
 			return out;
 		}
 
+		static updateWorldTransform( e, incMatrix=true ){
+			let n = e.Node;
+
+			// if parent has been modified, then child should also be concidered modified.
+			if( n.parent && n.parent.isModified ) n.isModified = true;
+			if( !n.isModified ) return this;
+
+			// if parent exists, add parent's world transform to the child's local transform
+			if( n.parent )	Transform.add( n.parent.Node.world, n.local, n.world );
+			else			n.world.copy( n.local );
+
+			// Create Model Matrix for Shaders
+			if( incMatrix ) Mat4.fromQuaternionTranslationScale( cn.world.rot, cn.world.pos, cn.world.scl, cn.modelMatrix );
+
+			return this;
+		}
+
 		/*
 		static getWorldTransform(e, wPos, wRot, wScale){
 			var ary	= [e.com.Transform],

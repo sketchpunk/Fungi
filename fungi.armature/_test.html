@@ -1,0 +1,48 @@
+<!DOCTYPE html><html><head><title>Fungi</title></head><script type="module">
+import App			from "../fungi/engine/App.js";
+
+import Armature, { ArmatureSystem } from "./Armature.js";
+import ArmaturePreview, { ArmaturePreviewSystem } from "./ArmaturePreview.js";
+
+//#############################################################################
+App.launch( onDraw, [
+	{ type:"shader", file:"/fungi/shaders/VecWColor.txt" },
+	{ type:"shader", file:"/fungi.armature/shaders/ArmaturePreview.txt" },
+])	.then( ()=>App.loadScene( false ) )
+	.then( ()=>init() )
+	.catch( (err)=>console.error( err ) );
+
+
+//#############################################################################
+function onDraw( dt, ss ){ App.ecs.updateSystems(); }
+
+
+//#############################################################################
+function init(){
+	App.camera.Node
+		.setPos( 0, 1.5, 4 )
+		.setRotAxis( [1,0,0], -15 * Math.PI / 180 );
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	let e 		= Armature.$( App.$Draw( "Arm" ) );
+	let arm		= e.Armature;
+
+	let b0 = Armature.addBone( arm, "b0", 0.4, null );
+	let b1 = Armature.addBone( arm, "b1", 0.4, b0 );
+	let b2 = Armature.addBone( arm, "b2", 0.4, b1 );
+	Armature.finalize( e );
+	ArmatureSystem.init( App.ecs );
+
+	b1.Node.local.rot.rz( 45 * Math.PI / 180 );
+	b0.Node.local.rot.rz( 45 * Math.PI / 180 );
+	b2.Node.local.rot.rz( 45 * Math.PI / 180 );
+
+	ArmaturePreview.$( e, "ArmaturePreview" ); // VecWColor
+	ArmaturePreviewSystem.init( App.ecs );
+
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	App.loop.start();
+}
+
+</script><body></body></html>
