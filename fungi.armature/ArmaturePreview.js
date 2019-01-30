@@ -64,7 +64,7 @@ const ATTRIB_LEN_LOC = 10;
 			//Get a list of length of the bone that the joint represent
 			let boneCnt	= e.Armature.bones.length,
 				aryLen	= new Float32Array( boneCnt );
-			console.log("Bone Count", boneCnt);
+			//console.log("Bone Count", boneCnt);
 			for(let i=0; i < boneCnt; i++) aryLen[i] = e.Armature.bones[i].Bone.length;
 
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -84,7 +84,7 @@ const ATTRIB_LEN_LOC = 10;
 				Vao.indexBuffer( v, "index", geo.faces );
 				elmCount = geo.faces.length;
 			}else elmCount = geo.verts.length / 4;
-			console.log( elmCount );
+			//console.log( elmCount );
 			Vao.finalize( v, e.info.name + "_preview", elmCount );
 
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

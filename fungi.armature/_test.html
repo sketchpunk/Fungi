@@ -1,13 +1,17 @@
 <!DOCTYPE html><html><head><title>Fungi</title></head><script type="module">
 import App			from "../fungi/engine/App.js";
+import Geometry		from "../fungi.misc/Geometry.js";
 
 import Armature, { ArmatureSystem } from "./Armature.js";
 import ArmaturePreview, { ArmaturePreviewSystem } from "./ArmaturePreview.js";
 
 //#############################################################################
+App.useArmature = true;
 App.launch( onDraw, [
-	{ type:"shader", file:"/fungi/shaders/VecWColor.txt" },
-	{ type:"shader", file:"/fungi.armature/shaders/ArmaturePreview.txt" },
+	{ type:"shader", file:"../fungi/shaders/VecWColor.txt" },
+	{ type:"shader", file:"../fungi/shaders/BaseColor.txt" },
+	{ type:"shader", file:"./shaders/ArmaturePreview.txt" },
+	{ type:"shader", file:"./shaders/ArmatureSkin.txt" },
 ])	.then( ()=>App.loadScene( false ) )
 	.then( ()=>init() )
 	.catch( (err)=>console.error( err ) );
@@ -16,19 +20,19 @@ App.launch( onDraw, [
 //#############################################################################
 function onDraw( dt, ss ){
 
-	
+	/*
 	let be = Armature.getBone( gEntity, "b1" );
 	be.Node.local.rot.setAxisAngle( [0,0,1], Math.sin( ss*1.4 ) * 40 * Math.PI / 180 );
-	be.Node.isModified = true;
-	
+	be.Node.isModified = true;	
 	gEntity.Armature.isModified = true;
-
+	*/
 
 	App.ecs.updateSystems();
 }
-let gEntity;
+
 
 //#############################################################################
+let gEntity;
 function init(){
 	App.camera.Node
 		.setPos( 0, 1.5, 4 )
@@ -37,6 +41,7 @@ function init(){
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	let e 		= Armature.$( App.$Draw( "Arm" ) );
 	let arm		= e.Armature;
+	gEntity = e;
 
 	let b0 = Armature.addBone( arm, "b0", 0.4, null );
 	let b1 = Armature.addBone( arm, "b1", 0.4, b0 );
@@ -44,20 +49,54 @@ function init(){
 	Armature.finalize( e );
 	ArmatureSystem.init( App.ecs );
 
-	//b1.Node.local.rot.rz( 45 * Math.PI / 180 );
-	//b0.Node.local.rot.rz( 45 * Math.PI / 180 );
-	//b2.Node.local.rot.rz( 45 * Math.PI / 180 );
+	b1.Node.local.rot.rz( 45 * Math.PI / 180 );
+	b0.Node.local.rot.rz( 45 * Math.PI / 180 );
+	b2.Node.local.rot.rz( 45 * Math.PI / 180 );
 
 	ArmaturePreview.$( e, "ArmaturePreview" ); // VecWColor
 	ArmaturePreviewSystem.init( App.ecs );
 
 	//b1.Node.local.rot.rz( 45 * Math.PI / 180 );
 
-	gEntity = e;
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	buildShape();
 
 
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	App.loop.start();
 }
+
+
+//#############################################################################
+function buildShape(){
+	let geo		= new Geometry(),
+		idxAry	= [ 0, 1, 2, 3 ];
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	geo.addVerts( 
+		-0.2, 0,  0.2,   0.2, 0,  0.2,
+		 0.2, 0, -0.2,  -0.2, 0, -0.2
+	);
+
+	const cnt = 7;
+	const inc = 0.2;
+	for(var i=1; i < cnt; i++) geo.extrude( idxAry, [ 0, inc * i, 0 ] );
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	for(var i=0; i < 4; i++) geo.verts[i].initJoints( 0, 1 ).initJointWeights( 1, 0 );
+	for(var i=4; i < 8; i++) geo.verts[i].initJoints( 0, 1 ).initJointWeights( 0.5, 0.5 );
+	for(var i=8; i < 12; i++) geo.verts[i].initJoints( 1, 2 ).initJointWeights( 1, 0 );
+	for(var i=12; i < 16; i++) geo.verts[i].initJoints( 1, 2 ).initJointWeights( 0.5, 0.5 );
+	for(var i=16; i < 20; i++) geo.verts[i].initJoints( 2, 0 ).initJointWeights( 1, 0 );
+	for(var i=20; i < 24; i++) geo.verts[i].initJoints( 2, 0 ).initJointWeights( 1, 0 );
+	for(var i=24; i < 28; i++) geo.verts[i].initJoints( 2, 0 ).initJointWeights( 1, 0 );
+
+	//console.log( geo.weightArray(2) );
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	let v = geo.buildVao( "skinTest", false, 2 );
+	//console.log( v.buf );
+	gEntity.Draw.add( v, "ArmatureSkin", 3 ); //BaseColorBlack
+}
+
 
 </script><body></body></html>

@@ -210,8 +210,8 @@ Shader.POSITION_LOC		= 0;
 Shader.NORMAL_LOC		= 1;
 Shader.UV_LOC			= 2;
 
-Shader.JOINT_IDX_LOC	= 8;
-Shader.JOINT_WEIGHT_LOC	= 9;
+Shader.BONE_IDX_LOC		= 8;
+Shader.BONE_WEIGHT_LOC	= 9;
 
 
 //##################################################################

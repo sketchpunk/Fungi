@@ -3,8 +3,6 @@ import Transform	from "../fungi/maths/Transform.js";
 import DualQuat		from "../fungi/maths/DualQuat.js";
 import { Entity, Assemblages, Components, System } from "../fungi/engine/Ecs.js";
 
-const ABONE_NAME = "Bone";	// constant name for a Bone Assemblage
-
 
 //#################################################################
 /** Single Bone data struct */
@@ -37,6 +35,7 @@ class Armature{
 		this.bones			= new Array();	// Main Bones Array : Ordered by Order Number
 		//this.orderedBones	= null;			// Second list of Bones : Ordered by an order number
 		this.isModified		= true;
+		this.isActive		= true;			// Disable the Rendering of Armature
 
 		this.flatOffset		= null;			// Flatten Bone DualQuat for Shaders
 		this.flatScale		= null;			// Flatten Bone
@@ -190,11 +189,9 @@ static updateWorld( e ){
 // If the node has been modified, then take every bone and update its dqOffset
 const BONE_QUERY_COM	= [ "Bone", "Node" ];
 const ARM_QUERY_COM		= [ "Armature" ];
+const ABONE_NAME = "Bone";	// constant name for a Bone Assemblage
 
-/**
-* After TransformSystem, BoneSystem can then turn all the World Transform into world Dual Quaternions.
-* @extends System
-*/
+/** After TransformSystem, BoneSystem can then turn all the World Transform into world Dual Quaternions. */
 class BoneSystem extends System{
 	update( ecs ){
 		let ary	= ecs.queryEntities( BONE_QUERY_COM ),
@@ -210,10 +207,7 @@ class BoneSystem extends System{
 	}
 }
 
-/**
-* System handles flattening all the DualQuat bone data
-* @extends System
-*/
+/** System handles flattening all the DualQuat bone data */
 class ArmatureSystem extends System{
 	static init( ecs, priority = 801 ){
 		ecs.addSystem( new BoneSystem(), priority );
@@ -230,10 +224,7 @@ class ArmatureSystem extends System{
 	}
 }
 
-/**
-* System to handle cleanup like setting isModified to false
-* @extends System
-*/
+/** System to handle cleanup like setting isModified to false */
 class ArmatureCleanupSystem extends System{
 	update( ecs ){
 		let e, ary = ecs.queryEntities( ARM_QUERY_COM );

@@ -125,21 +125,34 @@ class Vao{
 			return vao;
 		}
 
-		static buildSkinning(name, vertCompLen, aryVert, aryNorm=null, aryUV=null, aryInd=null, jointSize=0, aryJoint = null, aryWeight = null){
-			var o = new Vao().create()
-				.floatBuffer("bVertices", aryVert, Shader.ATTRIB_POSITION_LOC, vertCompLen);
+		static buildSkinning( name, vertCompLen, aryVert, aryNorm=null, aryUV=null, aryInd=null, boneSize=0, aryBones = null, aryWeight = null ){
+			let vao 		= new Vao(),
+				elmCount	= 0;
 
-			if(aryNorm)	o.floatBuffer("bNormal", aryNorm, Shader.ATTRIB_NORMAL_LOC, 3);
-			if(aryUV)	o.floatBuffer("bUV", aryUV, Shader.ATTRIB_UV_LOC, 2);
-			if(aryInd)	o.indexBuffer("bIndex", aryInd)
-			if(jointSize > 0){
-				o.floatBuffer("bJointIdx",		aryJoint,	Shader.ATTRIB_JOINT_IDX_LOC,	jointSize);
-			   	o.floatBuffer("bJointWeight",	aryWeight,	Shader.ATTRIB_JOINT_WEIGHT_LOC,	jointSize);
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			// Vertices are mandatory
+			Vao	.bind( vao )
+				.floatBuffer( vao, "vertex", aryVert, Shader.POSITION_LOC, vertCompLen );
+
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			// Build Optional Buffers
+			if( aryNorm ) 	Vao.floatBuffer( vao, "normal", aryNorm, Shader.NORMAL_LOC, 3 );
+			if( aryUV )		Vao.floatBuffer( vao, "uv", aryUV, Shader.UV_LOC, 2 );
+
+			if(boneSize > 0){
+				Vao.floatBuffer( vao, "boneIndex", aryBones,	Shader.BONE_IDX_LOC,	boneSize);
+				Vao.floatBuffer( vao, "boneWeight", aryWeight,	Shader.BONE_WEIGHT_LOC,	boneSize);
 			}
-						
-			var vao = o.finalize(name);
-			o.cleanup();
 
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			if( aryInd ){
+				Vao.indexBuffer( vao, "index", aryInd );
+				elmCount = aryInd.length;
+			}else elmCount = aryVert.length / vertCompLen;
+
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			// Done
+			Vao.finalize( vao, name, elmCount );
 			return vao;
 		}
 

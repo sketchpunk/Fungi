@@ -10,8 +10,12 @@ class Renderer{
 		this.vao			= null;
 
 		//UBOs for Updating
-		this.UBOModel	= App.cache.getUBO("UBOModel");
-		this.UBOGlobal	= App.cache.getUBO("UBOGlobal");
+		this.UBOModel		= App.cache.getUBO("UBOModel");
+		this.UBOGlobal		= App.cache.getUBO("UBOGlobal");
+		
+		if( App.useArmature ){
+			this.UBOArmature = App.cache.getUBO("UBOArmature");
+		}
 
 		//GL Option states
 		this.options	= {
@@ -95,9 +99,20 @@ class Renderer{
 		}
 
 		loadEntity( e ){ //console.log("Load Entity ", e.info.name);
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			this.UBOModel
 				.setItem( "modelMatrix", e.Node.modelMatrix )
 				.update();
+
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			if( App.useArmature && e.Armature && e.Armature.isActive ){
+				this.UBOArmature
+					.setItem( "bones", e.Armature.flatOffset )
+					.setItem( "scale", e.Armature.flatScale )
+					.update();
+			}
+
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			return this;
 		}
 

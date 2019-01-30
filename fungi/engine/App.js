@@ -71,11 +71,6 @@ class App{
 
 
 	//////////////////////////////////////////////
-	// SETTER / GETTERS
-	//////////////////////////////////////////////
-
-
-	//////////////////////////////////////////////
 	// ENTITY MANAGEMENT
 	//////////////////////////////////////////////
 		static $Node( name ){ return this.ecs.newAssemblage( "Node", name ); }
@@ -153,6 +148,17 @@ class App{
 			.setItem( "lightColor",		[  1.0,  1.0,  1.0 ] )
 			.update();
 
+		//............................
+		if( App.useArmature ){
+			let ubo = new Ubo( "UBOArmature" );
+			Ubo .addItem( ubo, "bones", "mat2x4", 60 )
+				.addItem( ubo, "scale", "vec3", 60 )
+				.addItem( ubo, "boneCount", "int" )
+				.finalize( ubo, 4 );
+
+			ubo.setItem( "boneCount", 2 );
+		}
+
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		return true;
 	}
@@ -221,6 +227,6 @@ App.node 			= Node;		// Quick Access to Node Static Functions
 App.deltaTime		= 0;		// Time between frames
 App.sinceStart		= 1;		// Time since the render loop started.
 
-
+App.useArmature		= false;
 //######################################################
 export default App;

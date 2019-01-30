@@ -1,10 +1,7 @@
 <shader>{
 	"name"		: "ArmatureSkin",
-	"ubo"		: [ "UBOTransform", "UBOModel", "UBOArmature" ],
-	"options"	: { "modelMatrix":true },
-	"uniforms"	: [
-
-	]
+	"ubo"		: [ "UBOGlobal", "UBOModel", "UBOArmature" ],
+	"uniforms"	: [ ]
 }<\shader>
 		{ "name":"u_joints", "type":"mat2x4" },
 		{ "name":"u_jointScale", "type":"vec3" },
@@ -19,11 +16,11 @@
 	layout(location=1) in vec3 a_norm;
 	layout(location=2) in vec2 a_uv;
 
-	layout(location=8) in vec4 a_jointIdx;
-	layout(location=9) in vec4 a_jointWeight;
+	layout(location=8) in vec4 a_boneIndex;
+	layout(location=9) in vec4 a_boneWeight;
 
-	uniform UBOTransform{
-		mat4 	projViewMatrix;
+	uniform UBOGlobal{
+		mat4	projViewMatrix;
 		vec3	cameraPos;
 		float	globalTime;
 		vec2	screenSize;
@@ -35,8 +32,9 @@
 	};
 
 	uniform UBOArmature{
-		mat2x4[60]	joints;
+		mat2x4[60]	bones;
 		vec3[60]	scale;
+		int 		boneCount;
 	} Arm;
 
 
@@ -81,16 +79,16 @@
 		return pos + tran;
 	}
 
-	vec3 dqJointTransform_2(vec3 pos, mat2x4[60] jDQ, vec4 jIndex, vec4 jWeight, vec3[60] jScale){
+	vec3 dqBoneTransform_2(vec3 pos, mat2x4[60] bDQ, vec4 bIndex, vec4 bWeight, vec3[60] bScale){
 		/* NORMALIZE DATA First */
-		int a = int( jIndex.x ),
-			b = int( jIndex.y );
+		int a = int( bIndex.x ),
+			b = int( bIndex.y );
 
-		float t 		=	1.0 / (jWeight.x + jWeight.y);
-		jWeight.xy		*=	t;
+		float t 		=	1.0 / (bWeight.x + bWeight.y);
+		bWeight.xy		*=	t;
 
-		mat2x4 dqSum 	=	jDQ[ a ] * jWeight.x + jDQ[ b ] * jWeight.y;
-		vec3 wScale 	=	jScale[ a ] * jWeight.x + jScale[ b ] * jWeight.y;
+		mat2x4 dqSum 	=	bDQ[ a ] 	* bWeight.x  +  bDQ[ b ]	* bWeight.y;
+		vec3 wScale 	=	bScale[ a ]	* bWeight.x  +  bScale[ b ]	* bWeight.y;
 
 		return dqVecTransform(dqSum, pos * wScale);
 	}
@@ -102,7 +100,7 @@
 		//pos = dqBoneTransform(a_position.xyz, u_jointCount, u_joints, a_jointIdx, a_jointWeight);
 		//vec3 pos = dqBoneTransform(a_position.xyz, u_jointCount, u_joints, a_jointIdx, a_jointWeight);
 		//vec3 pos = dqBoneTransform(a_position.xyz, Arm.count, Arm.joints, a_jointIdx, a_jointWeight);
-		vec3 pos = dqJointTransform_2(a_position.xyz, Arm.joints, a_jointIdx, a_jointWeight, Arm.scale);
+		vec3 pos = dqBoneTransform_2(a_position.xyz, Arm.bones, a_boneIndex, a_boneWeight, Arm.scale);
 		
 
 		gl_Position = projViewMatrix * modelMatrix *  vec4(pos, 1.0); //
@@ -116,5 +114,7 @@
 
 	out vec4 oFragColor;
 
-	void main(void){ oFragColor = vec4(0.0, 0.0, 0.0, 1.0); }
+	void main(void){ 
+		oFragColor = vec4(0.0, 0.0, 0.0, 1.0);
+	}
 <\fragment>
