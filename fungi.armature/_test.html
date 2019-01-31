@@ -1,6 +1,7 @@
 <!DOCTYPE html><html><head><title>Fungi</title></head><script type="module">
 import App			from "../fungi/engine/App.js";
 import Geometry		from "../fungi.misc/Geometry.js";
+import Maths,{ Vec3 }		from "../fungi/maths/Maths.js";
 
 import Armature, { ArmatureSystem } from "./Armature.js";
 import ArmaturePreview, { ArmaturePreviewSystem } from "./ArmaturePreview.js";
@@ -19,14 +20,18 @@ App.launch( onDraw, [
 
 //#############################################################################
 function onDraw( dt, ss ){
+	let ary = gEntity.Armature.bones;
+	let ang = Math.sin( ss ) * Maths.toRad( 30 );
+	let scl = (Math.sin( ss ) * 0.5 + 0.5) * 0.4 + 0.8;
 
-	/*
-	let be = Armature.getBone( gEntity, "b1" );
-	be.Node.local.rot.setAxisAngle( [0,0,1], Math.sin( ss*1.4 ) * 40 * Math.PI / 180 );
-	be.Node.isModified = true;	
+	for(let i=0; i < 3; i++){
+		ary[i].Node
+			.setScl( scl, 1, scl )
+			.setRotAxis( Vec3.FORWARD, ang );
+	}
 	gEntity.Armature.isModified = true;
-	*/
 
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	App.ecs.updateSystems();
 }
 
@@ -34,41 +39,47 @@ function onDraw( dt, ss ){
 //#############################################################################
 let gEntity;
 function init(){
+	ArmatureSystem.init( App.ecs );
+	ArmaturePreviewSystem.init( App.ecs );
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	App.camera.Node
 		.setPos( 0, 1.5, 4 )
 		.setRotAxis( [1,0,0], -15 * Math.PI / 180 );
 
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	let e 		= Armature.$( App.$Draw( "Arm" ) );
-	let arm		= e.Armature;
-	gEntity = e;
+	// New Draw Component allows to have more then One VAO set for drawing.
+	// This allows to simplify creation of Skinned Meshes and Bone Previews.
+	// Nice to have everything tidy in a single Entity and sharing a transform.
+	// This also allows to have a single mesh that is made up of multiple primatives
+	// load the same armature and transform data just once to the GPU, then bach
+	// draw all the meshes with their own specific shaders.
 
-	let b0 = Armature.addBone( arm, "b0", 0.4, null );
-	let b1 = Armature.addBone( arm, "b1", 0.4, b0 );
-	let b2 = Armature.addBone( arm, "b2", 0.4, b1 );
-	Armature.finalize( e );
-	ArmatureSystem.init( App.ecs );
+	let e 		= Armature.$( App.$Draw( "Arm" ) ),			// Add Armature Com to new Draw Entity
+		arm		= e.Armature,								// Get Armature Com Reference
+		b0 		= Armature.addBone( arm, "b0", 0.4, null ),	// Define Bone Hierarchy
+		b1 		= Armature.addBone( arm, "b1", 0.4, b0 ),
+		b2 		= Armature.addBone( arm, "b2", 0.4, b1 );
+	Armature.finalize( e );									// Set Bind Pose
+	ArmaturePreview.$( e, "ArmaturePreview" );				// Generate Preview Bone Meshes
+	buildShape( e );										// Generate and add Rigged Mesh to Draw
 
-	b1.Node.local.rot.rz( 45 * Math.PI / 180 );
-	b0.Node.local.rot.rz( 45 * Math.PI / 180 );
-	b2.Node.local.rot.rz( 45 * Math.PI / 180 );
-
-	ArmaturePreview.$( e, "ArmaturePreview" ); // VecWColor
-	ArmaturePreviewSystem.init( App.ecs );
-
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// Testing Bones
 	//b1.Node.local.rot.rz( 45 * Math.PI / 180 );
+	//b0.Node.local.rot.rz( 45 * Math.PI / 180 );
+	//b2.Node.local.rot.rz( 45 * Math.PI / 180 );
+	//b2.Node.setScl( 0.2, 1, 0.2 );
 
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	buildShape();
-
-
-	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	gEntity = e;
 	App.loop.start();
+	//App.loop.runFrame( 0.01 );
 }
 
 
 //#############################################################################
-function buildShape(){
+function buildShape( e ){
 	let geo		= new Geometry(),
 		idxAry	= [ 0, 1, 2, 3 ];
 
@@ -94,9 +105,6 @@ function buildShape(){
 	//console.log( geo.weightArray(2) );
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	let v = geo.buildVao( "skinTest", false, 2 );
-	//console.log( v.buf );
-	gEntity.Draw.add( v, "ArmatureSkin", 3 ); //BaseColorBlack
+	e.Draw.add( v, "ArmatureSkin", 3 ); //BaseColorBlack
 }
-
-
 </script><body></body></html>
