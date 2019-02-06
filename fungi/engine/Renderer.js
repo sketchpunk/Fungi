@@ -122,11 +122,11 @@ class Renderer{
 	////////////////////////////////////////////////////////////////////
 		draw( d ){
 			//...............................
-			if(this.vao !== d.vao){
-				this.vao = d.vao;
+			//if(this.vao !== d.vao){
+				//this.vao = d.vao;
 				gl.ctx.bindVertexArray( d.vao.id );
 				//console.log("Draw", r.entityPtr.name, r.vao.elmCount);
-			}
+			//}
 
 			//...............................
 			if(!d.vao.isInstanced){

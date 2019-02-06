@@ -61,6 +61,8 @@ class DrawSystem extends System{
 
 			}else d.onDraw( this.render, e ); // Run custom Rendering
 		}
+
+		//console.log( ary );
 	}
 }
 

@@ -30,8 +30,8 @@ const ATTRIB_LEN_LOC = 10;
 	}
 
 	function geoDiamondWire(){
-		const	pxz	= 0.06,
-				py	= 0.1;
+		const	pxz	= 0.015,
+				py	= 0.015;
 
 		const verts	= [
 			0, 0, 0, 0,				// 0 Bottom

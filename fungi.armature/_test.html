@@ -8,18 +8,21 @@ import ArmaturePreview, { ArmaturePreviewSystem } from "./ArmaturePreview.js";
 
 //#############################################################################
 App.useArmature = true;
-App.launch( onDraw, [
-	{ type:"shader", file:"../fungi/shaders/VecWColor.txt" },
-	{ type:"shader", file:"../fungi/shaders/BaseColor.txt" },
-	{ type:"shader", file:"./shaders/ArmaturePreview.txt" },
-	{ type:"shader", file:"./shaders/ArmatureSkin.txt" },
-])	.then( ()=>App.loadScene( false ) )
-	.then( ()=>init() )
-	.catch( (err)=>console.error( err ) );
+App	.launch( onDraw, true )
+	.then( dl=>dl
+		.add( "shader", "../fungi/shaders/VecWColor.txt" )
+		.add( "shader", "../fungi/shaders/BaseColor.txt" )
+		.add( "shader", "./shaders/ArmaturePreview.txt" )
+		.add( "shader", "./shaders/ArmatureSkin.txt" )
+		.start() )
+	.then( ()=>		App.loadScene() )
+	.then( ()=>		init() )
+	.catch( err=>	console.error( err ) );
 
 
 //#############################################################################
 function onDraw( dt, ss ){
+	/**/
 	let ary = gEntity.Armature.bones;
 	let ang = Math.sin( ss ) * Maths.toRad( 30 );
 	let scl = (Math.sin( ss ) * 0.5 + 0.5) * 0.4 + 0.8;
@@ -30,6 +33,7 @@ function onDraw( dt, ss ){
 			.setRotAxis( Vec3.FORWARD, ang );
 	}
 	gEntity.Armature.isModified = true;
+	
 
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	App.ecs.updateSystems();
@@ -105,6 +109,7 @@ function buildShape( e ){
 	//console.log( geo.weightArray(2) );
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	let v = geo.buildVao( "skinTest", false, 2 );
-	e.Draw.add( v, "ArmatureSkin", 3 ); //BaseColorBlack
+	e.Draw.add( v, "ArmatureSkin", 3 ); //BaseColorBlack\
+	//e.Draw.add( v, "BaseColorBlack", 3 ); //BaseColorBlack
 }
 </script><body></body></html>

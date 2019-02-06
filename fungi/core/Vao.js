@@ -2,6 +2,11 @@ import gl 		from "./gl.js";
 import Cache	from "./Cache.js";
 import Shader	from "./Shader.js";
 
+const BUF_V_NAME	= "vertices";
+const BUF_N_NAME	= "normal";
+const BUF_UV_NAME	= "uv";
+const BUF_IDX_NAME	= "indices";
+
 //##################################################################
 class Buffer{
 	static array( target, aryData, isStatic, dataType, attrLoc, compLen=3, stride=0, offset=0, isInstance=false ){
@@ -87,6 +92,26 @@ class Buffer{
 
 		return { id };
 	}
+
+	static fromBin( target, dataView, bStart, bLen, isStatic, dataType, attrLoc, compLen=3, stride=0, offset=0 ){
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		// Create and Bind New Buffer
+		let id = gl.ctx.createBuffer();
+		gl.ctx.bindBuffer( target, id );
+
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		// Copy data from ArrayBuffer/DataView to the GPU
+		gl.ctx.bufferData( target, dataView, (isStatic)? gl.ctx.STATIC_DRAW : gl.ctx.DYNAMIC_DRAW, bStart, bLen );
+
+		// If a data buffer, do some extra setup for shaders
+		if( target == gl.ctx.ARRAY_BUFFER ){
+			gl.ctx.enableVertexAttribArray( attrLoc );
+			gl.ctx.vertexAttribPointer( attrLoc, compLen, dataType, false, stride, offset );
+		}
+
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		return { id };
+	}
 }
 
 
@@ -156,6 +181,7 @@ class Vao{
 			return vao;
 		}
 
+
 		static buildEmpty( name, vertCompLen=3, vertCnt=4, normLen=0, uvLen=0, idxLen=0 ){
 			let vao = new Vao();
 
@@ -170,6 +196,42 @@ class Vao{
 
 			// Done
 			Vao.finalize( vao, name, 0 );
+			return vao;
+		}
+
+		// Build a VAO from ArrayBuffer, like a Gltf Bin File.
+		// Spec holds the buffers stored in the bin: bufferName:{ byteStart, byteLen, ElmCount, CompLength }
+		static buildFromBin( name, spec, bin ){
+			if( bin instanceof ArrayBuffer ) bin = new DataView( bin );
+
+			let vao = new Vao();
+
+			Vao.bind( vao );
+			vao.buf[ BUF_V_NAME ] = Buffer.fromBin( gl.ctx.ARRAY_BUFFER, 
+				bin, spec.vertices.byteStart, spec.vertices.byteLen,
+				true, gl.ctx.FLOAT, Shader.POSITION_LOC, spec.vertices.compLen );
+
+
+			if( spec.normal ){
+				vao.buf[ BUF_N_NAME ] = Buffer.fromBin( gl.ctx.ARRAY_BUFFER, 
+					bin, spec.normal.byteStart, spec.normal.byteLen,
+					true, gl.ctx.FLOAT, Shader.NORMAL_LOC, spec.normal.compLen );
+			}
+
+			if( spec.uv ){
+				vao.buf[ BUF_UV_NAME ] = Buffer.fromBin( gl.ctx.ARRAY_BUFFER, 
+					bin, spec.uv.byteStart, spec.uv.byteLen,
+					true, gl.ctx.FLOAT, Shader.UV_LOC, spec.uv.compLen );
+			}
+
+			if( spec.indices ){
+				vao.isIndexed = true;
+				vao.buf[ BUF_IDX_NAME ] = Buffer.fromBin( gl.ctx.ELEMENT_ARRAY_BUFFER, 
+					bin, spec.indices.byteStart, spec.indices.byteLen, true );
+			}
+
+			Vao.finalize( vao, name, ((spec.indices)? spec.indices.elmCount : spec.vertices.elmCount) );
+
 			return vao;
 		}
 

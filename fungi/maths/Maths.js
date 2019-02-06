@@ -75,7 +75,7 @@ class Maths{
 			return out;
 		}
 
-		static cartesianToPolar( v, radius, out ){
+		static cartesianToPolar( v, out ){
 			out = out || [0,0];
 			var lon 	= Math.atan2( v[0], -v[2] ) * Maths.RAD2DEG,
 				length 	= Math.sqrt( v[0] * v[0] + v[2] * v[2] ),

@@ -1,20 +1,21 @@
 <!DOCTYPE html><html><head><title>Fungi</title></head><script type="module">
 
-import App			from "./App.js";
+import App, { Material } from "./App.js";
 import FacedCube	from "../primitives/FacedCube.js";
-import Material 	from "../core/Material.js";
 
 //import DVerts, { DynamicVertsSystem } from "./ecs/DynamicVerts.js";
 //import Debug from "./Debug.js";
 
 
 //////////////////////////////////////////////////////////////////////
-App.launch( onDraw, [
-	{ type:"shader", file:"/fungi/shaders/VecWColor.txt" },
-])	//.then( ()=>App.loadModules( "./Debug.js" ) )
-	.then( ()=>App.loadScene( false ) )
-	.then( ()=>init() )
-	.catch( (err)=>console.error( err ) );
+App	.launch( onDraw, true )
+	.then( dl=>dl
+		.add( "shader", "../shaders/VecWColor.txt" )
+		.start() )
+	.then( ()=>		App.loadScene() )
+	.then( ()=>		init() )
+	.catch( err=>	console.error( err ) );
+
 
 function init(){
 	//DynamicVertsSystem.init( App.ecs );

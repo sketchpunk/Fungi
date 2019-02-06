@@ -151,6 +151,33 @@ class Armature{
 			}
 			return this;
 		}
+
+
+	///////////////////////////////////////////////////////////
+	// 
+	///////////////////////////////////////////////////////////
+	
+		// Serialize the Bones Data
+		static serialize( arm ){
+			let bLen 	= arm.bones.length,
+				out		= new Array( bLen ),
+				i, e ;
+
+			for( i=0; i < bLen; i++ ){
+				e = arm.bones[ i ];
+				out[ i ] = {
+					name	: e.info.name,
+					lvl		: e.Node.level,
+					len		: e.Bone.length,
+					idx		: e.Bone.order,
+					p_idx 	: (e.Node.parent)? e.Node.parent.Bone.order : null,
+					pos		: e.Bone.initial.pos.slice( 0 ),
+					rot		: e.Bone.initial.rot.slice( 0 ),
+					scl		: e.Bone.initial.scl.slice( 0 ),
+				};
+			}
+			return out;
+		}
 } Components( Armature );
 /*
 static updateWorld( e ){

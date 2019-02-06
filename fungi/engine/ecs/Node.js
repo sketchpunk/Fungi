@@ -118,6 +118,29 @@ class Node{
 		}
 
 		/**
+		 * Set rotation based on an Axis and angle in radians
+		 * @param {Vec3} dir - Unit vector of the direction to look at.
+		 * @param {?Vec3} up - Up vector to use, Vec3.UP will be used if left blank
+		 * @public @return {Node}
+		 */
+		setRotLook( dir, up=null ){
+			Quat.lookRotation( dir, up || Vec3.UP, this.local.rot );
+			this.isModified = true;
+			return this;
+		}
+
+		/**
+		 * Copy a quaternion or Vec4 into rotation
+		 * @param {(Array:Quat)} q - Quaterion or a Number[4]
+		 * @public @return {this}
+		 */
+		setRot( q ){
+			this.local.rot.copy( q );
+			this.isModified = true;
+			return this;
+		}
+
+		/**
 		 * Sets local scale and sets modified to true
 		 * @param {number} x - X local scale, if the only value passed in then it will scale all axises by X
 		 * @param {?number} y - Y Local scale
@@ -125,8 +148,10 @@ class Node{
 		 * @public @return {Node}
 		 */
 		setScl( x, y, z ){
-			if( arguments.length == 1 ) this.local.scl.set( x, x, x );
-			else						this.local.scl.set( x, y, z );
+			if( Array.isArray(x) )									this.local.scl.copy( x );
+			else if( arguments.length == 1 && typeof x == "number")	this.local.scl.set( x, x, x );
+			else if( arguments.length == 3 )						this.local.scl.set( x, y, z ); 
+			else { console.log("Unknown Scale Value"); return this; }
 			
 			this.isModified = true;
 			return this;
@@ -142,7 +167,7 @@ class Node{
 		 * @param {Entity} ce - Child Entity
 		 * @public @return {Node}
 		 */
-		static addChild( pe, ce ){
+		static addChild( pe, ce, updateLevels = true ){
 			let pn = pe.Node;
 
 			if( pn.children.indexOf( ce ) != -1){
@@ -162,8 +187,7 @@ class Node{
 
 			//...............................................
 			//if child has its own children, update their level values
-			if(cn.children.length > 0) updateChildLevel( cn );
-
+			if( updateLevels && cn.children.length > 0 ) updateChildLevel( cn );
 			return Node;
 		}
 

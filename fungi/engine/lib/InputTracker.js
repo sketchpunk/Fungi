@@ -14,6 +14,9 @@ class InputTracker{
 		this.arrowDown		= false;
 		this.arrowLeft		= false;
 		this.arrowRight		= false;
+		this.shift 			= false;
+		this.ctrl 			= false;
+		this.alt			= false;
 		this.spaceBar		= false;
 
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -136,9 +139,9 @@ class InputTracker{
 	//////////////////////////////////////////////////////////////////
 	// KEYBOARD
 	//////////////////////////////////////////////////////////////////
-		key(kCode){	return (this.keyState[kCode] == true); }
+		key( kCode ){ return ( this.keyState[kCode] == true ); }
 
-		onKeyDown(e){	//console.log( e.keyCode );
+		onKeyDown( e ){	//console.log( "KEY DOWN", e.keyCode );
 			this.keyState[ e.keyCode ] = true; 
 			this.keyCount++;
 
@@ -148,10 +151,13 @@ class InputTracker{
 				case 38: this.arrowUp		= true; break;
 				case 39: this.arrowRight	= true; break;
 				case 40: this.arrowDown		= true; break;
+				case 16: this.shift 		= true; break;
+				case 17: this.ctrl 			= true; break;
+				case 18: this.alt 			= true; break;
 			}
 		}
 
-		onKeyUp(e){
+		onKeyUp( e ){
 			this.keyState[ e.keyCode ] = false;
 			this.keyCount--;
 			switch(e.keyCode){
@@ -160,12 +166,11 @@ class InputTracker{
 				case 38: this.arrowUp		= false; break;
 				case 39: this.arrowRight	= false; break;
 				case 40: this.arrowDown		= false; break;
+				case 16: this.shift 		= false; break;
+				case 17: this.ctrl 			= false; break;
+				case 18: this.alt 			= false; break;
 			}
 		}
-
-		isShift(){	return this.keyState[ 16 ]; }
-		isCtrl(){	return this.keyState[ 17 ]; }
-		isAlt(){	return this.keyState[ 18 ]; }
 }
 
 export default InputTracker;
