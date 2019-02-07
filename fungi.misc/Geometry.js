@@ -234,7 +234,7 @@ class Geometry{
 		uvArray(){		return this.compileArray(this.verts, Float32Array, 2, "uv"); }
 		normArray(){	return this.compileArray(this.verts, Float32Array, 3, "norm"); }
 
-		jointArray(size){	return this.compileArray(this.verts, Float32Array, size, "jointIndex"); }
+		jointArray(size){	return this.compileArray(this.verts, Uint32Array, size, "jointIndex"); }
 		weightArray(size){	return this.compileArray(this.verts, Float32Array, size, "jointWeight"); }
 
 		compileArray( ary, AryType, size, sub=null ){
@@ -254,13 +254,13 @@ class Geometry{
 	////////////////////////////////////////////////////////////////////
 	// Misc
 	////////////////////////////////////////////////////////////////////
-		buildVao( vaoName, useIdx=false, jointSize=0 ){
+		buildVao( vaoName, useIdx=false, jointLimit=0 ){
 			let vertices	= this.vertexArray(),
 				index		= (useIdx)? this.faceArray() : null,
-				joints 		= (jointSize > 0)? this.jointArray(jointSize) : null,
-				weights 	= (jointSize > 0)? this.weightArray(jointSize) : null;
+				joints 		= (jointLimit > 0)? this.jointArray(jointLimit) : null,
+				weights 	= (jointLimit > 0)? this.weightArray(jointLimit) : null;
 
-			return Vao.buildSkinning( vaoName, 3, vertices, null, null, index, jointSize, joints, weights );
+			return Vao.buildSkinning( vaoName, 3, vertices, null, null, index, joints, weights, jointLimit );
 		}
 }
 

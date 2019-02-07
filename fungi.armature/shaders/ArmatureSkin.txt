@@ -87,9 +87,34 @@
 		float t 		=	1.0 / (bWeight.x + bWeight.y);
 		bWeight.xy		*=	t;
 
+		/* APPLY WEIGHTS */
 		mat2x4 dqSum 	=	bDQ[ a ] 	* bWeight.x  +  bDQ[ b ]	* bWeight.y;
 		vec3 wScale 	=	bScale[ a ]	* bWeight.x  +  bScale[ b ]	* bWeight.y;
 
+		/* SCALE, ROTATE - TRANSLATE */
+		return dqVecTransform(dqSum, pos * wScale);
+	}
+
+	vec3 dqBoneTransform_4(vec3 pos, mat2x4[70] bDQ, vec4 bIndex, vec4 bWeight, vec3[70] bScale){
+		/* NORMALIZE DATA FIRST */
+		int a = int( bIndex.x ),
+			b = int( bIndex.y ),
+			c = int( bIndex.z ),
+			d = int( bIndex.w );
+		bWeight *= 1.0 / (bWeight.x + bWeight.y + bWeight.z + bWeight.w); // 1 Div, 4 Mul, instead of 4 Div.
+
+		/* APPLY WEIGHTS */
+		mat2x4 dqSum 	=	bDQ[ a ] * bWeight.x +  
+							bDQ[ b ] * bWeight.y +
+							bDQ[ c ] * bWeight.z +
+							bDQ[ d ] * bWeight.w;
+
+		vec3 wScale 	=	bScale[ a ]	* bWeight.x +
+							bScale[ b ]	* bWeight.y +
+							bScale[ c ]	* bWeight.z +
+							bScale[ d ]	* bWeight.w;
+
+		/* SCALE, ROTATE - TRANSLATE */
 		return dqVecTransform(dqSum, pos * wScale);
 	}
 
@@ -100,7 +125,8 @@
 		//pos = dqBoneTransform(a_position.xyz, u_jointCount, u_joints, a_jointIdx, a_jointWeight);
 		//vec3 pos = dqBoneTransform(a_position.xyz, u_jointCount, u_joints, a_jointIdx, a_jointWeight);
 		//vec3 pos = dqBoneTransform(a_position.xyz, Arm.count, Arm.joints, a_jointIdx, a_jointWeight);
-		vec3 pos = dqBoneTransform_2(a_position.xyz, Arm.bones, a_boneIndex, a_boneWeight, Arm.scale);
+		//vec3 pos = dqBoneTransform_2(a_position.xyz, Arm.bones, a_boneIndex, a_boneWeight, Arm.scale);
+		vec3 pos = dqBoneTransform_4(a_position.xyz, Arm.bones, a_boneIndex, a_boneWeight, Arm.scale);
 		
 
 		gl_Position = projViewMatrix * modelMatrix *  vec4(pos, 1.0); //

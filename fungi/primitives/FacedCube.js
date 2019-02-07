@@ -5,7 +5,7 @@ const NAME = "FaceCube";
 
 function FacedCube(name = NAME, matName = "VecWColor"){
 	let e = App.$Draw( name );
-	e.Draw.add( FacedCube.vao( "FacedCube" ), App.cache.getMaterial( matName )  )
+	e.Draw.add( FacedCube.vao( "FacedCube" ), matName );
 	return e;
 }
 

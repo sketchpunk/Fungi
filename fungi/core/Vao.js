@@ -6,6 +6,9 @@ const BUF_V_NAME	= "vertices";
 const BUF_N_NAME	= "normal";
 const BUF_UV_NAME	= "uv";
 const BUF_IDX_NAME	= "indices";
+const BUF_BI_NAME	= "boneIndex";
+const BUF_BW_NAME	= "boneWeight";
+
 
 //##################################################################
 class Buffer{
@@ -135,13 +138,13 @@ class Vao{
 
 			// Vertices are mandatory
 			Vao	.bind( vao )
-				.floatBuffer( vao, "vertex", aryVert, Shader.POSITION_LOC, vertCompLen );
+				.floatBuffer( vao, BUF_V_NAME, aryVert, Shader.POSITION_LOC, vertCompLen );
 
 			// Build Optional Buffers
-			if( aryNorm ) 	Vao.floatBuffer( vao, "normal", aryNorm, Shader.NORMAL_LOC, 3 );
-			if( aryUV )		Vao.floatBuffer( vao, "uv", aryUV, Shader.UV_LOC, 2 );
+			if( aryNorm ) 	Vao.floatBuffer( vao, BUF_N_NAME, aryNorm, Shader.NORMAL_LOC, 3 );
+			if( aryUV )		Vao.floatBuffer( vao, BUF_UV_NAME, aryUV, Shader.UV_LOC, 2 );
 			if( aryInd ){
-				Vao.indexBuffer( vao, "index", aryInd );
+				Vao.indexBuffer( vao, BUF_IDX_NAME, aryInd );
 				elmCount = aryInd.length;
 			}else elmCount = aryVert.length / vertCompLen;
 
@@ -150,28 +153,28 @@ class Vao{
 			return vao;
 		}
 
-		static buildSkinning( name, vertCompLen, aryVert, aryNorm=null, aryUV=null, aryInd=null, boneSize=0, aryBones = null, aryWeight = null ){
+		static buildSkinning( name, vertCompLen, aryVert, aryNorm=null, aryUV=null, aryInd=null, aryBones = null, aryWeight = null, boneLimit=4 ){
 			let vao 		= new Vao(),
 				elmCount	= 0;
 
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			// Vertices are mandatory
 			Vao	.bind( vao )
-				.floatBuffer( vao, "vertex", aryVert, Shader.POSITION_LOC, vertCompLen );
+				.floatBuffer( vao, BUF_V_NAME, aryVert, Shader.POSITION_LOC, vertCompLen );
 
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			// Build Optional Buffers
-			if( aryNorm ) 	Vao.floatBuffer( vao, "normal", aryNorm, Shader.NORMAL_LOC, 3 );
-			if( aryUV )		Vao.floatBuffer( vao, "uv", aryUV, Shader.UV_LOC, 2 );
+			if( aryNorm ) 	Vao.floatBuffer( vao, BUF_N_NAME, aryNorm, Shader.NORMAL_LOC, 3 );
+			if( aryUV )		Vao.floatBuffer( vao, BUF_UV_NAME, aryUV, Shader.UV_LOC, 2 );
 
-			if(boneSize > 0){
-				Vao.floatBuffer( vao, "boneIndex", aryBones,	Shader.BONE_IDX_LOC,	boneSize);
-				Vao.floatBuffer( vao, "boneWeight", aryWeight,	Shader.BONE_WEIGHT_LOC,	boneSize);
+			if( boneLimit > 0 ){
+				Vao.floatBuffer( vao, BUF_BI_NAME, aryBones,	Shader.BONE_IDX_LOC,	boneLimit );
+				Vao.floatBuffer( vao, BUF_BW_NAME, aryWeight,	Shader.BONE_WEIGHT_LOC,	boneLimit );
 			}
 
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			if( aryInd ){
-				Vao.indexBuffer( vao, "index", aryInd );
+				Vao.indexBuffer( vao, BUF_IDX_NAME, aryInd );
 				elmCount = aryInd.length;
 			}else elmCount = aryVert.length / vertCompLen;
 
@@ -186,13 +189,13 @@ class Vao{
 			let vao = new Vao();
 
 			// Vertices are mandatory
-			Vao.bind( vao ).emptyFloatBuffer( vao, "vertex",
+			Vao.bind( vao ).emptyFloatBuffer( vao, BUF_V_NAME,
 				Float32Array.BYTES_PER_ELEMENT * vertCompLen * vertCnt, 
 				Shader.POSITION_LOC, vertCompLen );
 
 			// Build Optional Buffers
-			if( uvLen > 0 )		Vao.emptyFloatBuffer( vao, "uv", Float32Array.BYTES_PER_ELEMENT * 2 * uvLen, Shader.UV_LOC, 2 );
-			if( idxLen < 0 )	Vao.emptyIndexBuffer( vao, "index", Uint16Array.BYTES_PER_ELEMENT * idxLen, false );
+			if( uvLen > 0 )		Vao.emptyFloatBuffer( vao, BUF_UV_NAME, Float32Array.BYTES_PER_ELEMENT * 2 * uvLen, Shader.UV_LOC, 2 );
+			if( idxLen < 0 )	Vao.emptyIndexBuffer( vao, BUF_IDX_NAME, Uint16Array.BYTES_PER_ELEMENT * idxLen, false );
 
 			// Done
 			Vao.finalize( vao, name, 0 );
@@ -229,6 +232,11 @@ class Vao{
 				vao.buf[ BUF_IDX_NAME ] = Buffer.fromBin( gl.ctx.ELEMENT_ARRAY_BUFFER, 
 					bin, spec.indices.byteStart, spec.indices.byteLen, true );
 			}
+
+			//if( boneLimit > 0 ){
+				//Vao.floatBuffer( vao, BUF_BI_NAME, aryBones,	Shader.BONE_IDX_LOC,	boneLimit );
+				//Vao.floatBuffer( vao, BUF_BW_NAME, aryWeight,	Shader.BONE_WEIGHT_LOC,	boneLimit );
+			//}
 
 			Vao.finalize( vao, name, ((spec.indices)? spec.indices.elmCount : spec.vertices.elmCount) );
 
@@ -306,6 +314,31 @@ class Vao{
 			return Vao;
 		}
 
+
+	///////////////////////////////////////////////////////
+	// 
+	///////////////////////////////////////////////////////
+		/*
+		static uint16Buffer( vao, name, aryData, attrLoc, compLen=3, stride=0, offset=0, isStatic=true, isInstance=false ){
+			//let ary		= ( aryData instanceof Uint16Array )? aryData : new Uint32Array( aryData );
+			console.log( aryData );
+			let ary 	= new Float32Array( aryData );
+			console.log( ary );
+				
+			//let buf	= Buffer.array( gl.ctx.ARRAY_BUFFER, 
+			//		ary, isStatic, gl.ctx.UNSIGNED_SHORT, 
+			//		attrLoc, compLen, stride, offset, isInstance );
+
+			let buf	= Buffer.array( gl.ctx.ARRAY_BUFFER, 
+					ary, isStatic, gl.ctx.FLOAT, 
+					attrLoc, compLen, stride, offset, isInstance );
+
+			console.log( "Uint16", compLen );
+
+			vao.buf[ name ] = buf;
+			return Vao;
+		}	
+		*/
 
 	///////////////////////////////////////////////////////
 	// ELEMENT ARRAY BUFFER ( INDEX BUFFER )

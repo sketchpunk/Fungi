@@ -33,7 +33,7 @@ class Bone{
 class Armature{
 	constructor(){
 		this.bones			= new Array();	// Main Bones Array : Ordered by Order Number
-		//this.orderedBones	= null;			// Second list of Bones : Ordered by an order number
+
 		this.isModified		= true;
 		this.isActive		= true;			// Disable the Rendering of Armature
 
@@ -52,11 +52,8 @@ class Armature{
 		static finalize( e ){
 			let arm = ( e instanceof Armature )? e : e.Armature;
 
-			// Copy the array and sort it by order
+			// Sort it by order
 			// This is important when flattening the data for shader use
-			//arm.orderedBones = arm.bones.slice( 0 ).sort( fSort_bone_order );
-			
-			// Sort the main array by level, to make transform hierachy easy to process.
 			arm.bones.sort( fSort_bone_order );
 
 			// Create Bind pose data for each bone in the armature
@@ -154,27 +151,30 @@ class Armature{
 
 
 	///////////////////////////////////////////////////////////
-	// 
+	// MISC
 	///////////////////////////////////////////////////////////
 	
-		// Serialize the Bones Data
-		static serialize( arm ){
+		// Serialize the Bone Data
+		static serialize( arm, incScale = false ){
 			let bLen 	= arm.bones.length,
 				out		= new Array( bLen ),
-				i, e ;
+				i, e, bi;
 
 			for( i=0; i < bLen; i++ ){
-				e = arm.bones[ i ];
+				e	= arm.bones[ i ];
+				bi	= e.Bone.initial;
+
 				out[ i ] = {
 					name	: e.info.name,
 					lvl		: e.Node.level,
 					len		: e.Bone.length,
 					idx		: e.Bone.order,
 					p_idx 	: (e.Node.parent)? e.Node.parent.Bone.order : null,
-					pos		: e.Bone.initial.pos.slice( 0 ),
-					rot		: e.Bone.initial.rot.slice( 0 ),
-					scl		: e.Bone.initial.scl.slice( 0 ),
+					pos		: [ bi.pos[0], bi.pos[1], bi.pos[2] ],
+					rot		: [ bi.rot[0], bi.rot[1], bi.rot[2], bi.rot[3] ],
 				};
+
+				if( incScale ) out[ i ].scl = [ bi.scl[0], bi.scl[1], bi.scl[2] ];
 			}
 			return out;
 		}
