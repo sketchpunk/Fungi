@@ -40,6 +40,15 @@ class App{
 			if( onDraw ) App.loop = new RenderLoop( onDraw, 0, App );
 
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			// Setup Armature System if enabled.
+			if( App.useArmature ){
+				let ary = [];
+				if( (App.useArmature & 1) == 1 ) ary.push( import( "../../fungi.armature/Armature.js" ).then( runModuleInit ) );
+				if( (App.useArmature & 2) == 2 ) ary.push( import( "../../fungi.armature/ArmaturePreview.js" ).then( runModuleInit ) );
+				await Promise.all( ary );
+			}
+
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			if( getResources ){
 				return await import("./lib/Downloader.js").then( mod=>{
 					mod.HandlerTypes.shader = ShaderHandler;
@@ -157,7 +166,7 @@ class App{
 			.update();
 
 		//............................
-		if( App.useArmature ){
+		if( (App.useArmature) & 1 == 1 ){
 			let ubo = new Ubo( "UBOArmature" );
 			Ubo .addItem( ubo, "bones", "mat2x4", 70 )
 				.addItem( ubo, "scale", "vec3", 70 )
@@ -237,7 +246,7 @@ App.node 			= Node;		// Quick Access to Node Static Functions
 App.deltaTime		= 0;		// Time between frames
 App.sinceStart		= 1;		// Time since the render loop started.
 
-App.useArmature		= false;	// Enable Armature Specific Features.
+App.useArmature		= 0;		// Enable Armature Specific Features. 1 = Armature, 2 = Preview, 3 Both.
 
 //######################################################
 export default App;

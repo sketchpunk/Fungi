@@ -4,17 +4,17 @@ import App		from "./App.js";
 class Renderer{
 	constructor(){
 		//Render Objects
-		this.frameBuffer 	= null;
-		this.material		= null;
-		this.shader			= null;
-		this.vao			= null;
+		this.frameBuffer 		= null;
+		this.material			= null;
+		this.shader				= null;
+		this.vao				= null;
 
 		//UBOs for Updating
-		this.UBOModel		= App.cache.getUBO("UBOModel");
-		this.UBOGlobal		= App.cache.getUBO("UBOGlobal");
+		this.UBOModel			= App.cache.getUBO("UBOModel");
+		this.UBOGlobal			= App.cache.getUBO("UBOGlobal");
 		
-		if( App.useArmature ){
-			this.UBOArmature = App.cache.getUBO("UBOArmature");
+		if( (App.useArmature) & 1 == 1 ){
+			this.UBOArmature	= App.cache.getUBO("UBOArmature");
 		}
 
 		//GL Option states
@@ -35,6 +35,12 @@ class Renderer{
 
 		beginFrame(){
 			gl.clear();
+
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			// Reset State checks incase things where used before a frame render.
+			this.material	= null;
+			this.shader		= null;
+			this.vao		= null;
 
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			// Update Global UBO
@@ -122,11 +128,11 @@ class Renderer{
 	////////////////////////////////////////////////////////////////////
 		draw( d ){
 			//...............................
-			//if(this.vao !== d.vao){
-				//this.vao = d.vao;
+			if(this.vao !== d.vao){
+				this.vao = d.vao;
 				gl.ctx.bindVertexArray( d.vao.id );
 				//console.log("Draw", r.entityPtr.name, r.vao.elmCount);
-			//}
+			}
 
 			//...............................
 			if(!d.vao.isInstanced){

@@ -20,12 +20,16 @@ App	.launch( onDraw, true )
 		.add( "shader", "../fungi/shaders/VecWColor.txt" )
 		.add( "shader", "../fungi/shaders/LowPolyPhong.txt" )
 		.add( "shader", "./fungi.armature/shaders/ArmaturePreview.txt" )
+		.add( "shader", "./fungi.armature/shaders/ArmatureSkin.txt" )
+		.add( "shader", "./fungi.armature/shaders/ArmatureSkinPhong.txt" )
 		.start()
 	)
 	.then( ()=> 	App.loadModules( "../../fungi.armature/Armature.js", "../../fungi.armature/ArmaturePreview.js" ) )
 	.then( ()=>		App.loadScene() )
-	.then( ()=>		Xhr.get( "./Vegeta2.gltf", "json", "./Vegeta2.bin", "arraybuffer" ) )
+
+	.then( ()=>		Xhr.get( "./Vegeta.gltf", "json", "./Vegeta.bin", "arraybuffer" ) )
 	.then( ary=>	LoadModel( ary[0], ary[1]) )
+	
 	.then( ()=>		init() )
 	.catch( err=>	console.error( err ) );
 
@@ -51,33 +55,40 @@ function LoadModel( json, bin ){
 	console.log( "LoadModel", json, bin );
 
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	const BONE_CNT = 65;
+	let test = Gltf.getMesh( "Vegeta", json, bin, true );
+	//console.log( JSON.stringify( test ) );
+	console.log( test );
+	
 
 	let primatives = Gltf.getMesh( "Vegeta", json, bin );
 	let p = primatives[ 0 ];
+	console.log( p );
 	
+	/*
 	let vao = Vao.buildStandard( "Vegeta", p.vertices.compLen, p.vertices.data, 
 		(p.normal)?		p.normal.data	: null, 
 		(p.uv)? 		p.uv.data		: null,
 		(p.indices)?	p.indices.data	: null );
+	*/
 	
-	/*
 	let vao = Vao.buildSkinning( "Vegeta", p.vertices.compLen, p.vertices.data,
 		(p.normal)?		p.normal.data	: null, 
 		(p.uv)? 		p.uv.data		: null,
 		(p.indices)?	p.indices.data	: null,
-		BONE_CNT, 
 		p.joints.data,
 		p.weights.data
 	);
-	*/
+	//console.log( vao );
 
 
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	let e = App.$Draw( "Vegeta", vao, "LowPolyPhong", p.mode );
-	//if( p.rotation )	e.Node.setRot( p.rotation );
+	//let e = App.$Draw( "Vegeta", vao, "LowPolyPhong", p.mode );
+	//let e = App.$Draw( "Vegeta", vao, "ArmatureSkin", p.mode );
+	let e = App.$Draw( "Vegeta", vao, "ArmatureSkinPhong", p.mode );
+	
+	if( p.rotation )	e.Node.setRot( p.rotation );
 	if( p.position )	e.Node.setPos( p.position );
-	//if( p.scale ) 		e.Node.setScl( p.scale );
+	if( p.scale ) 		e.Node.setScl( p.scale );
 
 
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -85,9 +96,26 @@ function LoadModel( json, bin ){
 	Armature.$( e );
 
 	loadBones( e, bones );
-	console.log( p );
 
 	ArmaturePreview.$( e, "ArmaturePreview" );
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	let b = Armature.getBone( e.Armature, "Neck" );
+
+	b.Node.local.rot.setAxisAngle( [1,0,0], -45 * Math.PI / 180 );
+	b.Node.isModified = true;
+	e.Armature.isModified = true;
+
+	b = Armature.getBone( e.Armature, "LeftArm" );
+	b.Node.local.rot.setAxisAngle( [1,0,0], 65 * Math.PI / 180 );
+	b.Node.isModified = true;
+
+	b = Armature.getBone( e.Armature, "RightArm" );
+	b.Node.local.rot.setAxisAngle( [1,0,0], 65 * Math.PI / 180 );
+	b.Node.isModified = true;
+
+	//console.log( b );
+	//console.log( JSON.stringify( Armature.serialize( e.Armature ) ) );
 }
 
 function loadBones( e, bones ){

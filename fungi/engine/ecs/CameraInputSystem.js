@@ -168,8 +168,6 @@ class CameraInputSystem extends System{
 
 			this.targetPos.add( v );
 			App.camera.Node.addPos( v );
-
-			console.log( this.targetPos );
 		}
 
 		// Move Camera and Target based on Screen Direction by Delta Change
