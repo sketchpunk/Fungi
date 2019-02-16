@@ -12,8 +12,8 @@ class Renderer{
 		//UBOs for Updating
 		this.UBOModel			= App.cache.getUBO("UBOModel");
 		this.UBOGlobal			= App.cache.getUBO("UBOGlobal");
-		
-		if( (App.useArmature) & 1 == 1 ){
+
+		if( (App.useArmature & 1) == 1 ){
 			this.UBOArmature	= App.cache.getUBO("UBOArmature");
 		}
 

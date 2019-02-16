@@ -235,6 +235,31 @@ class Node{
 			return out;
 		}
 
+		//** Get direction based on the Node's World Model Matrix */
+		static getMatrixDir( e, dir=0, out=null, scale=1 ){
+			out = out || new Vec3();
+
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			let i = 0, mx = e.Node.modelMatrix;
+			switch( dir ){
+				case 0: i = 8; break;	// Forward : 8, 9, 10
+				case 1: i = 0; break;	// Left : 0, 1, 2
+				case 2: i = 4; break;	// Up : 4, 5, 6
+			}
+
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			let x	= mx[ i ],
+				y	= mx[ i+1 ],
+				z	= mx[ i+2 ],
+				len	= 1 / Math.sqrt( x*x + y*y + z*z );
+
+			out[0] = x * len * scale;
+			out[1] = y * len * scale;
+			out[2] = z * len * scale;
+
+			return out;
+		}
+
 		/**
 		 * Get the world rotation of an entity
 		 * @param {Entity} e - Entity you want get the rotation of.
@@ -247,6 +272,35 @@ class Node{
 			if( !e.Node.parent ) return out.copy( e.Node.local.rot );
 
 			console.log( "TODO - Need to implement Node.getWorldRot" );
+
+			return out;
+		}
+
+		static getWorldTransform( e, out = null, incChild=true ){
+			out = out || new Transform();
+
+			if( !e.Node.parent ) return ( incChild )? out.copy( e.Node.local ) : out.reset();
+
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			// Get the heirarchy nodes
+			let n 		= e.Node
+				tree 	= [ ];
+
+			if( incChild ) tree.push( n ); // Incase we do not what to add the requested entity to the world transform.
+
+			while( n.parent != null ){
+				tree.push( n.parent.Node );
+				n = n.parent.Node;
+			}
+
+			// Nothing
+			if( tree.length == 0 ) return out.reset();
+
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			let i = tree.length-1;
+			out.copy( tree[ i ] ); 								// Copy in the Root Parent
+			
+			for( i--; i > -1; i-- ) out.add( tree[ i ].local );	// Add Up All Transforms from root to child.
 
 			return out;
 		}
@@ -268,36 +322,6 @@ class Node{
 			return this;
 		}
 
-		/*
-		static getWorldTransform(e, wPos, wRot, wScale){
-			var ary	= [e.com.Transform],
-				t	= e.com.TransformNode;
-
-			//Get the parent tree of the entity
-			while(t.parent != null){
-				ary.push( t.parent.com.Transform );
-				t = t.parent.com.TransformNode;
-			}
-
-			let last 	= ary.length - 1,
-				tPos	= new Vec3(),
-				tRot 	= new Quat(),
-				tScale 	= new Vec3();
-
-			wPos.copy( ary[last].position );
-			wRot.copy( ary[last].rotation );
-			wScale.copy( ary[last].scale );
-
-			for(let i= last-1; i >= 0; i--){
-				t = ary[i];
-				TransformNode.transform(t.position, t.rotation, t.scale, tPos, tRot, tScale, wPos, wRot, wScale);
-
-				wPos.copy( tPos );
-				wRot.copy( tRot );
-				wScale.copy( tScale);
-			}
-		}
-		*/
 } Components( Node );
 
 

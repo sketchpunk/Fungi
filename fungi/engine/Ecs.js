@@ -249,6 +249,12 @@ class Ecs{
 			return this;
 		}
 
+		getEntityByName( eName ){
+			let e;
+			for( e of this.Entities ) if( e.info.name == eName ) return e;
+			return null;
+		}
+
 
 	//////////////////////////////////////////////////////
 	// SYSTEMS

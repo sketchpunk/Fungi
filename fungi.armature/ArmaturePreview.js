@@ -107,7 +107,7 @@ class ArmaturePreview{
 	/////////////////////////////////////////////////
 	//
 	/////////////////////////////////////////////////
-		static $( e, mat, meshType = 0 ){
+		static $( e, mat="ArmaturePreview", meshType = 0 ){
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			// Check for Dependancies
 			if( !e.Draw || !e.Armature || !e.Node ){

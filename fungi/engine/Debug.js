@@ -14,6 +14,8 @@ class Debug{
 		ePoint	= DVerts.$( App.$Draw( "Debug_Point" ), "Debug_Points", "VecWColor", 0 );
 		eLine	= DVerts.$( App.$Draw( "Debug_Line" ), "Debug_Lines", "VecWColor", 1 );
 		DynamicVertsSystem.init( ecs, priority );
+
+		App.debug = this;
 	}
 
 	////////////////////////////////////////////////////////////////////

@@ -64,6 +64,12 @@ class Downloader{
 			return this;
 		}
 
+		// Easier to pass in group of shaders, so first arg is the handler, then every arg after is just a file to download.
+		addGrp( handler, file ){
+			for( let i=1; i < arguments.length; i++ ) this.add( handler, arguments[ i ] );
+			return this;
+		}
+
 		start(){
 			if( this._promise ){ console.error("Downloader is currently active."); return null; }
 			if( !this._queue.length ){ console.error("Can not start, queue is empty."); return null; }

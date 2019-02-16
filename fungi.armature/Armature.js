@@ -111,7 +111,7 @@ class Armature{
 				//.................................
 				// Update world space transform then save result as bind pose.
 				App.node.updateWorldTransform( eb, false );
-				eb.Bone.initial.copy( eb.Node.world );	// Make a Copy as starting point to reset bones
+				eb.Bone.initial.copy( eb.Node.local );	// Make a Copy as starting point to reset bones
 
 				//.................................
 				// Bind Pose is the initial Hierarchy transform of each bone, inverted.

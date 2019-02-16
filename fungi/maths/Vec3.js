@@ -16,7 +16,12 @@ class Vec3 extends Float32Array{
 	// GETTER - SETTERS
 	////////////////////////////////////////////////////////////////////
 
-		set(x,y,z){ this[0] = x; this[1] = y; this[2] = z; return this;}
+		set( x=null, y=null, z=null ){ 
+			if( x != null ) this[0] = x;
+			if( y != null ) this[1] = y; 
+			if( z != null ) this[2] = z;
+			return this;
+		}
 
 		get x(){ return this[0]; }	set x(val){ this[0] = val; }
 		get y(){ return this[1]; }	set y(val){ this[1] = val; }

@@ -1,5 +1,8 @@
-import Downloader, { HandlerTypes } from "../fungi/engine/lib/Downloader.js";
-import App, { Vao } from "../fungi/engine/App.js";
+import Downloader, { HandlerTypes }	from "../fungi/engine/lib/Downloader.js";
+import App, { Vao } 				from "../fungi/engine/App.js";
+
+import Armature			from "../fungi.armature/Armature.js";
+import ArmaturePreview 	from "../fungi.armature/ArmaturePreview.js";
 
 /** 
  * Handle parsing data from GLTF Json and Bin Files
@@ -34,7 +37,7 @@ class Gltf{
 		* @param {object} json - GLTF Json Object
 		* @param {ArrayBuffer} bin - Array buffer of a bin file
 		* @param {bool} specOnly - Returns only Buffer Spec data related to the Bin File
-		* @public @return {data:TypeArray, min, max, elmCount, compLen, byteStart, byteLen}
+		* @public @return {data:TypeArray, min, max, elmCount, compLen, byteStart, byteLen, arrayType }
 		*/
 		//https://github.com/KhronosGroup/glTF-Tutorials/blob/master/gltfTutorial/gltfTutorial_005_BuffersBufferViewsAccessors.md
 		static parseAccessor( idx, json, bin, specOnly = false ){
@@ -127,8 +130,10 @@ class Gltf{
 			// TArray example from documentation works pretty well for data that is not interleaved.
 			}else{
 				if( specOnly ){
+					out.arrayType 	= TAry.name.substring( 0, TAry.name.length - 5 );
 					out.byteStart 	= ( acc.byteOffset || 0 ) + ( bView.byteOffset || 0 );
 					out.byteLen		= acc.count * compLen * TAry.BYTES_PER_ELEMENT;
+					console.log( bin );
 				}else{
 					let bOffset	= ( acc.byteOffset || 0 ) + ( bView.byteOffset || 0 )
 					out.data = new TAry( bin, bOffset, acc.count * compLen ); // ElementCount * ComponentLength
@@ -324,10 +329,11 @@ class Gltf{
 //###############################################################################
 
 // Hacking the prototype is to be frawned apo, but it makes a better API usage.
-Downloader.prototype.addGLTF = function( name, file, matName, meshNames ){
+Downloader.prototype.addGLTF = function( name, file, matName, meshNames, skinName=null ){
 	this._queue.push( { name, matName, 
-		handler : "gltf", 
+		handler		: "gltf", 
 		meshNames 	: meshNames,
+		skinName	: skinName,
 		files 	: [
 			{ url: file + ".gltf", type:"json" },
 			{ url: file + ".bin", type:"arraybuffer" }
@@ -346,12 +352,13 @@ HandlerTypes.gltf = class{
 
 	static load( dl ){
 		for( let i of dl.gltf ){
-			this.createEntity( i.name, i.matName, i.meshNames,  i.json, i.bin );
+			if( i.skinName )	this.skinnedEntity( i );
+			else				this.meshEntity( i.name, i.matName, i.meshNames, i.json, i.bin );
 		}
 		return true;
 	}
 
-	static createEntity( name, matName, meshNames, json, bin ){
+	static meshEntity( name, matName, meshNames, json, bin ){
 		let aryPrim = Gltf.getMesh( meshNames[0], json, bin, true );
 		let p = aryPrim[ 0 ];
 
@@ -361,6 +368,89 @@ HandlerTypes.gltf = class{
 		if( p.rotation )	e.Node.setRot( p.rotation );
 		if( p.position )	e.Node.setPos( p.position );
 		if( p.scale ) 		e.Node.setScl( p.scale );
+	}
+
+	static skinnedEntity( i ){
+		//console.log( "skinned Entity " );
+		//console.log( Gltf.getMesh( i.meshNames[0], i.json, i.bin, true ) );
+		//return;
+		//let aryPrim = Gltf.getMesh( i.meshNames[0], i.json, i.bin );
+		let aryPrim = Gltf.getMesh( i.meshNames[0], i.json, i.bin, true );
+		let p = aryPrim[ 0 ];
+
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		// Load up Mesh Data
+/*		
+		let vao = Vao.buildSkinning( i.name + "_vao", 
+			p.vertices.compLen, 
+			p.vertices.data,
+			(p.normal)?		p.normal.data	: null, 
+			(p.uv)? 		p.uv.data		: null,
+			(p.indices)?	p.indices.data	: null,
+			p.joints.data,
+			p.weights.data
+		);
+*/		
+		let vao = Vao.buildFromBin( i.meshNames[0], p, i.bin );
+
+		let e = App.$Draw( i.name, vao, i.matName, p.mode );		
+		if( p.rotation )	e.Node.setRot( p.rotation );
+		if( p.position )	e.Node.setPos( p.position );
+		if( p.scale ) 		e.Node.setScl( p.scale );
+
+		//e.info.active = false;
+
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		Armature.$( e );
+
+		let bones = Gltf.getSkin( i.skinName, i.json );
+		this.loadBones( e, bones );
+
+		ArmaturePreview.$( e, "ArmaturePreview" );
+	}
+
+	static loadBones( e, bones ){
+		let arm = e.Armature;	
+
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		// Create Bones
+		let i, b, ab, bLen = bones.length;
+		for( i=0; i < bLen; i++ ){
+			b	= bones[i];
+			ab	= Armature.addBone( arm, b.name, 1, null, b.idx );
+
+			if( b.rot ) ab.Node.setRot( b.rot );
+			if( b.pos ) ab.Node.setPos( b.pos );
+			if( b.scl ) ab.Node.setScl( b.scl );
+		}
+
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		// Setting up Parent-Child
+		for( i=0; i < bLen; i++ ){
+			b	= bones[ i ];
+			ab	= arm.bones[ b.idx ];
+
+			// Can not have levels updated automaticly, Callstack limits get hit
+			// Instead, using the Level from bones to manually set it.
+			if( b.p_idx != null ) App.node.addChild( arm.bones[ b.p_idx ], ab, false );
+
+			// Manual set node level, Must do it after addChild, else it will get overwritten.
+			ab.Node.level = b.lvl; 
+		}
+		Armature.finalize( e );	//This updates World Transforms
+
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		// With the WorldTransforms update, Calculate the Length of each bone.
+		for( i=0; i < bLen; i++ ){
+			ab	= arm.bones[ i ];
+			if( ab.Node.children.length == 0 ){
+				ab.Bone.length = 0.03;
+				continue;
+			}
+
+			b = ab.Node.children[0].Node.world;					// First Child's World Space Transform
+			ab.Bone.length = ab.Node.world.pos.length( b.pos );	// Distance from Parent to Child
+		}
 	}
 
 }; HandlerTypes.gltf.priority = 100;

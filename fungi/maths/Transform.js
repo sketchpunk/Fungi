@@ -3,10 +3,16 @@ import Quat from "./Quat.js";
 
 
 class Transform{
-	constructor(){
+	constructor( t ){
 		this.rot	= new Quat();
 		this.pos	= new Vec3();
 		this.scl 	= new Vec3( 1, 1, 1 );
+
+		if( t ){
+			this.rot.copy( t.rot );
+			this.pos.copy( t.pos );
+			this.scl.copy( t.scl );
+		}
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -42,7 +48,7 @@ class Transform{
 			//POSITION - parent.position + ( parent.rotation * ( parent.scale * child.position ) )
 			let v = new Vec3();
 			Vec3.mul( this.scl, cp, v ); // parent.scale * child.position;
-			this.position.add( Vec3.transformQuat( v, this.rot, v ) );
+			this.pos.add( Vec3.transformQuat( v, this.rot, v ) );
 
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			// SCALE - parent.scale * child.scale
@@ -55,6 +61,13 @@ class Transform{
 			return this;
 		}
 
+		clear(){
+			this.pos.set( 0, 0, 0 );
+			this.scl.set( 1, 1, 1 );
+			this.rot.reset();
+			return this;
+		}
+
 		transformVec( v, out = null ){
 			out = out || v;
 			//GLSL - vecQuatRotation(model.rotation, a_position.xyz * model.scale) + model.position;
@@ -63,10 +76,18 @@ class Transform{
 			return out;
 		}
 
+		dispose(){
+			delete this.pos;
+			delete this.rot;
+			delete this.scl;
+		}
+
 	//////////////////////////////////////////////////////////////////////
 	// STATIC FUNCTIONS
 	//////////////////////////////////////////////////////////////////////
 		static add( tp, tc, tOut ){
+			tOut = tOut || new Transform();
+
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			//POSITION - parent.position + ( parent.rotation * ( parent.scale * child.position ) )
 			let v = new Vec3();

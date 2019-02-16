@@ -103,8 +103,8 @@ class Quaternion extends Float32Array{
 			return out;
 		}
 
-		mul(q, out){ return Quaternion.mul( out || this, this, q ); }	 	// THIS * Q
-		pmul(q, out){ return Quaternion.mul( out || this , q, this ); }	// Q * THIS
+		mul( q, out=null ){ return Quaternion.mul( this, q, out || this ); }	// THIS * Q
+		pmul( q, out=null ){ return Quaternion.mul( q, this, out || this ); }	// Q * THIS
 
 		//AXIS MUST BE NORMALIZED.
 		//mult(this, setAxisAngle(axis, angle) )
@@ -297,7 +297,7 @@ class Quaternion extends Float32Array{
 			return out;
 		}
 
-		//https://github.com/toji/gl-matrix/blob/master/src/gl-matrix/quat.js#L305
+		// https://github.com/toji/gl-matrix/blob/master/src/gl-matrix/quat.js#L305
 		static fromMat3(m, out){
 			// Algorithm in Ken Shoemake's article in 1987 SIGGRAPH course notes
 			// article "Quaternion Calculus and Fast Animation".
@@ -330,6 +330,43 @@ class Quaternion extends Float32Array{
 				out[j]	= ( m[j*3+i] + m[i*3+j] ) * fRoot;
 				out[k]	= ( m[k*3+i] + m[i*3+k] ) * fRoot;
 			}
+			return out;
+		}
+
+		// https://github.com/toji/gl-matrix/blob/master/src/mat4.js
+		// Algorithm taken from http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/index.htm
+		static fromMat4(mat, out){
+			out = out || new Quaternion();
+
+			let trace = mat[0] + mat[5] + mat[10];
+			let S = 0;
+
+			if (trace > 0) {
+				S = Math.sqrt(trace + 1.0) * 2;
+				out[3] = 0.25 * S;
+				out[0] = (mat[6] - mat[9]) / S;
+				out[1] = (mat[8] - mat[2]) / S;
+				out[2] = (mat[1] - mat[4]) / S;
+			} else if ((mat[0] > mat[5]) && (mat[0] > mat[10])) {
+				S = Math.sqrt(1.0 + mat[0] - mat[5] - mat[10]) * 2;
+				out[3] = (mat[6] - mat[9]) / S;
+				out[0] = 0.25 * S;
+				out[1] = (mat[1] + mat[4]) / S;
+				out[2] = (mat[8] + mat[2]) / S;
+			} else if (mat[5] > mat[10]) {
+				S = Math.sqrt(1.0 + mat[5] - mat[0] - mat[10]) * 2;
+				out[3] = (mat[8] - mat[2]) / S;
+				out[0] = (mat[1] + mat[4]) / S;
+				out[1] = 0.25 * S;
+				out[2] = (mat[6] + mat[9]) / S;
+			} else {
+				S = Math.sqrt(1.0 + mat[10] - mat[0] - mat[5]) * 2;
+				out[3] = (mat[1] - mat[4]) / S;
+				out[0] = (mat[8] + mat[2]) / S;
+				out[1] = (mat[6] + mat[9]) / S;
+				out[2] = 0.25 * S;
+			}
+
 			return out;
 		}
 

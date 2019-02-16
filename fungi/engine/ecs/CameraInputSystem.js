@@ -106,8 +106,27 @@ class CameraInputSystem extends System{
 	}
 
 	/////////////////////////////////////////////////////////////////////////
+	// Setters
+	/////////////////////////////////////////////////////////////////////////
+		setTarget( x, y, z, dis=null ){
+			this.targetPos.set( x, y, z );
+			this.initPosition.copy( this.targetPos );
+			if( dis) this.targetDistance = dis;
+			return this;
+		}
+
+		setOrbit( orbX=null, orbY=null, tDis=null ){
+			if( tDis)	this.targetDistance = tDis;
+			if( orbX )	orbX = Maths.toRad( orbX );
+			if( orbY )	orbY = Maths.toRad( orbY );
+
+			this.orbit( orbX, orbY );
+			return this;
+		}
+
+	/////////////////////////////////////////////////////////////////////////
 	// Camera Controls
-	////////////////////////////////////////////////////////////////////////
+	/////////////////////////////////////////////////////////////////////////
 		
 		// Move on the XZ plane by Delta
 		panXZ( dx=null, dz=null ){

@@ -205,41 +205,58 @@ class Vao{
 		// Build a VAO from ArrayBuffer, like a Gltf Bin File.
 		// Spec holds the buffers stored in the bin: bufferName:{ byteStart, byteLen, ElmCount, CompLength }
 		static buildFromBin( name, spec, bin ){
-			if( bin instanceof ArrayBuffer ) bin = new DataView( bin );
-
-			let vao = new Vao();
+			let dv 	= ( bin instanceof ArrayBuffer )? new DataView( bin ) : bin, // To Bind to GL Buffers, need DataView but to bind to TypeArrays need ArrayBuffer
+				vao	= new Vao();
 
 			Vao.bind( vao );
 			vao.buf[ BUF_V_NAME ] = Buffer.fromBin( gl.ctx.ARRAY_BUFFER, 
-				bin, spec.vertices.byteStart, spec.vertices.byteLen,
+				dv, spec.vertices.byteStart, spec.vertices.byteLen,
 				true, gl.ctx.FLOAT, Shader.POSITION_LOC, spec.vertices.compLen );
 
-
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			if( spec.normal ){
 				vao.buf[ BUF_N_NAME ] = Buffer.fromBin( gl.ctx.ARRAY_BUFFER, 
-					bin, spec.normal.byteStart, spec.normal.byteLen,
+					dv, spec.normal.byteStart, spec.normal.byteLen,
 					true, gl.ctx.FLOAT, Shader.NORMAL_LOC, spec.normal.compLen );
 			}
 
 			if( spec.uv ){
 				vao.buf[ BUF_UV_NAME ] = Buffer.fromBin( gl.ctx.ARRAY_BUFFER, 
-					bin, spec.uv.byteStart, spec.uv.byteLen,
+					dv, spec.uv.byteStart, spec.uv.byteLen,
 					true, gl.ctx.FLOAT, Shader.UV_LOC, spec.uv.compLen );
 			}
 
 			if( spec.indices ){
 				vao.isIndexed = true;
 				vao.buf[ BUF_IDX_NAME ] = Buffer.fromBin( gl.ctx.ELEMENT_ARRAY_BUFFER, 
-					bin, spec.indices.byteStart, spec.indices.byteLen, true );
+					dv, spec.indices.byteStart, spec.indices.byteLen, true );
 			}
 
-			//if( boneLimit > 0 ){
-				//Vao.floatBuffer( vao, BUF_BI_NAME, aryBones,	Shader.BONE_IDX_LOC,	boneLimit );
-				//Vao.floatBuffer( vao, BUF_BW_NAME, aryWeight,	Shader.BONE_WEIGHT_LOC,	boneLimit );
-			//}
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			if( spec.joints && spec.weights ){
+				// WEIGHTS
+				vao.buf[ BUF_BW_NAME ] = Buffer.fromBin( gl.ctx.ARRAY_BUFFER, 
+					dv, spec.weights.byteStart, spec.weights.byteLen,
+					true, gl.ctx.FLOAT, Shader.BONE_WEIGHT_LOC, spec.weights.compLen );
 
+				// JOINT INDICES
+				// Can make this work BUT need to parse joints out of BIN as a Uint16 array, then pass
+				// that to Buffer.array instead of fromBin. Javascript knows well enough how to convert
+				// Uint16Array to Float32Array before saving it to the GPU. This is an issue because
+				// there does not seem to be a way to use Uint16 Buffers other then Index. Only option is
+				// to use float buffers, so this conversion is needed.
+				if( spec.joints.arrayType == "Uint16" ){
+					// elmCount * compLen = Total Uints ( not total bytes )
+					let uiAry = new Uint16Array( bin, spec.joints.byteStart, spec.joints.elmCount * spec.joints.compLen );
+					Vao.floatBuffer( vao, BUF_BI_NAME, uiAry, Shader.BONE_IDX_LOC, spec.joints.compLen );
+				}else{
+					console.error("VAO.buildFromBin : Joints are not the type Uint16 ");
+					return vao;
+				}
+			}
+
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			Vao.finalize( vao, name, ((spec.indices)? spec.indices.elmCount : spec.vertices.elmCount) );
-
 			return vao;
 		}
 

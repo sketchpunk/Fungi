@@ -26,7 +26,7 @@ class DynamicVerts{
 			let vao = Vao.buildEmpty( name, vecCompLen, startSize );
 
 			e.Draw.add( vao, mat, mode );
-			e.DynamicVerts.buf		= DynamicBuffer.newFloat( vao.buf.vertex, vecCompLen, startSize );
+			e.DynamicVerts.buf		= DynamicBuffer.newFloat( vao.buf.vertices, vecCompLen, startSize );
 			e.DynamicVerts.itemIdx	= e.Draw.items.length - 1;
 
 			return e;

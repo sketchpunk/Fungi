@@ -30,7 +30,7 @@ class Maths{
 			return x*x*(3-2*x);
 		}
 		
-		// Loops between 0 and Len, once over len, starts over again at 0
+		// Loops between 0 and Len, once over len, starts over again at 0, like a sawtooth wave
 		static repeat(t, len){ return Maths.clamp(t - Math.floor( t / len ) * len, 0, len); }
 
 		// Loops back and forth between 0 and len, it functions like a triangle wave.
@@ -39,11 +39,23 @@ class Maths{
 			return len - Math.abs( t - len );
 		}
 
-
 		static gradient010( t ){
 			var tt = t * 2;
 			return ( tt > 1 )? 1 - (tt - 1) : tt;
 		}
+
+
+	////////////////////////////////////////////////////////////////////
+	// TRIG
+	////////////////////////////////////////////////////////////////////
+		// SSS : Solve only knowing sides Side-Side-Side
+		// https://www.mathsisfun.com/algebra/trig-solving-sss-triangles.html
+		static lawcos_sss( aLen, bLen, cLen ){
+			// Law of Cosines - SSS : cos(C) = (a^2 + b^2 - c^2) / 2ab
+			// The Angle between A and B with C being the opposite length of the angle.
+			return Math.acos( (aLen*aLen + bLen*bLen - cLen*cLen) / (2 * aLen * bLen) );
+		}
+
 
 	////////////////////////////////////////////////////////////////////
 	// RANDOM NUMBERS
