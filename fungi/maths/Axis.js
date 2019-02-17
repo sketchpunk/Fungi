@@ -1,4 +1,5 @@
 import Vec3 from "./Vec3.js";
+import Quat from "./Quat.js";
 
 /*
 3x3 Rotation Matrix
@@ -21,7 +22,6 @@ class Axis{
 	////////////////////////////////////////////////////////////////////
 	// SETTERS
 	////////////////////////////////////////////////////////////////////
-		
 		//Passing in Vectors.
 		set( x, y, z, doNormalize = false ){
 			this.x.copy( x );
@@ -33,12 +33,11 @@ class Axis{
 				this.y.normalize();
 				this.z.normalize();
 			}
-
-			return true;
+			return this;
 		}
 
 		//Create axis based on a Quaternion
-		setQuat( q ){
+		fromQuat( q ){
 			// Same code for Quat to Matrix 3 conversion
 			let x = q[0], y = q[1], z = q[2], w = q[3],
 				x2 = x + x,
@@ -60,7 +59,13 @@ class Axis{
 			return this;
 		}
 
+		toQuat( out ){
+			out = out || new Quat();
+			return Quat.fromAxis( this.x, this.y, this.z, out );
+		}
+
 		//Create an axis based on a looking direction
+		/*
 		lookAt( v ){
 			//If the vector is pretty much forward, just do set default axis.
 			var test = Vec3.nearZero( v );
@@ -82,6 +87,16 @@ class Axis{
 			Vec3.cross(this.z, this.y, this.x).normalize();
 			return this;
 		}
+		*/
+
+		//
+		fromDir( pFwd, pUp ){
+			this.z.copy( pFwd ).normalize();
+			Vec3.cross( pUp, this.z, this.x ).normalize();
+			Vec3.cross( this.z, this.x, this.y ).normalize();
+			return this;
+		}
+
 
 	////////////////////////////////////////////////////////////////////
 	//  
@@ -103,21 +118,33 @@ class Axis{
 	////////////////////////////////////////////////////////////////////
 	// STATIC
 	////////////////////////////////////////////////////////////////////
-		/*
-		static debug(DVao, e, axis, origin=null, scl=1.0){
+		
+		static debug( o, axis, origin=null, scl=1.0 ){
 			origin = origin || Vec3.ZERO;
 
 			var v = new Vec3();
-			v.copy(axis.z).scale( scl ).add(origin);
-			DVao.vecLine(e, origin, v, 0);
+			v.copy( axis.z ).scale( scl ).add( origin );
+			o.line( origin, v, 6 );
 
-			v.copy(axis.y).scale( scl ).add(origin);
-			DVao.vecLine(e, origin, v, 2);
+			v.copy( axis.y ).scale( scl ).add( origin );
+			o.line( origin, v, 2 );
 
-			v.copy(axis.x).scale( scl ).add(origin);
-			DVao.vecLine(e, origin, v, 6);
+			v.copy( axis.x ).scale( scl ).add( origin );
+			o.line(origin, v, 0);
 		}
-		*/
 }
+
+
+/*
+	//X and Y axis need to be normalized vectors, 90 degrees of eachother.
+		static planeEllipse(vecCenter, xAxis, yAxis, angle, xRadius, yRadius, out){
+			let sin = Math.sin(angle),
+				cos = Math.cos(angle);
+			out[0] = vecCenter[0] + xRadius * cos * xAxis[0] + yRadius * sin * yAxis[0];
+			out[1] = vecCenter[1] + xRadius * cos * xAxis[1] + yRadius * sin * yAxis[1];
+			out[2] = vecCenter[2] + xRadius * cos * xAxis[2] + yRadius * sin * yAxis[2];
+			return out;
+		}
+*/
 
 export default Axis;

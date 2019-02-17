@@ -137,10 +137,10 @@ class Quaternion extends Float32Array{
 				a3	= this[3],
 				dot	= a0*a0 + a1*a1 + a2*a2 + a3*a3;
 			
-			// TODO: Would be faster to return [0,0,0,0] immediately if dot == 0
+			// Would be faster to return [0,0,0,0] immediately if dot == 0
 			if(dot == 0){ out[0] = out[1] = out[2] = out[3] = 0; }
 
-			let invDot = dot ? 1.0/dot : 0;
+			let invDot = 1.0 / dot; // let invDot = dot ? 1.0/dot : 0;
 			out		=  out || this;
 			out[0]	= -a0 * invDot;
 			out[1]	= -a1 * invDot;
@@ -239,7 +239,7 @@ class Quaternion extends Float32Array{
 		    return out;
 		}
 
-		static axisAngle(axis, angle, out=null){ //AXIS MUST BE NORMALIZED.
+		static axisAngle( axis, angle, out=null){ //AXIS MUST BE NORMALIZED.
 			let halfAngle	= angle * .5,
 				s			= Math.sin(halfAngle);
 
@@ -532,18 +532,18 @@ class Quaternion extends Float32Array{
 		}
 
 		//https://github.com/toji/gl-matrix/blob/master/src/gl-matrix/quat.js
-		static invert(a,out) {
+		static invert(a,out){
+			out		= out || new Quaternion();
 			let a0	= a[0],
 				a1	= a[1],
 				a2	= a[2],
 				a3	= a[3],
 				dot	= a0*a0 + a1*a1 + a2*a2 + a3*a3;
 			
-			// TODO: Would be faster to return [0,0,0,0] immediately if dot == 0
+			// Would be faster to return [0,0,0,0] immediately if dot == 0
 			if(dot == 0){ out[0] = out[1] = out[2] = out[3] = 0; }
 
-			let invDot = dot ? 1.0/dot : 0;
-			out		= out || new Quaternion();
+			let invDot = 1.0 / dot; // let invDot = dot ? 1.0/dot : 0;
 			out[0]	= -a0*invDot;
 			out[1]	= -a1*invDot;
 			out[2]	= -a2*invDot;

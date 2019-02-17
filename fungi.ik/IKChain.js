@@ -2,7 +2,94 @@ import Transform 	from "../fungi/maths/Transform.js";
 import Vec3			from "../fungi/maths/Vec3.js";
 import Armature		from "../fungi.armature/Armature.js";
 
+import App from "../fungi/engine/App.js"; //Todo just for debug, remove.
 
+
+class IKChain{
+	constructor( arm, bNames ){
+		this.arm	= arm;			// Reference to Armature Object
+		this.idx	= new Array();	// List of Index values to the armature Bones that make up a chain
+		this.lens 	= new Array();	// Cache Bone Lengths to make things easier for IK.
+		this.cnt	= 0;			// How many Bones in the chain
+		this.len 	= 0;			// Chain Length
+		this.lenSqr	= 0;			// Chain Length Squared, Cached for Checks without SQRT
+		
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		// Get The Bone Indices and
+		let e, n;
+		for( n of bNames ){
+			e = Armature.getBone( arm, n );
+			if( !e ){ console.error("Bone not found: ", n ); return; }
+
+			this.len += e.Bone.length;
+			this.idx.push( e.Bone.order );
+			this.lens.push( e.Bone.length );
+		}
+
+		this.lenSqr	= this.len * this.len;
+		this.cnt	= this.idx.length;
+	}
+
+	/////////////////////////////////////////////////////////////////////
+	// GETTERS - SETTERS
+	/////////////////////////////////////////////////////////////////////
+		getBone( i ){ return this.arm.bones[ this.idx[ i ] ]; }
+
+		updateBone( idx, rot=null, pos=null, scl=null ){
+			let n = this.arm.bones[ this.idx[ idx ] ].Node;
+
+			n.local.set( rot, pos, scl );
+			n.isModified = true;
+			return this;
+		}
+
+
+	/////////////////////////////////////////////////////////////////////
+	// METHODS
+	/////////////////////////////////////////////////////////////////////
+		resetBones( ia, ib=null, pose=null ){
+			if( ib == null ) ib = this.cnt-1;
+
+			let i, ary = this.arm.bones;
+			pose = pose || this;
+
+			for( ia; ia <= ib; ia++ ){
+				i = this.idx[ ia ];
+				pose.updateBone( i, ary[ i ].Bone.initial.rot );
+			}
+
+			return this;
+		}
+
+
+	/////////////////////////////////////////////////////////////////////
+	// STATIC FUNCS
+	/////////////////////////////////////////////////////////////////////
+		static debugAxis( d, c, pose=null, wtRoot=null, scl=0.5 ){
+			let wt = new Transform( wtRoot );
+			d.point( wt.pos, 6 );
+
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			// Calc all World Transform for each bone in the chain.
+			let i, lt;
+			for( i of c.idx ){
+				lt = ( pose )?	pose.bones[ i ].local :
+								c.arm.bones[ i ].Node.local;
+				wt.add( lt );
+				d.point( wt.pos, 6 ).quat( wt.rot, wt.pos, scl );
+			}
+
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			// The tip of the last bone has no transform data,
+			// so use the last bone plus Bone Length as the position.
+			let bLen = c.lens[ c.idx[ c.cnt-1 ] ];
+			wt.add( lt.rot, [ 0, bLen, 0 ], lt.scl );
+			d.point( wt.pos, 2 );
+		}
+}
+
+
+/*
 //#####################################################################
 class IKChain{
 	constructor( arm, bNames ){
@@ -19,6 +106,7 @@ class IKChain{
 		this.targetPos		= new Vec3();
 		this.targetDir		= new Vec3();
 		this.targetLenStr	= 0;
+		this.targetBendDir	= new Vec3();
 		
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		// Get The Bone Indices and
@@ -39,12 +127,13 @@ class IKChain{
 	/////////////////////////////////////////////////////////////////////
 	// SET IK TARGET
 	/////////////////////////////////////////////////////////////////////
-		targetPoint( pos, tran=null ){
+		targetPoint( pos, wt=null ){
 			this.targetPos.copy( pos );										// Copy Position
 
-			if( tran )	this.world.copy( tran );							// Starting Transform
+			if( wt )	this.world.copy( wt );								// Starting Transform
 			else		this.world.clear();
 
+			//PROBLEM TODO, this might be an Issue, May need the POSE Transform, not Armature
 			Transform.add(	this.world,										// Add Trasform and Bone Local to get World position
 							this.getBone( 0 ).Node.local,
 							this.transform );
@@ -121,7 +210,7 @@ class IKChain{
 			return this;
 		}
 }
-
+*/
 
 //#####################################################################
 export default IKChain;

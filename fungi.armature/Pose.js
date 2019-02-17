@@ -20,21 +20,11 @@ class Pose{
 	/////////////////////////////////////////////////////////////////////
 		updateBone( idx, rot=null, pos=null, scl=null ){
 			let b = this.bones[ idx ];
-			
-			if( rot ){
-				b.local.rot.copy( rot );
-				b.changeState |= Pose.ROT;
-			}
 
-			if( pos ){
-				b.local.pos.copy( pos );
-				b.changeState |= Pose.POS;
-			}
-
-			if( scl ){
-				b.local.scl.copy( pos );
-				b.changeState |= Pose.SCL;
-			}
+			b.local.set( rot, pos, scl );
+			if( rot ) b.changeState |= Pose.ROT;
+			if( pos ) b.changeState |= Pose.POS;
+			if( scl ) b.changeState |= Pose.SCL;
 
 			return this;
 		}
