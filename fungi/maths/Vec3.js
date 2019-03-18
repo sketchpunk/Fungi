@@ -57,6 +57,8 @@ class Vec3 extends Float32Array{
 			return x*x + y*y + z*z;
 		}
 
+		dot( v ){ return this[0] * v[0] + this[1] * v[1] + this[2] * v[2]; }
+
 
 	////////////////////////////////////////////////////////////////////
 	// INSTANCE OPERATORS
@@ -308,6 +310,11 @@ class Vec3 extends Float32Array{
 			return out;
 		}
 
+		static angle( v0, v1 ){
+			let theta = this.dot( v0, v1 ) / ( Math.sqrt( v0.lengthSqr() * v1.lengthSqr() ) );
+			return Math.acos( Math.max( -1, Math.min( 1, theta ) ) ); // clamp ( t, -1, 1 )
+		}
+
 		//https://github.com/toji/gl-matrix/blob/master/src/gl-matrix/vec3.js#L514
 		static transformQuat(a, q, out) {
 			// benchmarks: https://jsperf.com/quaternion-transform-vec3-implementations-fixed
@@ -396,13 +403,13 @@ class Vec3 extends Float32Array{
 
 //########################################################################
 // CONSTANTS
-Vec3.UP			= [0,1,0];
-Vec3.DOWN		= [0,-1,0];
-Vec3.LEFT		= [1,0,0];
-Vec3.RIGHT		= [-1,0,0];
-Vec3.FORWARD	= [0,0,1];
-Vec3.BACK		= [0,0,-1];
-Vec3.ZERO		= [0,0,0];
+Vec3.UP			= new Vec3(  0,  1,  0 );
+Vec3.DOWN		= new Vec3(  0, -1,  0 );
+Vec3.LEFT		= new Vec3(  1,  0,  0 );
+Vec3.RIGHT		= new Vec3( -1,  0,  0 );
+Vec3.FORWARD	= new Vec3(  0,  0,  1 );
+Vec3.BACK		= new Vec3(  0,  0, -1 );
+Vec3.ZERO		= new Vec3(  0,  0,  0 );
 
 
 //########################################################################

@@ -11,6 +11,7 @@
 <vertex>
 	#version 300 es
 	layout(location=0)	in vec4		a_position;
+	layout(location=3)	in vec3		a_color;
 
 	layout(location=8) 	in vec4		a_boneRotation; //Rotation
 	layout(location=9) 	in vec3		a_bonePosition; //Position
@@ -53,12 +54,13 @@
 
 	void main(void){
 		//......................................
-		gl_PointSize = 5.0;
-		
-		if(a_position.w == 0.0)			v_color = vec3(1.0,0.0,0.0);
-		else if(a_position.w == 1.0)	v_color = vec3(0.0,1.0,0.0);
-		else if(a_position.w == 2.0)	v_color = vec3(0.0,0.0,1.0);
-		else 							v_color = vec3(0.6,0.6,0.6);
+		gl_PointSize	= 5.0;
+		v_color			= a_color;
+
+		//if(a_position.w == 0.0)		v_color = vec3(1.0,0.0,0.0);
+		//else if(a_position.w == 1.0)	v_color = vec3(0.0,1.0,0.0);
+		//else if(a_position.w == 2.0)	v_color = vec3(0.0,0.0,1.0);
+		//else 							v_color = vec3(0.6,0.6,0.6);
 
 		//......................................
 		vec3 pos = a_position.xyz;

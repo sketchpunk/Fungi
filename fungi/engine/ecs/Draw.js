@@ -5,8 +5,9 @@ import Cache	from "../../core/Cache.js";
 //#########################################################################
 class Draw{
 	constructor(){ 
-		this.items	= [];
-		this.onDraw	= null;
+		this.items		= [];
+		this.onDraw		= null;
+		this.priority 	= 500;
 	}
 
 	add( vao, material=null, mode=4 ){ // 4 == gl.TRIANGLE
@@ -34,7 +35,7 @@ class DrawSystem extends System{
 	}
 
 	update( ecs ){
-		let i, e, d, ary = ecs.queryEntities( QUERY_COM );
+		let i, e, d, ary = ecs.queryEntities( QUERY_COM, thSort );
 
 		this.render.beginFrame(); // Prepare to start rendering new frame
 
@@ -64,6 +65,11 @@ class DrawSystem extends System{
 
 		//console.log( ary );
 	}
+}
+
+function thSort( a, b ){
+	return (a.Draw.priority == b.Draw.priority) ? 0 :
+			(a.Draw.priority < b.Draw.priority) ? -1 : 1;
 }
 
 

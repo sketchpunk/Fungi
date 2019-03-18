@@ -11,10 +11,19 @@ import { Perlin }			from "../lib/Noise1D.js";
 
 import IKChain from "./IKChain.js";
 
+import Gltf		from "../fungi.misc/GLTF.js";
+
 //#############################################################################
-App.useArmature = 2;
+App.useArmature = 3;
 App	.launch( onDraw, true )
-	.then( dl	=> dl.addGrp( "shader", "../fungi/shaders/VecWColor.txt", "../fungi.armature/shaders/ArmaturePreview.txt" ).start() )
+	.then( dl	=> dl
+		.addGrp( "shader", 
+			"../fungi/shaders/VecWColor.txt", 
+			"../fungi.armature/shaders/ArmaturePreview.txt", 
+			"../fungi.armature/shaders/ArmatureSkinPhong.txt",
+		)
+		.addGLTF( "Mesh01", "../Vegeta", "ArmatureSkinPhong", ["Vegeta"], "Armature", true )
+		.start() )
 	.then( ()	=> App.loadScene( true, true ) )
 	.then( ()	=> init() )
 	.catch( err	=> console.error( err ) );
@@ -31,25 +40,238 @@ function onDraw(dt, ss){
 }
 
 function init(){
-	App.cameraCtrl.setTarget( 0, 0.75, 0 ).setOrbit( -35, 15, 2.9 );
+	App.cameraCtrl.setTarget( 0, 1.15, 0 ).setOrbit( -35, 35, 1.1 );
+	App.cache.getMaterial( "VecWColor" ).options.depthTest = false;
 
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	let json = { 	
 		leg_l: [ "LeftUpLeg","LeftLeg" ],
 		leg_r: [ "RightUpLeg","RightLeg" ],
+		arm_l: [ "LeftArm","LeftForeArm" ],
+		arm_r: [ "RightArm","RightForeArm" ],
+		hand_l: "LeftHand",
+		hand_r: "RightHand",
 		hip:"Hips"
 	};
 
-	gEntity = ArmTest.previewHuman();
-	gRig 	= new IKRig_Human( gEntity, json );
-	gDance	= new IKRig_Human_Dance( gRig );
+	//gEntity = ArmTest.previewHuman();
+	//gRig 	= new IKRig_Human( gEntity, json );
+	//TPose.human_rig( gRig );
 
-	gDance.update( 0.03, 0.1 );
+	let e = App.ecs.getEntityByName( "Mesh01" );
+	gRig 	= new IKRig_Human( e, json );
+	TPose.human_rig( gRig );
+
+	let n = e.Armature.bones[ 0 ].Node;
+	n.local.pos.z = -0.5;
+	n.local.pos.x = -0.5;
+	n.isModified = true;
+
+	//let phip = gRig.getPHip();
+	//phip.local.pos.x = 2;
+	//phip.changeState = 2;
+	//console.log( phip );
+
+
+	//gDance	= new IKRig_Human_Dance( gRig );
+
+	//gDance.update( 0.03, 0.1 );
+
+	IKTest( gRig );
+	//TPose();
+	
 
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	App.loop.start();
 	//onDraw(0.01, 0.1 );
 }
+
+const QUAT_FWD2UP = [0.7071067690849304, 0, 0, 0.7071067690849304];
+class TPose{
+	static human_rig( rig ){
+		this.align_chain( rig.arm_l, Vec3.LEFT );
+		this.align_chain( rig.arm_r, Vec3.RIGHT );
+		this.single_bone( rig.getEBone( rig.hand_l ), Vec3.LEFT );
+		this.single_bone( rig.getEBone( rig.hand_r ), Vec3.RIGHT );
+
+		this.align_chain( rig.leg_l, Vec3.DOWN );
+		this.align_chain( rig.leg_r, Vec3.DOWN );
+	}
+
+	static align_chain( chain, upDir ){
+		let b, lt,
+			rot	= new Quat(),
+			pt	= new Transform(),
+			bt	= new Transform();
+
+		chain.bindt = new Array();
+		//chain.bindw = new Array();
+
+		b = chain.getBone( 0 );						// Start with the chain root bone.
+		App.node.getWorldTransform( b, pt, false );	// Get the starting parent world transform
+
+		let i, iEnd = chain.cnt - 1;
+		for(i=0; i <= iEnd; i++){
+			lt	= b.Bone.bind;						// Original Bind Transform
+			Transform.add( pt, lt, bt );			// Create World Transform for Bone
+
+			this.align_bone( pt, bt, upDir, rot );	// Align Bone to Line
+			b.Node.setRot( rot );					// Set Rotation
+
+			chain.bindt.push( new Transform().set( rot, lt.pos, lt.scl ) );
+			//chain.bindw.push( new Transform( pt ).add( rot, lt.pos, lt.scl ) );
+
+			if( i != iEnd ){
+				pt.add( rot, lt.pos, lt.scl );		// Add bone transform to parent for next loop
+				b = chain.getBone( i+1 );			// Get Bone Reference for next loop
+			}
+		}
+	}
+
+	static align_bone( pWorld, bWorld, u, out ){
+		// Create the final Quaternion
+		// The UP direction is passed in, The final Axis Must match the up
+		// Then we take the bone's forward to calculate a new LEFT direction
+		// With the proper left, we reset the forward using UP and LEFT to make
+		// a usable set of axises to create a rotation from.	
+		let f = Vec3.transformQuat( Vec3.FORWARD, bWorld.rot ),
+			l = Vec3.cross( u, f ).normalize();
+		Vec3.cross( l, u, f ).normalize();
+
+		// With the rotation created, we need the Difference,
+		// to do it we need to subtract the parent rotation 
+		// by PreMul by its inverse.
+		Quat.fromAxis( l, u, f , out )
+			.pmul( Quat.invert( pWorld.rot ) );
+
+		/* 
+		App.debug
+			.line( bWorld.pos, Vec3.add( bWorld.pos, u ), 2 )
+			.line( bWorld.pos, Vec3.add( bWorld.pos, f ), 1 )
+			.line( bWorld.pos, Vec3.add( bWorld.pos, l ), 0 ); */
+	}
+
+	static single_bone( b, upDir ){
+		let rot	= new Quat(),
+			pt	= new Transform(),
+			bt	= new Transform();
+
+		App.node.getWorldTransform( b, pt, false );
+		Transform.add( pt, b.Bone.bind, bt );
+		this.align_bone( pt, bt, upDir, rot );
+		b.Node.setRot( rot );
+	}
+}
+
+
+function IKTest( rig ){
+	// Target Point
+	//let v = new Vec3( 0.3, 1.2, 0.3 );
+	//let v = new Vec3( 0.2, 1.3, 0.2 );
+	let v = new Vec3( 0.2, 1.4, 0.1 );
+	let bendDir = Vec3.LEFT;
+	//let v = new Vec3( 0.4, 1.0, 0.1 );
+	//let bendDir = Vec3.BACK;
+	//App.debug.point( v, 2 );
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	let b = rig.arm_l.getBone( 0 );							
+	let wt = App.node.getWorldTransform( b, null, false );
+	let bt = Transform.add( wt, rig.arm_l.bindt[ 0 ] );
+	
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	let target = new IKTarget();
+	target.byPos( bt.pos, v, bendDir );
+
+	IKTarget.debug( App.debug, target );
+
+	//limb( rig.arm_l, target, null, wt );
+	//arm( rig.arm_l, target, null, wt );
+	aim( rig.arm_l, target, null, wt );
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	//gRig.pose.apply();
+}
+
+function arm( chain, target, pose, wt, doUpFix=true ){
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	
+	// World Splace Rotation for Bone 1
+	let q = new Quat();
+	q.copy( wt.rot )
+		.mul( chain.bindt[ 0 ].rot );
+
+	//Targets Forward becomes Bone's Up
+	//Targets Left becomes the bone's forward
+	//Calc the bone's new Left based on its new Up/Forward directions
+	let xAxis = Vec3.cross( target.axis.z, target.axis.x );
+	let tq = Quat.fromAxis( xAxis, target.axis.z, target.axis.x );
+
+	// Get Difference between current bone rotation and the final rotation
+	let dq = Quat.mul(  tq, Quat.invert( q ) );
+	q.pmul( dq ); //Add that difference to the bone
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// Using law of cos SSS, so need the length of all sides of the triangle
+	let aLen	= chain.lens[ 0 ],
+		bLen	= chain.lens[ 1 ],
+		cLen	= Math.sqrt( target.distanceSqr );
+
+		console.log( aLen, bLen, cLen );
+
+	let rad	= Maths.lawcos_sss( aLen, cLen, bLen );
+	let qrot = new Quat().setAxisAngle( target.axis.x, -rad );
+	q.pmul( qrot );
+	console.log( rad * 180 / Math.PI );
+	//console.log( Maths.lawcos_sss( bLen, cLen, aLen ) * 180 / Math.PI );
+
+	let wq = q.clone();
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// Subtract parent world rotation to get the bone's local space rotation.
+	q.pmul( Quat.invert( wt.rot ) );
+	chain.updateBone( 0, q ); //Save local space to bone.
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	let b = chain.bindt[ 0 ];
+	let tran = new Transform( wt ).add( q, b.pos, b.scl ).add( chain.bindt[1] );
+	//let tran2 = new Transform( wt ).add( q, b.pos, b.scl );
+	App.debug.point( tran.pos, 2 );
+	//console.log( Vec3.sub( tran.pos, target.startPos ).length() );
+
+	rad	= Math.PI - Maths.lawcos_sss( aLen, bLen, cLen ); //Need to rotate from Right to Left, So take the angle and subtract it from 180 to rotate from the other direction.
+	qrot = new Quat().setAxisAngle( target.axis.x, rad );
+
+	console.log( rad * 180 / Math.PI );
+
+	q.copy( tran.rot )
+		.pmul( qrot )
+		.pmul( Quat.invert( wq ) );
+
+	chain.updateBone( 1, q ); //Save local space to bone.
+	/**/
+}
+
+
+
+function aim( chain, target, pose, wt ){
+	// Ceate the final rotation the first bone needs to be at in World space
+	// -- Targets Forward becomes Bone's Up
+	// -- Targets Left becomes the bone's forward
+	// -- Calc the bone's new Left based on its new Up/Forward directions
+	let xAxis	= Vec3.cross( target.axis.z, target.axis.x ),
+		qTarget	= Quat.fromAxis( xAxis, target.axis.z, target.axis.x ),
+		rot 	= Quat.mul( wt.rot, chain.bindt[ 0 ].rot ), // Get Worldspace rotation of the first bone
+		tmp		= new Quat(); 
+
+	Quat.mul( qTarget, rot.invert( tmp ), tmp );	// Diff between starting rotation and final rotation
+
+	rot	.pmul( tmp ) 					// Add that difference to starting rotation
+		.pmul( wt.rot.invert( tmp ) );	// Convert to Bone's Local Space by mul invert of parent bone rotation
+
+	chain.updateBone( 0, rot ); 		// Save result to bone.
+}
+
+
 
 class NoiseCycle{
 	constructor( fps = 0.1, ){
@@ -76,7 +298,7 @@ class NoiseCycle{
 class NumberCycle{
 	constructor( nps = 0.2 ){
 		this.numPerSec	= nps;
-		this.value 		= 0;
+		this.value 		= 0.0;
 	}
 	update( dt = null ){ this.value += this.numPerSec * (dt || App.deltaTime); return this; }
 	floor(){ return Math.floor(this.value); }
@@ -91,6 +313,7 @@ class IKRig_Human_Dance{
 		this.hipMin		= 0.05;
 
 		this.stepClock = new NumberCycle( 0.5 );	// How long to take a step.
+		//this.stepClock.value = 0.5;
 
 		this.stepAngle		= Maths.toRad( 120 );
 		this.stepHeight		= 0.4;
@@ -119,8 +342,7 @@ class IKRig_Human_Dance{
 			hipDir: new Vec3(),
 		};
 
-		
-		console.log( "hipHeight", this.hipHeight );
+		//console.log( "hipHeight", this.hipHeight );
 	}
 
 	update( dt, ss ){
@@ -143,7 +365,7 @@ class IKRig_Human_Dance{
 		
 		this.handleFeet();	// figure out where the feet are going to be positioned
 		this.handleHip();	// .. Which helps determine where the hip is going to be.
-		this.ik_hip_feet();	
+		this.ik_hip_feet2();	
 	}
 
 	//////////////////////////////////////////////////////////////////
@@ -231,12 +453,34 @@ class IKRig_Human_Dance{
 
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		// VISUAL DEBUG
-		App.debug.point( pos, 2 ).line( pos, Vec3.add( pos, dir.scale(0.2) ), 2 );
+		//App.debug.point( pos, 2 ).line( pos, Vec3.add( pos, dir.scale(0.2) ), 2 );
 	}
 
 	//////////////////////////////////////////////////////////////////
 	// IK
 	//////////////////////////////////////////////////////////////////
+	ik_hip_feet2(){
+		// Target Point
+		let v = new Vec3( 0.1, 0.2, 0.2 );
+		App.debug.point( v, 2 );
+
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		let wt = new Transform( this.rig.getPHip().local );
+		let t = new Transform();
+		let idx = this.rig.leg_l_chain.idx[ 0 ];
+
+		Transform.add( wt, this.rig.pose.bones[ idx ].local, t );
+		App.debug.point( t.pos, 6 );
+
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		this.target.byPos( t.pos, v, this.f.hipDir );
+		IKTarget.debug( App.debug, this.target );
+
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		this.rig.pose.apply();
+	}
+
+
 	ik_hip_feet(){
 		// Find World Transform for Hip, No Need for Entity World Transform.
 		// this.rig.pose.bones[ this ]
@@ -244,19 +488,18 @@ class IKRig_Human_Dance{
 
 		let wt = new Transform( this.rig.getPHip().local );
 		let t = new Transform();
-
 		let idx = this.rig.leg_l_chain.idx[ 0 ];
 
 		Transform.add( wt, this.rig.pose.bones[idx].local, t );
 
-		App.debug.point( t.pos , 6);
+		//App.debug.point( t.pos , 6);
 
 		this.target.byPos( t.pos, this.f.ikFeet[0], this.f.hipDir );
 
 		Solver.limb( this.rig.leg_l_chain, this.target, this.rig.pose, wt );
 
 
-		IKChain.debugAxis( App.debug, this.rig.leg_l_chain, this.rig.pose, wt, 0.3 );
+		//IKChain.debugAxis( App.debug, this.rig.leg_l_chain, this.rig.pose, wt, 0.3 );
 		//IKChain.debugAxis( App.debug, this.rig.leg_r_chain, this.rig.pose, wt, 0.3 );
 		IKTarget.debug( App.debug, this.target );
 

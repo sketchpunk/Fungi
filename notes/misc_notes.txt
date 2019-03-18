@@ -89,3 +89,34 @@ uvec2 encrypt(uvec2 v)
 
     return v;
 }
+
+
+//////////////////////////////////////////////////
+// optimized version (avoids dual quaternion - matrix conversion):
+outputs dqsFast(inputs IN,
+			uniform float4x4 modelViewProj,
+			uniform float4x4 modelViewIT,
+			uniform float2x4 boneDQ[100])
+{
+	outputs OUT;			
+		
+	float2x4 blendDQ = IN.weights.x*boneDQ[IN.matrixIndices.x];
+	blendDQ += IN.weights.y*boneDQ[IN.matrixIndices.y];
+	blendDQ += IN.weights.z*boneDQ[IN.matrixIndices.z];
+	blendDQ += IN.weights.w*boneDQ[IN.matrixIndices.w];	
+		
+	float len = length(blendDQ[0]);
+	blendDQ /= len;
+
+	float3 position = IN.position.xyz + 2.0*cross(blendDQ[0].yzw, cross(blendDQ[0].yzw, IN.position.xyz) + blendDQ[0].x*IN.position.xyz);
+	float3 trans = 2.0*(blendDQ[0].x*blendDQ[1].yzw - blendDQ[1].x*blendDQ[0].yzw + cross(blendDQ[0].yzw, blendDQ[1].yzw));
+	position += trans;
+
+	float3 inpNormal = IN.normal.xyz;
+	float3 normal = inpNormal + 2.0*cross(blendDQ[0].yzw, cross(blendDQ[0].yzw, inpNormal) + blendDQ[0].x*inpNormal);
+
+	OUT.hPosition = mul(modelViewProj, float4(position, 1.0));
+	OUT.hNormal = mul(modelViewIT, float4(normal, 0.0));
+		
+	return OUT;
+}

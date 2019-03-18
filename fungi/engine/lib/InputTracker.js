@@ -4,7 +4,8 @@ import gl	from "../../core/gl.js";
 
 class InputTracker{
 	constructor(){
-		this.canvas	= gl.ctx.canvas;
+		this.canvas		= gl.ctx.canvas;
+		this.onInput	= null;
 
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		//Keyboard State Data
@@ -41,8 +42,6 @@ class InputTracker{
 			pdy:0
 		};
 
-		
-
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		var box			= this.canvas.getBoundingClientRect();
 		this.offsetX	= box.left;	//Help get X,Y in relation to the canvas position.
@@ -64,6 +63,8 @@ class InputTracker{
 	//////////////////////////////////////////////////////////////////
 	// MOUSE
 	//////////////////////////////////////////////////////////////////
+		toCoord( e ){ return [ e.pageX - this.offsetX, e.pageY - this.offsetY ]; }
+
 		updateCoords(e){
 			//Current Position
 			this.coord.x = e.pageX - this.offsetX;
@@ -84,7 +85,8 @@ class InputTracker{
 			e.preventDefault(); e.stopPropagation();
 			this.wheelValue		= Math.max(-1, Math.min(1, (e.wheelDelta || -e.detail))); //Try to map wheel movement to a number between -1 and 1	
 			this.wheelUpdateOn	= App.sinceStart;
-			//console.log(delta);
+
+			if( this.onInput ) this.onInput();
 		}
 
 		onMouseDown(e){
@@ -108,11 +110,15 @@ class InputTracker{
 			}
 
 			this.isMouseActive = (this.leftMouse || this.middleMouse || this.rightMouse);
+
+			if( this.onInput ) this.onInput();
 		}
 
 		onMouseMove(e){
 			e.preventDefault(); e.stopPropagation();
 			this.updateCoords(e);
+
+			if( this.onInput ) this.onInput();
 		}
 
 		onMouseUp(e){
@@ -133,6 +139,8 @@ class InputTracker{
 			if(!this.isMouseActive){
 				this.canvas.removeEventListener("mousemove", this._boundMouseMove );
 			}
+
+			if( this.onInput ) this.onInput();
 		}
 
 
@@ -142,9 +150,6 @@ class InputTracker{
 		key( kCode ){ return ( this.keyState[kCode] == true ); }
 
 		onKeyDown( e ){	//console.log( "KEY DOWN", e.keyCode );
-			this.keyState[ e.keyCode ] = true; 
-			this.keyCount++;
-
 			switch(e.keyCode){
 				case 32: this.spaceBar		= true; break;
 				case 37: this.arrowLeft		= true; break;
@@ -155,11 +160,20 @@ class InputTracker{
 				case 17: this.ctrl 			= true; break;
 				case 18: this.alt 			= true; break;
 			}
+
+			// Shift, Ctrl and Alt isn't to be counted as part of active keyboard activity.
+			switch( e.keyCode ){
+				case 16: case 17: case 18: break;
+				default:
+					this.keyState[ e.keyCode ] = true; 
+					this.keyCount++;
+				break;
+			}
+
+			if( this.onInput ) this.onInput();
 		}
 
 		onKeyUp( e ){
-			this.keyState[ e.keyCode ] = false;
-			this.keyCount--;
 			switch(e.keyCode){
 				case 32: this.spaceBar		= false; break;
 				case 37: this.arrowLeft		= false; break;
@@ -170,6 +184,17 @@ class InputTracker{
 				case 17: this.ctrl 			= false; break;
 				case 18: this.alt 			= false; break;
 			}
+
+			// Shift, Ctrl and Alt isn't to be counted as part of active keyboard activity.
+			switch( e.keyCode ){
+				case 16: case 17: case 18: break;
+				default:
+					this.keyState[ e.keyCode ] = false;
+					this.keyCount--;
+				break;
+			}
+
+			if( this.onInput ) this.onInput();
 		}
 }
 

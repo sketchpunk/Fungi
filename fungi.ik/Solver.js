@@ -2,6 +2,7 @@ import Maths, { Vec3, Quat } from "../fungi/maths/Maths.js";
 
 import App from "../fungi/engine/App.js"; //TODO Delete
 import Axis from "../fungi/maths/Axis.js";
+import Transform from "../fungi/maths/Transform.js";
 
 
 //#####################################################################
@@ -85,30 +86,57 @@ class Solver{
 	///////////////////////////////////////////////////////////////////
 		
 		static limb( chain, target, pose, wt, doUpFix=true ){
+			//let t = Transform.invert( wt );
+			//console.log( t );
+			//let zz = t.transformVec( target.axis.z, new Vec3() ).normalize();
+			//let yy = t.transformVec( target.axis.y, new Vec3() ).normalize();
+			//let xx = Vec3.cross( zz, yy );
+
+			//console.log( zz, xx );
+			//
+			let t = new Transform();
+			Transform.add( wt, pose.bones[ chain.idx[0] ].local, t );
+
+
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			// Using law of cos SSS, so need the length of all sides of the triangle
 			let aLen	= chain.lens[ 0 ],
 				bLen	= chain.lens[ 1 ],
 				cLen	= Math.sqrt( target.distanceSqr ),
+				xAxis 	= Vec3.cross( target.axis.z, target.axis.y ), // Flipping z and y, need new X
 				q 		= new Quat();
 
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			// Solve angle for the second bone
-			q.setAxisAngle( Vec3.RIGHT, Math.PI - Maths.lawcos_sss( aLen, bLen, cLen ) ); //Up is Forward Fix ( PI - angle )
-			if( pose )	pose.updateBone( chain.idx[ 1 ], q );
-			else		chain.updateBone( chain.idx[ 1 ], q );
+			//q.setAxisAngle( xx, Math.PI - Maths.lawcos_sss( aLen, bLen, cLen ) ); //Up is Forward Fix ( PI - angle )
+			//if( pose )	pose.updateBone( chain.idx[ 1 ], q );
+			//else		chain.updateBone( chain.idx[ 1 ], q );
 
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			// Solve for first Bone
-			let x	= -Maths.lawcos_sss( aLen, cLen, bLen ),
-				rot	= target.axis.toQuat();
+			// By aligning it first by flipping around the target's axis. The t.z -> b.y, t.y -> b.z
+			// Then we calc
+			let x	= Maths.lawcos_sss( aLen, cLen, bLen ),
+				rot	= Quat.fromAxis( xAxis, target.axis.z, target.axis.y );
 
+			Quat.mul( wt.rot, chain.getBone( 0 ).Bone.initial.rot, q );
+			//Quat.mul( wt.rot, pose.bones[ chain.idx[0] ].local.rot, q ).invert();
+			
+			//q.copy( chain.getBone( 0 ).Bone.initial.rot ).invert();
+			//console.log( q );
+
+			//rot.pmul( chain.getBone( 0 ).Bone.initial.rot );
+
+			//App.debug.quat( rot )
+			//App.debug.quat( q )
+
+			//rot.pmul( Quat.axisAngle( xx,  x, q ) );
 			//rot.pmul( Quat.axisAngle( target.axis.x, Maths.PI_H + x, q ) )
 			//rot.pmul( Quat.invert( wt.rot, q ));
 			//rot.pmul( Quat.invert( chain.getBone(0).Bone.initial.rot ) );
 
-			//if( pose )	pose.updateBone( chain.idx[ 0 ], rot );
-			//else		chain.updateBone( chain.idx[ 0 ], rot );
+			if( pose )	pose.updateBone( chain.idx[ 0 ], rot );
+			else		chain.updateBone( chain.idx[ 0 ], rot );
 
 			return this;
 		}

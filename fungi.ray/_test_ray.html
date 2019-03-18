@@ -1,0 +1,42 @@
+<!DOCTYPE html><html><head><title>Fungi</title></head><script type="module">
+import App,{ gl } from "../fungi/engine/App.js";
+import Ray from "./Ray.js";
+
+//#############################################################################
+App	.launch( null, true )
+	.then( dl=>dl
+		.add( "shader", "../fungi/shaders/VecWColor.txt" )
+		.start() )
+	.then( ()=>		App.loadScene( true, true ) )
+	.then( ()=>		init() )
+	.catch( err=>	console.error( err ) );
+
+
+//#############################################################################
+function onDraw( dt, ss ){ App.ecs.updateSystems(); }
+
+
+//#############################################################################
+function init(){
+	App.camera.Node
+		.setPos( 0, 1.5, 4 )
+		.setRotAxis( [1,0,0], -15 * Math.PI / 180 );
+
+	let ray = new Ray();
+	gl.ctx.canvas.addEventListener( "mouseup", (e)=>{
+		if( e.button != 2 ) return;
+		e.preventDefault(); e.stopPropagation();
+
+		let pos = App.input.toCoord( e );
+
+		Ray.MouseSegment( pos[0], pos[1], ray );
+
+		App.debug.line( ray.origin, ray.end );
+		console.log( ray );
+	});
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	App.input.onInput = ()=>{ window.requestAnimationFrame( onDraw ); } // App.loop.start();
+	onDraw();
+}
+</script><body></body></html>

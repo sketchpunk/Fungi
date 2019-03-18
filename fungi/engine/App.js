@@ -9,7 +9,7 @@ import Page			from "./lib/Page.js";
 import RenderLoop 	from "./RenderLoop.js";
 import InputTracker from "./lib/InputTracker.js";
 
-import Ecs, { Entity, Assemblages } from "./Ecs.js";
+import Ecs, { Entity, Assemblages, System } from "./Ecs.js";
 import Camera, { CameraSystem }	from "./ecs/Camera.js";
 import Node, { NodeSystem } 	from "./ecs/Node.js";
 import { DrawSystem }			from "./ecs/Draw.js";
@@ -250,4 +250,4 @@ App.useArmature		= 0;		// Enable Armature Specific Features. 1 = Armature, 2 = P
 
 //######################################################
 export default App;
-export { Vao, Shader, Material, gl, Entity };
+export { Vao, Shader, Material, gl, Entity, System };

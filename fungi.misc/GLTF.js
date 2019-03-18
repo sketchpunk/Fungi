@@ -133,7 +133,7 @@ class Gltf{
 					out.arrayType 	= TAry.name.substring( 0, TAry.name.length - 5 );
 					out.byteStart 	= ( acc.byteOffset || 0 ) + ( bView.byteOffset || 0 );
 					out.byteLen		= acc.count * compLen * TAry.BYTES_PER_ELEMENT;
-					console.log( bin );
+					//console.log( bin );
 				}else{
 					let bOffset	= ( acc.byteOffset || 0 ) + ( bView.byteOffset || 0 )
 					out.data = new TAry( bin, bOffset, acc.count * compLen ); // ElementCount * ComponentLength
@@ -329,11 +329,12 @@ class Gltf{
 //###############################################################################
 
 // Hacking the prototype is to be frawned apo, but it makes a better API usage.
-Downloader.prototype.addGLTF = function( name, file, matName, meshNames, skinName=null ){
+Downloader.prototype.addGLTF = function( name, file, matName, meshNames, skinName=null, loadSkin=true ){
 	this._queue.push( { name, matName, 
 		handler		: "gltf", 
-		meshNames 	: meshNames,
-		skinName	: skinName,
+		meshNames,
+		skinName,
+		loadSkin,
 		files 	: [
 			{ url: file + ".gltf", type:"json" },
 			{ url: file + ".bin", type:"arraybuffer" }
@@ -380,7 +381,7 @@ HandlerTypes.gltf = class{
 
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		// Load up Mesh Data
-/*		
+		/*		
 		let vao = Vao.buildSkinning( i.name + "_vao", 
 			p.vertices.compLen, 
 			p.vertices.data,
@@ -390,15 +391,16 @@ HandlerTypes.gltf = class{
 			p.joints.data,
 			p.weights.data
 		);
-*/		
-		let vao = Vao.buildFromBin( i.meshNames[0], p, i.bin );
-
-		let e = App.$Draw( i.name, vao, i.matName, p.mode );		
-		if( p.rotation )	e.Node.setRot( p.rotation );
-		if( p.position )	e.Node.setPos( p.position );
-		if( p.scale ) 		e.Node.setScl( p.scale );
-
-		//e.info.active = false;
+		*/		
+		let e;
+		if( i.loadSkin ){
+			let vao = Vao.buildFromBin( i.meshNames[0], p, i.bin );
+			e = App.$Draw( i.name, vao, i.matName, p.mode );		
+			//e.info.active = false;
+			if( p.rotation )	e.Node.setRot( p.rotation );
+			if( p.position )	e.Node.setPos( p.position );
+			if( p.scale ) 		e.Node.setScl( p.scale );
+		}else e = App.$Draw( i.name );
 
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		Armature.$( e );
@@ -406,7 +408,7 @@ HandlerTypes.gltf = class{
 		let bones = Gltf.getSkin( i.skinName, i.json );
 		this.loadBones( e, bones );
 
-		ArmaturePreview.$( e, "ArmaturePreview" );
+		ArmaturePreview.$( e, "ArmaturePreview", 2 );
 	}
 
 	static loadBones( e, bones ){

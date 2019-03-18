@@ -253,9 +253,9 @@ class Quaternion extends Float32Array{
 		}
 
 		static fromAxis(xAxis, yAxis, zAxis, out = null){
-			var m00 = xAxis.x, m01 = xAxis.y, m02 = xAxis.z,
-				m10 = yAxis.x, m11 = yAxis.y, m12 = yAxis.z,
-				m20 = zAxis.x, m21 = zAxis.y, m22 = zAxis.z,
+			var m00 = xAxis[0], m01 = xAxis[1], m02 = xAxis[2],
+				m10 = yAxis[0], m11 = yAxis[1], m12 = yAxis[2],
+				m20 = zAxis[0], m21 = zAxis[1], m22 = zAxis[2],
 				t = m00 + m11 + m22,
 				x, y, z, w, s;
 
@@ -473,6 +473,7 @@ class Quaternion extends Float32Array{
 			var ax = a[0], ay = a[1], az = a[2], aw = a[3],
 				bx = b[0], by = b[1], bz = b[2], bw = b[3];
 
+			out = out || new Quaternion();
 			out[0] = ax * bw + aw * bx + ay * bz - az * by;
 			out[1] = ay * bw + aw * by + az * bx - ax * bz;
 			out[2] = az * bw + aw * bz + ax * by - ay * bx;

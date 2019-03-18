@@ -22,19 +22,21 @@ class IKRig_Human{
 	constructor( e, json ){
 		this.entity = e;
 		//this.chain	= new IKChain( e.Armature, bNames );
-		this.pose			= new Pose( e.Armature, true );
+		this.pose	= new Pose( e.Armature, true );
 
-		this.leg_l_chain	= new IKChain( e.Armature, json.leg_l );
-		this.leg_r_chain	= new IKChain( e.Armature, json.leg_r );
-
-		//this.arm_l_chain = null;
+		this.leg_l	= new IKChain( e.Armature, json.leg_l );
+		this.leg_r	= new IKChain( e.Armature, json.leg_r );
+		this.arm_l 	= new IKChain( e.Armature, json.arm_l );
+		this.arm_r 	= new IKChain( e.Armature, json.arm_r );
 		//this.arm_r_chain = null;
 
 		//this.spine_chain = null;
 
 		//this.neck	= null;
 		
-		this.hip			= Armature.getBone( e.Armature, json.hip ).Bone.order;
+		this.hip	= Armature.getBone( e.Armature, json.hip ).Bone.order;
+		this.hand_l	= Armature.getBone( e.Armature, json.hand_l ).Bone.order;
+		this.hand_r	= Armature.getBone( e.Armature, json.hand_r ).Bone.order;
 
 		//this.foot_l = null;
 		//this.foot_r = null;

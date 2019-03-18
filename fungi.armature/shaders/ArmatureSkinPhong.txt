@@ -60,13 +60,16 @@
 							bDQ[ c ] * bWeight.z +
 							bDQ[ d ] * bWeight.w;
 
+		dqSum *= 1.0 / length( dqSum[0] ); // Normalize DQ by the length of the Quaternion
+
 		vec3 wScale 	=	bScale[ a ]	* bWeight.x +
 							bScale[ b ]	* bWeight.y +
 							bScale[ c ]	* bWeight.z +
 							bScale[ d ]	* bWeight.w;
 
 		/* SCALE, ROTATE - TRANSLATE */
-		return dqVecTransform(dqSum, pos * wScale);
+		//return dqVecTransform(dqSum, pos * wScale);
+		return dqVecTransform(dqSum, pos);
 	}
 
 	void main(void){
@@ -94,7 +97,8 @@
 
 	out vec4 oFragColor;
 
-	const vec3 uBaseColor			= vec3(1.0, 0.498, 0.498); //ff 7f 7f
+	//const vec3 uBaseColor			= vec3(1.0, 0.498, 0.498); //ff 7f 7f
+	const vec3 uBaseColor			= vec3(0.95, 0.95, 0.95); //ff 7f 7f
 	const float uAmbientStrength	= 0.5;
 	const float uDiffuseStrength	= 0.5;
 	const float uSpecularStrength	= 0.2f;	//0.15

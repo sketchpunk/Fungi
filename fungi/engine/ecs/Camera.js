@@ -8,6 +8,7 @@ class Camera{
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		this.viewMatrix		= new Mat4();
 		this.projMatrix		= new Mat4();
+		this.projMatrixInv	= new Mat4();
 		this.pvMatrix		= new Mat4();
 	}
 
@@ -21,6 +22,8 @@ class Camera{
 		let ratio	= gl.width / gl.height;
 		fov			= fov * Math.PI/180;
 		Mat4.perspective( e.Camera.projMatrix, fov, ratio, near, far );
+		Mat4.invert( e.Camera.projMatrix, e.Camera.projMatrixInv );
+
 		//com.projectionMetaData = { fov, ratio, near, far };
 		//Mat4.invert(com.invertedProjectionMatrix, com.projectionMatrix); //Save Inverted version for Ray Casting.
 	}

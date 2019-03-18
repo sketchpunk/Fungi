@@ -209,6 +209,7 @@ class Shader{
 Shader.POSITION_LOC		= 0;
 Shader.NORMAL_LOC		= 1;
 Shader.UV_LOC			= 2;
+Shader.COL_LOC			= 3;
 
 Shader.BONE_IDX_LOC		= 8;
 Shader.BONE_WEIGHT_LOC	= 9;

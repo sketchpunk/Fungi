@@ -8,10 +8,14 @@ class Transform{
 		this.pos	= new Vec3();
 		this.scl 	= new Vec3( 1, 1, 1 );
 
-		if( t ){
+		if( arguments.length == 1 ){
 			this.rot.copy( t.rot );
 			this.pos.copy( t.pos );
 			this.scl.copy( t.scl );
+		}else if( arguments.length == 3 ){
+			this.rot.copy( arguments[ 0 ] );
+			this.pos.copy( arguments[ 1 ] );
+			this.scl.copy( arguments[ 2 ] );
 		}
 	}
 
@@ -105,6 +109,25 @@ class Transform{
 
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			return tOut;
+		}
+
+		static invert( t, inv ){
+			inv = inv || new Transform();
+
+			// Invert Rotation
+			t.rot.invert( inv.rot );		
+
+			// Invert Scale
+			inv.scl.x = ( t.scl.x != 0 )? 1 / t.scl.x : 0;
+			inv.scl.y = ( t.scl.y != 0 )? 1 / t.scl.y : 0;
+			inv.scl.z = ( t.scl.z != 0 )? 1 / t.scl.z : 0;
+
+
+			// Invert Position : rotInv * ( invScl * invPos )
+			t.pos.invert( inv.pos ).mul( inv.scl );
+			Vec3.transformQuat( inv.pos, inv.rot, inv.pos );
+
+			return inv;
 		}
 }
 

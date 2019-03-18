@@ -283,7 +283,7 @@ class Node{
 
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			// Get the heirarchy nodes
-			let n 		= e.Node
+			let n 		= e.Node,
 				tree 	= [ ];
 
 			if( incChild ) tree.push( n ); // Incase we do not what to add the requested entity to the world transform.
@@ -297,8 +297,8 @@ class Node{
 			if( tree.length == 0 ) return out.reset();
 
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			let i = tree.length-1;
-			out.copy( tree[ i ] ); 								// Copy in the Root Parent
+			let i = tree.length - 1;
+			out.copy( tree[ i ].local );						// Copy in the Root Parent
 			
 			for( i--; i > -1; i-- ) out.add( tree[ i ].local );	// Add Up All Transforms from root to child.
 

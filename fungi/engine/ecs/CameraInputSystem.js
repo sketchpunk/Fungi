@@ -251,12 +251,17 @@ class CameraInputSystem extends System{
 			if( dx != null ) polar[0] += dx;
 			if( dy != null ) polar[1] += dy;
 
+			//TODO, Fix this, Pos + Target, then Look = Pos - Target, Do better.
 			let pos		= polarToCartesian( polar[0], polar[1], this.targetDistance ).add( this.targetPos ),
 				look	= Vec3.sub( pos, this.targetPos );
 
 			App.camera.Node.local.pos.copy( pos );
 			Quat.lookRotation( look, Vec3.UP, App.camera.Node.local.rot );
 			App.camera.Node.isModified = true;
+
+			//BETTER SOLUTION, FIX LAter.
+			//this.camera.position.copy( pos ).add( this.targetPos );
+			//this.camera.lookAt( pos.invert() );
 		}
 
 		// Orbit Around target by Inc

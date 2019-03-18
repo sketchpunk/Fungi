@@ -15,6 +15,9 @@ class Debug{
 		eLine	= DVerts.$( App.$Draw( "Debug_Line" ), "Debug_Lines", "VecWColor", 1 );
 		DynamicVertsSystem.init( ecs, priority );
 
+		ePoint.Draw.priority	= 1000;
+		eLine.Draw.priority		= 1000;
+
 		App.debug = this;
 	}
 

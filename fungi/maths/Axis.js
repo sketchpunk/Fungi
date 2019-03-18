@@ -124,7 +124,7 @@ class Axis{
 
 			var v = new Vec3();
 			v.copy( axis.z ).scale( scl ).add( origin );
-			o.line( origin, v, 6 );
+			o.line( origin, v, 1 );
 
 			v.copy( axis.y ).scale( scl ).add( origin );
 			o.line( origin, v, 2 );

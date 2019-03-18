@@ -73,7 +73,7 @@ export default class ArmTest{
 
 		e.Armature.isActive = false;			// Disable Skinning on Entity
 		Armature.finalize( e );					// Set Bind Pose
-		ArmaturePreview.$( e, matPrev );		// Generate Preview Bones
+		ArmaturePreview.$( e, matPrev, 2 );		// Generate Preview Bones
 		return e;
 	}
 

@@ -108,6 +108,8 @@
 							bDQ[ b ] * bWeight.y +
 							bDQ[ c ] * bWeight.z +
 							bDQ[ d ] * bWeight.w;
+							
+		dqSum *= 1.0 / length( dqSum[0] ); // Normalize DQ by the length of the Quaternion
 
 		vec3 wScale 	=	bScale[ a ]	* bWeight.x +
 							bScale[ b ]	* bWeight.y +

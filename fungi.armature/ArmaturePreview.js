@@ -46,7 +46,39 @@ const ATTRIB_LEN_LOC = 10;
 						0,2,0,3,0,4,0,5,
 						2,3,3,4,4,5,5,2 ];
 
-		return { verts, faces, mode:1 }; // Line = 1
+		const colors = [
+			0.5, 0.5, 0.5,
+			1, 0, 0,
+			0.5, 0.5, 0.5,
+			0.5, 0.5, 0.5,
+			0.5, 0.5, 0.5,
+			0.5, 0.5, 0.5,
+		];
+
+		return { verts, faces, colors, mode:1 }; // Line = 1
+	}
+
+	function geoAxis(){
+		const	x	= 0.035,
+				z	= 0.035;
+
+		const verts	= [
+			0, 0, 0, 0,				// 0 Bottom
+			0, 1, 0, 1,				// 1 Top
+			x, 0, 0, 0,
+			0, 0, z, 0,
+		];
+
+		const colors = [
+			0.4, 0.4, 0.4,
+			0.7, 0.7, 0.7,
+			1, 0, 0,
+			0, 0.7, 0,
+		];
+
+		const faces = [ 0, 1, 0, 2, 0, 3, 1, 2, 1, 3, 2, 3 ];
+
+		return { verts, faces, colors, mode:1 }; // Line = 1
 	}
 
 	function buildPreviewVao( e, mat, meshType ){
@@ -55,6 +87,7 @@ const ATTRIB_LEN_LOC = 10;
 		switch( meshType ){
 			case 0: geo = geoDiamondWire(); break;	// Wire Diamond
 			case 1: geo = geoDiamond(); break;		// Solid Diamond
+			case 2: geo = geoAxis(); break;			// Axis
 		}
 
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -71,6 +104,7 @@ const ATTRIB_LEN_LOC = 10;
 		Vao.bind( vao )
 			.setInstanced( vao, boneCnt )
 			.floatBuffer( vao, "vertex", 		geo.verts,		Shader.POSITION_LOC, 	4 )
+			.floatBuffer( vao, "colors",		geo.colors,		Shader.COL_LOC,			3 )
 			.floatBuffer( vao, "bonelength",	aryLen,			ATTRIB_LEN_LOC, 1, 0, 0, false, true )
 			.emptyFloatBuffer( vao, "rotation",	boneCnt*4*4,	ATTRIB_ROT_LOC, 4, 0, 0, false, true )
 			.emptyFloatBuffer( vao, "position",	boneCnt*3*4, 	ATTRIB_POS_LOC, 3, 0, 0, false, true )
@@ -91,7 +125,6 @@ const ATTRIB_LEN_LOC = 10;
 		e.ArmaturePreview.vao = vao;
 		return vao;
 	}
-
 
 
 //#################################################################

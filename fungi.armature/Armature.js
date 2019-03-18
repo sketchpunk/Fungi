@@ -10,7 +10,7 @@ class Bone{
 	constructor( len=1 ){
 		this.order			= 0;				// Bone Order, Used to identify bone to vertices in shaders
 		this.length			= len;				// Length of the Bone (Going UP)
-		this.initial 		= new Transform();	// Default Local Transform For Bone, Allows to reset bones back to initial state.
+		this.bind 			= new Transform();	// Default Local Transform For Bone, Allows to reset bones back to initial state.
 
 		//...................................
 		// Bind Pose is the inverted Hierachy Transform of the bone. Its used to "subtract"
@@ -111,7 +111,7 @@ class Armature{
 				//.................................
 				// Update world space transform then save result as bind pose.
 				App.node.updateWorldTransform( eb, false );
-				eb.Bone.initial.copy( eb.Node.local );	// Make a Copy as starting point to reset bones
+				eb.Bone.bind.copy( eb.Node.local );	// Make a Copy as starting point to reset bones
 
 				//.................................
 				// Bind Pose is the initial Hierarchy transform of each bone, inverted.
@@ -162,7 +162,7 @@ class Armature{
 
 			for( i=0; i < bLen; i++ ){
 				e	= arm.bones[ i ];
-				bi	= e.Bone.initial;
+				bi	= e.Bone.bind;
 
 				out[ i ] = {
 					name	: e.info.name,
