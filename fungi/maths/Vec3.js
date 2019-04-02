@@ -121,11 +121,19 @@ class Vec3 extends Float32Array{
 			return out;
 		}
 
-		abs(v,out){
+		abs( out ){
 			out = out || this;
 			out[0] = Math.abs( this[0] );
 			out[1] = Math.abs( this[1] );
 			out[2] = Math.abs( this[2] );
+			return out;
+		}
+
+		floor( out ){
+			out = out || this;
+			out[0] = Math.floor( this[0] );
+			out[1] = Math.floor( this[1] );
+			out[2] = Math.floor( this[2] );
 			return out;
 		}
 

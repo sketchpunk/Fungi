@@ -33,14 +33,14 @@ let gEntity, gRig, gDance;
 
 //#############################################################################
 function onDraw(dt, ss){
-	//gDance.update( dt, ss );
+	gDance.update( dt, ss );
 
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	
 	App.ecs.updateSystems();
 }
 
 function init(){
-	App.cameraCtrl.setTarget( 0, 1.15, 0 ).setOrbit( -35, 35, 1.1 );
+	App.cameraCtrl.setTarget( 0, 0.8, 0 ).setOrbit( 10, 15, 2.5 );
 	App.cache.getMaterial( "VecWColor" ).options.depthTest = false;
 
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -60,12 +60,12 @@ function init(){
 
 	let e = App.ecs.getEntityByName( "Mesh01" );
 	gRig 	= new IKRig_Human( e, json );
-	TPose.human_rig( gRig );
+	//TPose.human_rig( gRig ); //TODO Something with T Pose screws up Legs
 
 	let n = e.Armature.bones[ 0 ].Node;
-	n.local.pos.z = -0.5;
-	n.local.pos.x = -0.5;
-	n.isModified = true;
+	//n.local.pos.z = -1.2;
+	//n.local.pos.x = -0.5;
+	//n.isModified = true;
 
 	//let phip = gRig.getPHip();
 	//phip.local.pos.x = 2;
@@ -73,11 +73,12 @@ function init(){
 	//console.log( phip );
 
 
-	//gDance	= new IKRig_Human_Dance( gRig );
+	gDance	= new IKRig_Human_Dance( gRig );
 
-	//gDance.update( 0.03, 0.1 );
+	gDance.update( 0.03, 0.1 );
 
-	IKTest( gRig );
+	//IKTest( gRig );
+	//IKTest_Leg( gRig );
 	//TPose();
 	
 
@@ -104,7 +105,7 @@ class TPose{
 			pt	= new Transform(),
 			bt	= new Transform();
 
-		chain.bindt = new Array();
+		//chain.bindt = new Array();
 		//chain.bindw = new Array();
 
 		b = chain.getBone( 0 );						// Start with the chain root bone.
@@ -118,7 +119,8 @@ class TPose{
 			this.align_bone( pt, bt, upDir, rot );	// Align Bone to Line
 			b.Node.setRot( rot );					// Set Rotation
 
-			chain.bindt.push( new Transform().set( rot, lt.pos, lt.scl ) );
+			//chain.bindt.push( new Transform().set( rot, lt.pos, lt.scl ) );
+			chain.bind[i].set( rot, lt.pos, lt.scl );
 			//chain.bindw.push( new Transform( pt ).add( rot, lt.pos, lt.scl ) );
 
 			if( i != iEnd ){
@@ -177,7 +179,7 @@ function IKTest( rig ){
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	let b = rig.arm_l.getBone( 0 );							
 	let wt = App.node.getWorldTransform( b, null, false );
-	let bt = Transform.add( wt, rig.arm_l.bindt[ 0 ] );
+	let bt = Transform.add( wt, rig.arm_l.bind[ 0 ] );
 	
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	let target = new IKTarget();
@@ -185,12 +187,74 @@ function IKTest( rig ){
 
 	IKTarget.debug( App.debug, target );
 
-	//limb( rig.arm_l, target, null, wt );
 	//arm( rig.arm_l, target, null, wt );
-	aim( rig.arm_l, target, null, wt );
+	//aim( rig.arm_l, target, null, wt );
+	//limb( rig.arm_l, target, null, wt);
+
+	if( target.distanceSqr < rig.arm_l.lenSqr ){
+		limb( rig.arm_l, target, null, wt);
+	}else{
+		aim( rig.arm_l, target, null, wt );	
+	}
 
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	//gRig.pose.apply();
+}
+
+function IKTest_Leg( rig ){
+	let v = new Vec3( 0.2, 0.5, 0.2 );
+	let bendDir = Vec3.FORWARD;
+
+	let b = rig.leg_l.getBone( 0 );
+	let wt = App.node.getWorldTransform( b, null, false );
+	let bt = Transform.add( wt, rig.leg_l.bind[0] );
+
+	App.debug.point( bt.pos, 2 );
+
+	let target = new IKTarget();
+	target.byPos( bt.pos, v, bendDir );
+
+	IKTarget.debug( App.debug, target );
+
+	if( target.distanceSqr < rig.leg_l.lenSqr ){
+		limb( rig.leg_l, target, null, wt);
+	}else{
+		aim2( rig.leg_l, target, null, wt );	
+	}
+
+	return;
+
+	/*
+	//let bt = Transform.add( wt, rig.leg_l.bind[0] );
+	bt.rot.pmul( new Quat().setAxisAngle( Vec3.UP, Maths.toRad(40) ));
+	bt.rot.pmul( new Quat().setAxisAngle( Vec3.LEFT, Maths.toRad(-40) ));
+	bt.rot.pmul( new Quat().setAxisAngle( Vec3.FORWARD, Maths.toRad(40) ));
+
+	App.debug.quat( bt.rot );
+	console.log( bt.rot );
+
+	let F = Vec3.transformQuat( Vec3.FORWARD, bt.rot ).normalize();
+	let U = Vec3.transformQuat( Vec3.UP, bt.rot ).normalize();
+	let L = Vec3.transformQuat( Vec3.LEFT, bt.rot ).normalize();
+	//Quat.fromAxis( L, U, F, bt.rot );//.normalize();
+	console.log( bt.rot );
+
+	//bt.rot.flip();
+
+	bt.rot.pmul( Quat.invert( wt.rot ), b.Node.local.rot );
+	b.Node.isModified = true;
+
+	App.debug.quat( bt.rot );
+	
+	
+	b = rig.leg_l.getBone( 1 );
+	wt = App.node.getWorldTransform( b, null, false );
+	bt = Transform.add( wt, rig.leg_l.bind[1] );
+
+	bt.rot.pmul( new Quat().setAxisAngle( Vec3.LEFT, Maths.toRad(50) ));
+	bt.rot.pmul( Quat.invert( wt.rot ), b.Node.local.rot );
+	b.Node.isModified = true;
+	 */
 }
 
 function arm( chain, target, pose, wt, doUpFix=true ){
@@ -198,7 +262,7 @@ function arm( chain, target, pose, wt, doUpFix=true ){
 	// World Splace Rotation for Bone 1
 	let q = new Quat();
 	q.copy( wt.rot )
-		.mul( chain.bindt[ 0 ].rot );
+		.mul( chain.bind[ 0 ].rot );
 
 	//Targets Forward becomes Bone's Up
 	//Targets Left becomes the bone's forward
@@ -232,8 +296,8 @@ function arm( chain, target, pose, wt, doUpFix=true ){
 	chain.updateBone( 0, q ); //Save local space to bone.
 
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	let b = chain.bindt[ 0 ];
-	let tran = new Transform( wt ).add( q, b.pos, b.scl ).add( chain.bindt[1] );
+	let b = chain.bind[ 0 ];
+	let tran = new Transform( wt ).add( q, b.pos, b.scl ).add( chain.bind[1] );
 	//let tran2 = new Transform( wt ).add( q, b.pos, b.scl );
 	App.debug.point( tran.pos, 2 );
 	//console.log( Vec3.sub( tran.pos, target.startPos ).length() );
@@ -253,14 +317,14 @@ function arm( chain, target, pose, wt, doUpFix=true ){
 
 
 
-function aim( chain, target, pose, wt ){
+function aimX( chain, target, pose, wt ){
 	// Ceate the final rotation the first bone needs to be at in World space
 	// -- Targets Forward becomes Bone's Up
 	// -- Targets Left becomes the bone's forward
 	// -- Calc the bone's new Left based on its new Up/Forward directions
 	let xAxis	= Vec3.cross( target.axis.z, target.axis.x ),
 		qTarget	= Quat.fromAxis( xAxis, target.axis.z, target.axis.x ),
-		rot 	= Quat.mul( wt.rot, chain.bindt[ 0 ].rot ), // Get Worldspace rotation of the first bone
+		rot 	= Quat.mul( wt.rot, chain.bind[ 0 ].rot ), // Get Worldspace rotation of the first bone
 		tmp		= new Quat(); 
 
 	Quat.mul( qTarget, rot.invert( tmp ), tmp );	// Diff between starting rotation and final rotation
@@ -271,6 +335,176 @@ function aim( chain, target, pose, wt ){
 	chain.updateBone( 0, rot ); 		// Save result to bone.
 }
 
+function aim2( chain, target, pose, wt ){
+	// Ceate the final rotation the first bone needs to be at in World space
+	// -- Targets Forward becomes Bone's Up
+	// -- Targets Left becomes the bone's forward
+	// -- Calc the bone's new Left based on its new Up/Forward directions
+	let xAxis	= Vec3.cross( target.axis.z, target.axis.y ).normalize(),
+		//xAxis	= Vec3.cross( target.axis.y, target.axis.z ),
+		qTarget	= Quat.fromAxis( xAxis, target.axis.z, target.axis.y ).normalize(),
+		rot 	= Quat.mul( wt.rot, chain.bind[ 0 ].rot ), // Get Worldspace rotation of the first bone
+		tmp		= new Quat(); 
+
+
+	//let bt = Transform.add( wt, chain.bind[0] );
+	//let U = Vec3.transformQuat( Vec3.UP, bt.rot ).normalize();
+	//let U = target.axis.z.clone();
+	//let F = Vec3.transformQuat( Vec3.FORWARD, bt.rot ).normalize();
+	//let L = Vec3.transformQuat( Vec3.LEFT, bt.rot ).normalize();
+
+	//console.log( U );
+
+	//Vec3.cross( U, F, L ).normalize();
+	//Vec3.cross( L, U, F ).normalize();
+	
+	//Quat.fromAxis( L, U, F, qTarget );
+
+	qTarget.flip();
+	//fromAxis( F, L, U, qTarget ).normalize();
+	//fromAxis( Vec3.FORWARD, Vec3.RIGHT, Vec3.DOWN, qTarget ).normalize();
+
+	//App.debug.line( Vec3.ZERO, U, 8 );
+
+	//App.debug.quat( bt.rot, bt.pos );
+	//App.debug.quat( qTarget, bt.pos );
+
+
+	Quat.mul( qTarget, Quat.invert(rot).normalize(), tmp ).normalize();	// Diff between starting rotation and final rotation
+
+	rot	.pmul( tmp ).normalize() 					// Add that difference to starting rotation
+		.pmul( Quat.invert( wt.rot ) );	// Convert to Bone's Local Space by mul invert of parent bone rotation
+
+	chain.updateBone( 0, rot.normalize() ); 		// Save result to bone.
+}
+
+
+function limbOLD( chain, target, pose, wt ){
+	// Ceate the final rotation the first bone needs to be at in World space
+	// -- Targets Forward becomes Bone's Up
+	// -- Targets Left becomes the bone's forward
+	// -- Calc the bone's new Left based on its new Up/Forward directions
+	let xAxis	= Vec3.cross( target.axis.z, target.axis.x ),
+		qTarget	= Quat.fromAxis( xAxis, target.axis.z, target.axis.x ),
+		wq 		= new Quat(),
+		rot 	= new Quat(),	
+		tmp		= new Quat(); 
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// Using law of cos SSS, so need the length of all sides of the triangle
+	let aLen	= chain.lens[ 0 ],
+		bLen	= chain.lens[ 1 ],
+		cLen	= Math.sqrt( target.distanceSqr ),
+		rad;
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// FIRST BONE - Aim then rotate by the angle.
+	rot = Quat.mul( wt.rot, chain.bind[ 0 ].rot, rot );		// Get Worldspace rotation of the first bone
+
+	if( Quat.dot( rot, qTarget ) < 0 ) qTarget.flip();		// Axis can be pointing in the wrong direction, Flip the signs
+
+	Quat.mul( qTarget, rot.invert( tmp ), tmp );			// Diff between starting rotation and final rotation
+
+	rot.pmul( tmp );										// Add that difference to starting rotation
+	
+	rad	= Maths.lawcos_sss( aLen, cLen, bLen );				// Get the Angle between First Bone and Target.
+	tmp.setAxisAngle( target.axis.x, -rad );				// Use the Target's X axis for rotation
+	rot.pmul( tmp );										// Rotate the the aimed bone by the angle from SSS
+	wq.copy( rot );											// Save a Copy as World Rotation before converting to local space
+
+	rot.pmul( wt.rot.invert( tmp ) );						// Convert to Bone's Local Space by mul invert of parent bone rotation
+
+	chain.updateBone( 0, rot ); 							// Save result to bone.
+	//if( pose )	pose.updateBone( chain.idx[ 0 ], rot );
+	//else			chain.updateBone( 0, rot );
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// SECOND BONE
+	// Need to rotate from Right to Left, So take the angle and subtract it from 180 to rotate from 
+	// the other direction. Ex. L->R 70 degrees == R->L 110 degrees
+	rad	= Math.PI - Maths.lawcos_sss( aLen, bLen, cLen );
+
+	Quat.mul( wq, chain.bind[ 1 ].rot, rot ) 				// Add Bone 2's Local Bind Rotation to Bone 1's new World Rotation.
+		.pmul( tmp.setAxisAngle( target.axis.x, rad ) )		// Rotate it by the target's x-axis
+		.pmul( wq.invert( tmp ) );							// Convert to Bone's Local Space
+	
+	chain.updateBone( 1, rot ); 							// Save local space to bone.
+
+	//if( pose )	pose.updateBone( chain.idx[ 1 ], rot );
+	//else			chain.updateBone( 1, rot );
+}
+
+function _aimBone( chain, target, wt, out ){
+	// Create the rotation that aligns to the target's z Axis, that also points the bending at targets y axis
+	// -- Targets Forward becomes Bone's Up
+	// -- Depending on the chain, the new forward can be either X or Y.
+	// -- Calc the bone's new Left based on its new Up/Forward directions
+	let zAxis	= target.axis[ chain.ikTargetFwd ],
+		xAxis	= Vec3.cross( target.axis.z, zAxis ),
+		qTarget	= Quat.fromAxis( xAxis, target.axis.z, zAxis ),
+		tmp		= new Quat();
+
+	Quat.mul( wt.rot, chain.bind[ 0 ].rot, out );			// Get Worldspace rotation of the first bone
+
+	if( Quat.dot( out, qTarget ) < 0 ) qTarget.flip();		// Axis can be pointing in the wrong direction, Flip the signs: Thx @gszauer
+
+	Quat.mul( qTarget, out.invert( tmp ), tmp );			// Diff between starting rotation and final rotation
+
+	out.pmul( tmp );										// Add that difference to starting rotation
+
+	return out;
+}
+
+
+function limb( chain, target, pose, wt ){
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// Using law of cos SSS, so need the length of all sides of the triangle
+	let aLen	= chain.lens[ 0 ],
+		bLen	= chain.lens[ 1 ],
+		cLen	= Math.sqrt( target.distanceSqr ),
+		wq 		= new Quat(),
+		rot 	= new Quat(),	
+		tmp		= new Quat(),
+		rad;
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// FIRST BONE - Aim then rotate by the angle.
+	_aimBone( chain, target, wt, rot );						// Aime the first bone toward the target oriented with the bend direction.
+	
+	rad	= Maths.lawcos_sss( aLen, cLen, bLen );				// Get the Angle between First Bone and Target.
+	tmp.setAxisAngle( target.axis.x, -rad );				// Use the Target's X axis for rotation
+	rot.pmul( tmp );										// Rotate the the aimed bone by the angle from SSS
+	wq.copy( rot );											// Save a Copy as World Rotation before converting to local space
+
+	rot.pmul( wt.rot.invert( tmp ) );						// Convert to Bone's Local Space by mul invert of parent bone rotation
+
+	if( pose )	pose.updateBone( chain.idx[ 0 ], rot );		// Save result to bone.
+	else		chain.updateBone( 0, rot );
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// SECOND BONE
+	// Need to rotate from Right to Left, So take the angle and subtract it from 180 to rotate from 
+	// the other direction. Ex. L->R 70 degrees == R->L 110 degrees
+	rad	= Math.PI - Maths.lawcos_sss( aLen, bLen, cLen );
+
+	Quat.mul( wq, chain.bind[ 1 ].rot, rot ) 				// Add Bone 2's Local Bind Rotation to Bone 1's new World Rotation.
+		.pmul( tmp.setAxisAngle( target.axis.x, rad ) )		// Rotate it by the target's x-axis
+		.pmul( wq.invert( tmp ) );							// Convert to Bone's Local Space
+
+	if( pose )	pose.updateBone( chain.idx[ 1 ], rot );
+	else		chain.updateBone( 1, rot );
+}
+
+function aim( chain, target, pose, wt ){
+	let rot = new Quat();
+
+	_aimBone( chain, target, wt, rot );		
+
+	rot.pmul( Quat.invert( wt.rot ) );	// Convert to Bone's Local Space by mul invert of parent bone rotation
+
+	if( pose )	pose.updateBone( chain.idx[ 0 ], rot );
+	else		chain.updateBone( 0, rot );
+}
 
 
 class NoiseCycle{
@@ -308,7 +542,7 @@ class NumberCycle{
 class IKRig_Human_Dance{
 	constructor( rig ){
 		this.rig = rig;
-		this.hipHeight = rig.getEBone( rig.hip ).Bone.initial.pos.y;
+		this.hipHeight = rig.getEBone( rig.hip ).Bone.bind.pos.y;
 		this.hipMaxMove = -0.3;
 		this.hipMin		= 0.05;
 
@@ -461,20 +695,37 @@ class IKRig_Human_Dance{
 	//////////////////////////////////////////////////////////////////
 	ik_hip_feet2(){
 		// Target Point
-		let v = new Vec3( 0.1, 0.2, 0.2 );
-		App.debug.point( v, 2 );
+		//let v = new Vec3( 0.1, 0.2, 0.2 );
+		//App.debug.point( v, 2 );
 
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		let wt = new Transform( this.rig.getPHip().local );
+		let bend = Vec3.FORWARD.clone();
+		wt.transformVec( bend );
+
+		this.ik_limb( this.rig.leg_l, this.rig.pose, wt, this.f.ikFeet[0], bend );
+		this.ik_limb( this.rig.leg_r, this.rig.pose, wt, this.f.ikFeet[1], bend );
+		/*
 		let t = new Transform();
-		let idx = this.rig.leg_l_chain.idx[ 0 ];
+		let idx = this.rig.leg_l.idx[ 0 ];
 
 		Transform.add( wt, this.rig.pose.bones[ idx ].local, t );
 		App.debug.point( t.pos, 6 );
 
-		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		this.target.byPos( t.pos, v, this.f.hipDir );
+		this.target.byPos( t.pos, this.f.ikFeet[0],  Vec3.FORWARD );
 		IKTarget.debug( App.debug, this.target );
+
+		if( this.target.distanceSqr < this.rig.leg_l.lenSqr ){
+			limb( this.rig.leg_l, this.target, this.rig.pose, wt );
+		}else{
+			//aim2( rig.leg_l, target, null, wt );	
+			console.log("TODO AIM");
+		}
+		*/
+
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		//this.target.byPos( t.pos, v, this.f.hipDir );
+		//IKTarget.debug( App.debug, this.target );
 
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		this.rig.pose.apply();
@@ -519,14 +770,18 @@ class IKRig_Human_Dance{
 		this.rig.pose.apply();
 	}
 
-	ik_limb( pose, chain, pos, wt ){
-		if( !chain.targetPoint( pos, wt ) ){
-			chain.resetPose( pose, 1 );
-			Solver.aim( chain, pose, true );
-			console.log( "aim" );
+	ik_limb( chain, pose, wt, targetPos, targetBend ){
+		let t = Transform.add( wt, chain.bind[0] );
+
+		this.target.byPos( t.pos, targetPos, targetBend );
+		//IKTarget.debug( App.debug, this.target );
+
+		if( this.target.distanceSqr < chain.lenSqr ){
+			limb( chain, this.target, pose, wt );
 		}else{
-			Solver.limb( chain, pose, true );
-			console.log( "limb" );
+			//console.log( "aim" );
+			aim( chain, this.target, pose, wt );
+			pose.updateBone( chain.idx[ 1 ], Quat.ZERO );
 		}
 	}
 }

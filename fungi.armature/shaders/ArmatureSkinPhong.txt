@@ -43,6 +43,15 @@
 		vec4 Qd 	= dq[1].xyzw; //dual (trans)
 		vec3 pos	= v + cross(2.0 * Qr.xyz, cross(Qr.xyz, v) + Qr.w * v);	//Rotate Vector
 		vec3 tran	= 2.0 * (Qr.w * Qd.xyz - Qd.w * Qr.xyz + cross(Qr.xyz, Qd.xyz));	//Pull out Translation from DQ
+		//vec3 tran = 2.0 * Qd.xyz * -Qr.xyz;
+		return pos + tran;
+	}
+
+	vec3 dqVecTransform2(mat2x4 dq, vec3 v){
+		vec4 Qr 	= dq[0].xyzw; //real (rot)
+		vec4 Qd 	= dq[1].xyzw; //dual (trans)
+		vec3 pos	= v + 2.0 * cross( Qr.xyz, cross(Qr.xyz, v) + Qr.w * v);	//Rotate Vector
+		vec3 tran	= 2.0 * (Qr.w * Qd.xyz - Qd.w * Qr.xyz + cross(Qr.xyz, Qd.xyz));	//Pull out Translation from DQ
 		return pos + tran;
 	}
 
@@ -60,7 +69,8 @@
 							bDQ[ c ] * bWeight.z +
 							bDQ[ d ] * bWeight.w;
 
-		dqSum *= 1.0 / length( dqSum[0] ); // Normalize DQ by the length of the Quaternion
+		//dqSum *= 1.0 / length( dqSum[0] ); // Normalize DQ by the length of the Quaternion
+		dqSum /= length( dqSum[0] ); // Normalize DQ by the length of the Quaternion
 
 		vec3 wScale 	=	bScale[ a ]	* bWeight.x +
 							bScale[ b ]	* bWeight.y +
@@ -70,7 +80,22 @@
 		/* SCALE, ROTATE - TRANSLATE */
 		//return dqVecTransform(dqSum, pos * wScale);
 		return dqVecTransform(dqSum, pos);
+		//return dqVecTransform2(dqSum, pos);
+
+		//vec4 Qr 	= dqSum[0].xyzw; //real (rot)
+		//vec4 Qd 	= dqSum[1].xyzw; //dual (trans)
+
+		//vec3 position = pos + 2.0 * cross( Qr.xyz, cross(Qr.xyz, pos) + Qr.w * pos);
+		////vec3 position = pos + cross( 2.0 * Qr.xyz, cross(Qr.xyz, pos) + Qr.w * pos);
+		////vec3 position = pos + 2.0 * cross( Qr.yzw, cross(Qr.yzw, pos.xyz) + Qr.x * pos);
+		////vec3 trans = 2.0 * ( Qr.x * Qd.yzw - Qd.x * Qr.yzw + cross( Qr.yzw, Qd.yzw));
+		//vec3 trans = 2.0 * ( Qr.w * Qd.xyz - Qd.w * Qr.xyz + cross( Qr.xyz, Qd.xyz) );
+		//position += trans; 
+
+		//return position;
 	}
+
+
 
 	void main(void){
 		vec3 pos	= dqBoneTransform_4(a_position.xyz, Arm.bones, a_boneIndex, a_boneWeight, Arm.scale);

@@ -1,5 +1,6 @@
 <!DOCTYPE html><html><head><title>Fungi</title></head><script type="module">
 import App,{ gl }	from "../fungi/engine/App.js";
+import { Vec3 }		from "../fungi/maths/Maths.js";
 import Ray 			from "./Ray.js";
 
 //#############################################################################
@@ -17,11 +18,18 @@ function onDraw( dt, ss ){ App.ecs.updateSystems(); }
 
 
 //#############################################################################
+let plane_pos	= new Vec3( 0, 1, -1 );
+let plane_norm	= new Vec3( 0, 0, 1 );
+
 function init(){
 	App.cameraCtrl.setOrbit( -20, 20, 6 );
 
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	gl.ctx.canvas.addEventListener( "mouseup", onRightClick );
+
+	App.debug
+		.point( plane_pos, 8 )
+		.line( plane_pos, Vec3.add( plane_pos, plane_norm ), 8 );
 
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	App.input.onInput = ()=>{ window.requestAnimationFrame( onDraw ); } // App.loop.start();
@@ -29,16 +37,20 @@ function init(){
 }
 
 //#############################################################################
+
 let gRay = new Ray();
 function onRightClick( e ){
 	if( e.button != 2 ) return;
 	e.preventDefault(); e.stopPropagation();
 
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	let pos = App.input.toCoord( e );
-
 	Ray.MouseSegment( pos[0], pos[1], gRay );
-
 	App.debug.line( gRay.origin, gRay.end, 6 );
-	console.log( gRay );
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	let t = Ray.inPlane( gRay, plane_pos, plane_norm );
+	if(t != null) App.debug.point( gRay.getPos( t ), 0 );
+	//console.log( t );
 }
 </script><body></body></html>

@@ -1,6 +1,9 @@
 <!DOCTYPE html><html><head><title>Fungi</title></head><script type="module">
 import App,{ gl }	from "../fungi/engine/App.js";
+import { Vec3 }		from "../fungi/maths/Maths.js";
 import Ray 			from "./Ray.js";
+
+import BoundingBox	from "./BoundingBox.js";
 
 //#############################################################################
 App	.launch( null, true )
@@ -17,11 +20,17 @@ function onDraw( dt, ss ){ App.ecs.updateSystems(); }
 
 
 //#############################################################################
+let aabb = new BoundingBox( [0,0,0], [1,1,1] );
+
 function init(){
 	App.cameraCtrl.setOrbit( -20, 20, 6 );
 
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	gl.ctx.canvas.addEventListener( "mouseup", onRightClick );
+
+	aabb.setWorldPos( [ -1.0, 0.5, -0.5 ] );
+	App.debug.box( aabb.worldBounds[0], aabb.worldBounds[1] );
+
 
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	App.input.onInput = ()=>{ window.requestAnimationFrame( onDraw ); } // App.loop.start();
@@ -29,16 +38,25 @@ function init(){
 }
 
 //#############################################################################
+
 let gRay = new Ray();
 function onRightClick( e ){
 	if( e.button != 2 ) return;
 	e.preventDefault(); e.stopPropagation();
 
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	let pos = App.input.toCoord( e );
-
-	Ray.MouseSegment( pos[0], pos[1], gRay );
-
+	Ray.MouseSegment( pos[0], pos[1], gRay, true ); //Enable AABB optimization
 	App.debug.line( gRay.origin, gRay.end, 6 );
-	console.log( gRay );
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	
+	var info = {};
+	if(Ray.inAABB( gRay, aabb, info )){
+		//console.log(info);
+		App.debug
+			.point( gRay.getPos( info.min ), 0 )
+			.point( gRay.getPos( info.max ), 1 );
+	}
 }
 </script><body></body></html>

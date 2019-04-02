@@ -6,15 +6,18 @@ import App from "../fungi/engine/App.js"; //Todo just for debug, remove.
 
 
 class IKChain{
-	constructor( arm, bNames ){
+	constructor( arm, bNames, ikFwd="y" ){
 		this.arm	= arm;			// Reference to Armature Object
 		
 		this.idx	= new Array();	// List of Index values to the armature Bones that make up a chain
 		this.lens 	= new Array();	// Cache Bone Lengths to make things easier for IK.
+		this.bind	= new Array();	// Local Bind Transform for each Bone
 
 		this.cnt	= 0;			// How many Bones in the chain
 		this.len 	= 0;			// Chain Length
 		this.lenSqr	= 0;			// Chain Length Squared, Cached for Checks without SQRT
+
+		this.ikTargetFwd = ikFwd;		
 		
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		// Get The Bone Indices and
@@ -26,6 +29,7 @@ class IKChain{
 			this.len += e.Bone.length;
 			this.idx.push( e.Bone.order );
 			this.lens.push( e.Bone.length );
+			this.bind.push( e.Bone.bind.clone() );
 		}
 
 		this.lenSqr	= this.len * this.len;

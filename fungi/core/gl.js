@@ -1,5 +1,9 @@
 import Cache	from "./Cache.js";
 
+
+const NORMALIZE_RGB = 1 / 255.0;
+
+
 class gl{
 	static init( canvas ){
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -95,12 +99,27 @@ class gl{
 	////////////////////////////////////////////////////////
 	// DATA
 	////////////////////////////////////////////////////////
+		
 		static rgbArray(){
 			if(arguments.length == 0) return null;
 			let ary = (Array.isArray(arguments[0]))? arguments[0] : arguments,
 				rtn = [];
 
 			for(var i=0, c, p; i < ary.length; i++){
+				//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+				// Handle Numeric Form
+				if( ! isNaN( ary[i] ) ){
+					c = parseInt( ary[i] );
+					rtn.push(
+						( c >> 16 & 255 )	* NORMALIZE_RGB,
+						( c >> 8 & 255 )	* NORMALIZE_RGB,
+						( c & 255 )			* NORMALIZE_RGB
+					);
+					continue;
+				}
+
+				//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+				// Handle Text Hex Form
 				if(ary[i].length < 6) continue;
 				c = ary[i];				//Just an alias(copy really) of the color text, make code smaller.
 				p = (c[0] == "#")?1:0;	//Determine starting position in char array to start pulling from

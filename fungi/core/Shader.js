@@ -174,8 +174,13 @@ class Shader{
 				case "float":	gl.ctx.uniform1f(	itm.loc, uValue); break;
 				case "afloat":	gl.ctx.uniform1fv(	itm.loc, uValue); break;
 				case "vec2":	gl.ctx.uniform2fv(	itm.loc, uValue); break;
+				
+				case "rgb":
 				case "vec3":	gl.ctx.uniform3fv(	itm.loc, uValue); break;
+				
+				case "rgba":
 				case "vec4":	gl.ctx.uniform4fv(	itm.loc, uValue); break;
+				
 				case "int":		gl.ctx.uniform1i(	itm.loc, uValue); break;
 
 				case "mat4":	gl.ctx.uniformMatrix4fv(	itm.loc, false, uValue); break;

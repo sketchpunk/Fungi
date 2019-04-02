@@ -9,7 +9,7 @@ import Page			from "./lib/Page.js";
 import RenderLoop 	from "./RenderLoop.js";
 import InputTracker from "./lib/InputTracker.js";
 
-import Ecs, { Entity, Assemblages, System } from "./Ecs.js";
+import Ecs, { Entity, Assemblages, System, Components } from "./Ecs.js";
 import Camera, { CameraSystem }	from "./ecs/Camera.js";
 import Node, { NodeSystem } 	from "./ecs/Node.js";
 import { DrawSystem }			from "./ecs/Draw.js";
@@ -95,6 +95,15 @@ class App{
 		static $Draw( name, vao = null, mat = null, mode = 4 ){ 
 			let e = this.ecs.newAssemblage( "Draw", name );
 			if( vao ) e.Draw.add( vao, mat, mode );
+			return e;
+		}
+
+		static $Grp( name ){ 
+			let e = this.ecs.newAssemblage( "Node", name );
+			e.add = function( e, updateLevels = true ){
+				Node.addChild( this, e, updateLevels );
+				return this;
+			}
 			return e;
 		}
 }
@@ -250,4 +259,4 @@ App.useArmature		= 0;		// Enable Armature Specific Features. 1 = Armature, 2 = P
 
 //######################################################
 export default App;
-export { Vao, Shader, Material, gl, Entity, System };
+export { Vao, Shader, Material, gl, Entity, System, Components };

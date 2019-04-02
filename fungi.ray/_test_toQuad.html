@@ -1,6 +1,9 @@
 <!DOCTYPE html><html><head><title>Fungi</title></head><script type="module">
 import App,{ gl }	from "../fungi/engine/App.js";
+import { Vec3 }		from "../fungi/maths/Maths.js";
 import Ray 			from "./Ray.js";
+
+import Quad			from "../fungi/primitives/Quad.js";
 
 //#############################################################################
 App	.launch( null, true )
@@ -17,11 +20,17 @@ function onDraw( dt, ss ){ App.ecs.updateSystems(); }
 
 
 //#############################################################################
+let quad;
+
 function init(){
 	App.cameraCtrl.setOrbit( -20, 20, 6 );
 
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	gl.ctx.canvas.addEventListener( "mouseup", onRightClick );
+
+	quad = Quad( "VecWColor" );
+	quad.Node.local.pos.set( 1, 1, -1 );
+
 
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	App.input.onInput = ()=>{ window.requestAnimationFrame( onDraw ); } // App.loop.start();
@@ -29,16 +38,20 @@ function init(){
 }
 
 //#############################################################################
+
 let gRay = new Ray();
 function onRightClick( e ){
 	if( e.button != 2 ) return;
 	e.preventDefault(); e.stopPropagation();
 
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	let pos = App.input.toCoord( e );
-
 	Ray.MouseSegment( pos[0], pos[1], gRay );
-
 	App.debug.line( gRay.origin, gRay.end, 6 );
-	console.log( gRay );
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	let t = Ray.inQuad( gRay, quad, 1 );
+	if(t != null) App.debug.point( gRay.getPos( t ), 0 );
+	//console.log( t );
 }
 </script><body></body></html>

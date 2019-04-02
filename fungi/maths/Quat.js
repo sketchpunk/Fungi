@@ -84,6 +84,15 @@ class Quaternion extends Float32Array{
 
 		clone(){ return new Quaternion(this); }
 
+		flip( out ){
+			out = out || this;
+			out[0] = -this[0];
+			out[1] = -this[1];
+			out[2] = -this[2];
+			out[3] = -this[3];
+			return out;
+		}
+
 
 	////////////////////////////////////////////////////////////////////
 	// INSTANCE OPERATIONS
@@ -153,6 +162,8 @@ class Quaternion extends Float32Array{
 	////////////////////////////////////////////////////////////////////
 	// STATIC GETTER / SETTERS
 	////////////////////////////////////////////////////////////////////
+		static dot( a, b ){ return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]; }
+
 
 		//Ported to JS from C# example at https://pastebin.com/ubATCxJY
 		//Note, if Dir and Up are equal, a roll happends. Need to find a way to fix this.

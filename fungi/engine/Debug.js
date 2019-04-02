@@ -41,7 +41,7 @@ class Debug{
 			let v = new Vec3();
 			offset = offset || Vec3.ZERO;
 			Debug
-				.line( offset, Vec3.transformQuat( Vec3.scale( Vec3.FORWARD, scale, v) , q, v).add( offset ), 6 )
+				.line( offset, Vec3.transformQuat( Vec3.scale( Vec3.FORWARD, scale, v) , q, v).add( offset ), 1 )
 				.line( offset, Vec3.transformQuat( Vec3.scale( Vec3.UP, scale, v), q, v).add( offset ), 2 )
 				.line( offset, Vec3.transformQuat( Vec3.scale( Vec3.LEFT, scale, v), q, v).add( offset ), 0 );
 

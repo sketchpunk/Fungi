@@ -1,5 +1,6 @@
 <!DOCTYPE html><html><head><title>Fungi</title></head><script type="module">
 import App,{ gl }	from "../fungi/engine/App.js";
+import Maths,{ Vec3 }		from "../fungi/maths/Maths.js";
 import Ray 			from "./Ray.js";
 
 //#############################################################################
@@ -17,11 +18,32 @@ function onDraw( dt, ss ){ App.ecs.updateSystems(); }
 
 
 //#############################################################################
+let plane_pos		= new Vec3( 0, 1, -1 );
+let plane_norm		= new Vec3( 0, 0, 1 );
+let plane_radius 	= 0.5;
+
 function init(){
 	App.cameraCtrl.setOrbit( -20, 20, 6 );
 
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	gl.ctx.canvas.addEventListener( "mouseup", onRightClick );
+
+	App.debug
+		.point( plane_pos, 8 )
+		.line( plane_pos, Vec3.add( plane_pos, plane_norm ), 8 );
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// Draw Circle
+	let seg = 16,
+		v0 	= new Vec3(),
+		v1 	= new Vec3();
+
+	Maths.planeCircle( plane_pos, Vec3.LEFT, Vec3.UP, 0, plane_radius, v0 );
+	for( let i=1; i <= seg; i++ ){
+		Maths.planeCircle( plane_pos, Vec3.LEFT, Vec3.UP, Maths.PI_2 * i / seg, plane_radius, v1 );
+		App.debug.line( v0, v1, 8 );
+		v0.copy( v1 );
+	}
 
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	App.input.onInput = ()=>{ window.requestAnimationFrame( onDraw ); } // App.loop.start();
@@ -29,16 +51,20 @@ function init(){
 }
 
 //#############################################################################
+
 let gRay = new Ray();
 function onRightClick( e ){
 	if( e.button != 2 ) return;
 	e.preventDefault(); e.stopPropagation();
 
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	let pos = App.input.toCoord( e );
-
 	Ray.MouseSegment( pos[0], pos[1], gRay );
-
 	App.debug.line( gRay.origin, gRay.end, 6 );
-	console.log( gRay );
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	let t = Ray.inCircle( gRay, plane_radius, plane_pos, plane_norm );
+	if(t != null) App.debug.point( gRay.getPos( t ), 0 );
+	//console.log( t );
 }
 </script><body></body></html>

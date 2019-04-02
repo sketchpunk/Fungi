@@ -7,6 +7,7 @@ class Ray{
 	//
 	////////////////////////////////////////////////////////
 		constructor(aPos = null, bPos = null){
+			this.mouse		= [ 0, 0 ];
 			this.origin		= new Vec3(); // Starting position of the ray
 			this.end		= new Vec3(); // Ending position of the ray
 			this.vecLen		= new Vec3(); // Vector Length of Origin to End
@@ -44,7 +45,7 @@ class Ray{
 	////////////////////////////////////////////////////////
 		// Create Ray Based on Screen Mouse X,Y
 		//Create actual point in 3d space the mouse clicked plus the furthest point the ray can travel.
-		static MouseSegment( ix, iy, ray = null ){
+		static MouseSegment( ix, iy, ray = null, forAABB = false ){
 			// http://antongerdelan.net/opengl/raycasting.html
 			// Normalize Device Coordinate
 			var nx = ix / gl.width * 2 - 1,
@@ -73,6 +74,12 @@ class Ray{
 			// Build all the values
 			ray = ray || new Ray();
 			ray.setPos( vec4Near, vec4Far );
+
+			ray.mouse[ 0 ] = ix;
+			ray.mouse[ 1 ] = iy;
+
+			if( forAABB ) ray.prepareAABB();
+
 			return ray;
 		}
 		
@@ -115,13 +122,13 @@ class Ray{
 	////////////////////////////////////////////////////////
 	// Intersection Tests
 	////////////////////////////////////////////////////////
-		static inPlane(ray, planePos, planeNorm){
+		static inPlane( ray, planePos, planeNorm ){
 			// t = ray2PlaneLen.planeNorm / rayLen.planeNorm
 			// i = rayStart + (t * rayLen)
-			var denom = Vec3.dot(ray.vecLen, planeNorm);						//Dot product of rayPlen Length and plane normal
-			if(denom <= 0.000001 && denom >= -0.000001) return null;			//abs(denom) < epsilon, using && instead to not perform absolute.
+			var denom = Vec3.dot( ray.vecLen, planeNorm );						// Dot product of rayPlen Length and plane normal
+			if( denom <= 0.000001 && denom >= -0.000001 ) return null;			// abs(denom) < epsilon, using && instead to not perform absolute.
 
-			var ray2PlaneLen	= Vec3.sub(planePos, ray.origin),				//Distance between start of ray and plane position.
+			var ray2PlaneLen	= Vec3.sub(planePos, ray.origin),				// Distance between start of ray and plane position.
 				t 				= Vec3.dot(ray2PlaneLen, planeNorm) / denom;
 
 			//if(t >= 0) return ray.vecLen.clone().scale(t).add(rayStart);			//include && t <= 1 to limit to range of ray, else its infinite in fwd dir.
@@ -130,56 +137,91 @@ class Ray{
 		}
 
 
-		static inCircle(ray, radius, planePos, planeNorm){
-			var t = Ray.inPlane(ray, planePos, planeNorm);
+		static inCircle( ray, radius, planePos, planeNorm ){
+			var t = Ray.inPlane( ray, planePos, planeNorm );
 			if(t == null) return null;
 
-			var ip 		= ray.getPos(t),
-				lenSqr 	= ip.lengthSqr(planePos);
+			var ip 		= ray.getPos( t ),
+				lenSqr 	= ip.lengthSqr( planePos );
 
-			return (lenSqr <= radius*radius)? t : null;
+			return ( lenSqr <= radius*radius )? t : null;
 		}
 
-		
-		//TODO : Need to handle precalc the 4 points of a quad AND handle scale,rotation and translation
-		static inQuad(ray, quad, qSize){
-			var planePos	= quad._position.clone(),
+
+		//TODO : Need to handle precalc the 4 points of a quad AND handle scale, rotation and translation
+		static inQuad( ray, quad, qSize ){
+			var planePos	= quad.Node.local.pos.clone(),
 				planeNorm	= new Vec3();
 
-			//........................................
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			//Figure out the 4 points in the quad based on center position and known width/height;
 			//Note: If the quad has been rotated or scaled, need to apply those to the 4 points as well.
-			var v0 = planePos.clone().add([-qSize,qSize,0]),
-				v1 = planePos.clone().add([-qSize,-qSize,0]),
-				v2 = planePos.clone().add([qSize,-qSize,0]),
-				v3 = planePos.clone().add([qSize,qSize,0]);
+			var v0 = Vec3.add( planePos, [-qSize,  qSize, 0] ),
+				v1 = Vec3.add( planePos, [-qSize, -qSize, 0] ),
+				v2 = Vec3.add( planePos, [ qSize, -qSize, 0] ),
+				v3 = Vec3.add( planePos, [ qSize,  qSize, 0] );
 
-			//........................................
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			//Figure out the normal direction of the quad
 			//to find normal direction, take 3 sequential corners, get two vector 
 			//lengths then cross apply in counter-clockwise order
-			var L0 = Vec3.sub(v0,v1),
-				L1 = Vec3.sub(v2,v1);
-			Vec3.cross(L1, L0, planeNorm).normalize();
+			var L0 = Vec3.sub( v0, v1 ),
+				L1 = Vec3.sub( v2, v1 );
+			Vec3.cross( L1, L0, planeNorm ).normalize();
 
-			//........................................
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			//Determine if the ray intersects the same plane of the quad.
-			var t = Ray.inPlane(ray, planePos, planeNorm);
+			var t = Ray.inPlane( ray, planePos, planeNorm );
 			if(t == null) return null;
 
-			//........................................
-			//First Diagonal Test 
-			var ip		= ray.getPos(t),
-				vlen	= Vec3.sub(v1, v0),
-				plen	= Vec3.sub(ip, v0),
-				tt		= Vec3.dot(plen,vlen) / Vec3.dot(vlen,vlen); //|a|.|b| / |b|.|b|
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			//First Diagonal Test - Projecting intersection point onto Left Side of Quad
+			var ip		= ray.getPos( t ),
+				vlen	= Vec3.sub( v1, v0 ),
+				plen	= Vec3.sub( ip, v0 ),
+				tt		= Vec3.dot( plen, vlen ) / Vec3.dot( vlen, vlen ); //|a|.|b| / |b|.|b|
 			if(tt < 0 || tt > 1) return null;
 
 			//........................................
-			//Second Diagonal Test 
-			v2.sub(v1, vlen); //vlen = v2.clone().sub(v1);
-			ip.sub(v1, plen); //plen = iPos.clone().sub(v1);
-			tt = Vec3.dot(plen,vlen) / Vec3.dot(vlen,vlen);
+			//Second Diagonal Test - Projecting intersection point onto bottom Side of Quad
+			Vec3.sub( v2, v1, vlen );
+			Vec3.sub( ip, v1, plen );
+			tt = Vec3.dot( plen, vlen ) / Vec3.dot( vlen, vlen );
+
+			if(tt < 0 || tt > 1) return null;
+
+			return t;
+		}
+
+		static inQuadRaw( ray, v0, v1, v2, v3 ){
+			var planeNorm	= new Vec3();
+
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			//Figure out the normal direction of the quad
+			//to find normal direction, take 3 sequential corners, get two vector 
+			//lengths then cross apply in counter-clockwise order
+			var L0 = Vec3.sub( v0, v1 ),
+				L1 = Vec3.sub( v2, v1 );
+			Vec3.cross( L1, L0, planeNorm ).normalize();
+
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			//Determine if the ray intersects the same plane of the quad.
+			var t = Ray.inPlane( ray, v0, planeNorm );
+			if(t == null) return null;
+
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			//First Diagonal Test - Projecting intersection point onto Left Side of Quad
+			var ip		= ray.getPos( t ),
+				vlen	= Vec3.sub( v1, v0 ),
+				plen	= Vec3.sub( ip, v0 ),
+				tt		= Vec3.dot( plen, vlen ) / Vec3.dot( vlen, vlen ); //|a|.|b| / |b|.|b|
+			if(tt < 0 || tt > 1) return null;
+
+			//........................................
+			//Second Diagonal Test - Projecting intersection point onto bottom Side of Quad
+			Vec3.sub( v2, v1, vlen );
+			Vec3.sub( ip, v1, plen );
+			tt = Vec3.dot( plen, vlen ) / Vec3.dot( vlen, vlen );
 
 			if(tt < 0 || tt > 1) return null;
 
@@ -187,7 +229,7 @@ class Ray{
 		}
 
 
-		static inAABB(ray, box, out){
+		static inAABB( ray, box, out ){
 			var tMin, tMax, min, max, minAxis = 0;//, maxAxis = 0;
 
 			//X Axis ---------------------------
@@ -198,17 +240,17 @@ class Ray{
 			min = (box.worldBounds[		ray.aabb[1]].y - ray.origin.y) * ray.vecLenInv.y;
 			max = (box.worldBounds[1 - 	ray.aabb[1]].y - ray.origin.y) * ray.vecLenInv.y;
 
-			if(max < tMin || min > tMax) return false; //if it criss crosses, its a miss
-			if(min > tMin){ tMin = min; minAxis = 1; } //Get the greatest min
-			if(max < tMax){ tMax = max; }//Get the smallest max
+			if(max < tMin || min > tMax) return false;	// if it criss crosses, its a miss
+			if(min > tMin){ tMin = min; minAxis = 1; }	// Get the greatest min
+			if(max < tMax){ tMax = max; }				// Get the smallest max
 
 			//Z Axis ---------------------------
 			min = (box.worldBounds[		ray.aabb[2]].z - ray.origin.z) * ray.vecLenInv.z;
 			max = (box.worldBounds[1 - 	ray.aabb[2]].z - ray.origin.z) * ray.vecLenInv.z;
 
-			if(max < tMin || min > tMax) return false; //if criss crosses, its a miss
-			if(min > tMin){ tMin = min; minAxis = 2; } //Get the greatest min
-			if(max < tMax){ tMax = max; } //Get the smallest max
+			if(max < tMin || min > tMax) return false;	// if criss crosses, its a miss
+			if(min > tMin){ tMin = min; minAxis = 2; }	// Get the greatest min
+			if(max < tMax){ tMax = max; }				// Get the smallest max
 
 			//Finish ------------------------------
 			//var ipos = dir.clone().scale(tMin).add(ray.start); //with the shortist distance from start of ray, calc intersection
@@ -216,7 +258,7 @@ class Ray{
 				out.min		= tMin;
 				out.max		= tMax;
 				out.nAxis	= minAxis; // 0 : X, 1 : Y, 2 : Z
-				out.nDir	= (ray.aabb[minAxis] == 1)? 1 : -1;
+				out.nDir	= ( ray.aabb[ minAxis ] == 1 )? 1 : -1;
 			}
 			return true;
 		}
@@ -383,77 +425,39 @@ class Ray{
 	////////////////////////////////////////////////////////
 	// MISC
 	////////////////////////////////////////////////////////
-		static nearSegmentPoints( ray, A0, A1, tAry ){ //http://geomalgorithms.com/a07-_distance.html
-			var u = A1.clone().sub(A0),
+		static nearSegmentPoints( ray, A0, A1, tAry=null ){ //http://geomalgorithms.com/a07-_distance.html
+			var u = Vec3.sub( A1, A0 ),
 				v = ray.vecLen.clone(),
-				w = A0.clone().sub(ray.origin),
-				a = Vec3.dot(u,u),    // always >= 0
-				b = Vec3.dot(u,v),
-				c = Vec3.dot(v,v),    // always >= 0
-				d = Vec3.dot(u,w),
-				e = Vec3.dot(v,w),
-				D = a*c - b*b,        // always >= 0
+				w = Vec3.sub( A0, ray.origin ),
+				a = Vec3.dot( u, u ),	// always >= 0
+				b = Vec3.dot( u, v ),
+				c = Vec3.dot( v, v ),	// always >= 0
+				d = Vec3.dot( u, w ),
+				e = Vec3.dot( v, w ),
+				D = a * c - b * b,		// always >= 0
 				tU, tV;
+
 			//compute the line parameters of the two closest points
 			if(D < 0.000001){	// the lines are almost parallel
 				tU = 0.0;
-				tV = (b>c ? d/b : e/c);    // use the largest denominator
+				tV = ( b > c ? d/b : e/c );    // use the largest denominator
 			}else{
-				tU = (b*e - c*d) / D;
-				tV = (a*e - b*d) / D;
+				tU = ( b*e - c*d ) / D;
+				tV = ( a*e - b*d ) / D;
 			}
 
 			if( tU < 0 || tU > 1 || tV < 0 || tV > 1) return null;
-			if(tAry !== undefined){ tAry[0] = tU; tAry[1] = tV; }
+			if( tAry ){ // Return T Values if requested.
+				tAry[0] = tU; 
+				tAry[1] = tV;
+			}
 
-			return [ u.scale(tU).add(A0), v.scale(tV).add(ray.origin) ];
+			return [ u.scale( tU ).add( A0 ), v.scale( tV ).add( ray.origin ) ];
 		}
 }
-
-
-//#######################################################################################
-class BoundingBox{
-	constructor(){
-		this.localBounds = [new Vec3(), new Vec3()]; //Local Space Bound Positions
-		this.worldBounds = [new Vec3(), new Vec3()]; //World Space Bound Position with target position added to local
-		this.target = null;
-
-		if(arguments.length == 1){			//Passing in Target
-			this.setTarget(arguments[0]);
-		}else if(arguments.length == 2){	//Passing in two Vec3 / arrays
-			this.localBounds[0].copy(arguments[0]);
-			this.localBounds[1].copy(arguments[1]);
-			this.worldBounds[0].copy(arguments[0]);
-			this.worldBounds[1].copy(arguments[1]);
-		}else if(arguments.length == 6){	//Passing in raw values for bounds.
-			this.localBounds[0].set(arguments[0],arguments[1],arguments[2]);
-			this.localBounds[1].set(arguments[3],arguments[4],arguments[5]);
-			this.worldBounds[0].set(arguments[0],arguments[1],arguments[2]);
-			this.worldBounds[1].set(arguments[3],arguments[4],arguments[5]);
-		}
-	}
-
-	setTarget(t){
-		this.target = t;
-		if(t.bounds != undefined){
-			this.localBounds[0].copy(t.bounds[0]);
-			this.localBounds[1].copy(t.bounds[1]);
-		}
-		return this;
-	}
-
-	//TODO this won't work well with child renderables. May need to pull translation from worldMatrix.
-	update(){
-		this.localBounds[0].add(this.target.com.Transform.position, this.worldBounds[0]);
-		this.localBounds[1].add(this.target.com.Transform.position, this.worldBounds[1]);
-		return this;
-	}
-}
-
 
 //#######################################################################################
 export default Ray;
-export { BoundingBox };
 
 
 	/* Came from Camera

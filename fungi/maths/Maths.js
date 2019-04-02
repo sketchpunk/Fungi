@@ -147,8 +147,6 @@ class Maths{
 		static squareWave (v, min=0, max=1, period=1){ return ( (v % period) <  (period * 0.5) )? max : min; }
 
 		
-
-
 	////////////////////////////////////////////////////////////////////
 	// CURVES
 	////////////////////////////////////////////////////////////////////
@@ -221,6 +219,24 @@ class Maths{
 		//Cubic Bezier curve:
 		//y = A*(1-x)^3+3*B*(1-x)^2*x+3*C*(1-x)*x^2+D*x^3
 
+
+	////////////////////////////////////////////////////////////////////
+	// Lines and Points
+	////////////////////////////////////////////////////////////////////
+
+	//From a point in space, closest spot to a 2D line
+	static closestPointToLine2D( x0,y0, x1,y1, px, py, out=null ){
+		var dx	= x1 - x0,
+			dy	= y1 - y0,
+			t	= ( (px-x0)*dx + (py-y0)*dy ) / ( dx*dx + dy*dy );
+
+		if( out ){
+			out[ 0 ] = x0 + (dx * t); //Util.lerp(x0, x1, t)
+			out[ 1 ] = y0 + (dy * t); //Util.lerp(y0, y1, t);
+		}
+
+		return t;
+	}
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -265,7 +281,7 @@ function closestPointToLine2D(x0,y0,x1,y1,px,py){
 		t	= ((px-x0)*dx + (py-y0)*dy) / (dx*dx+dy*dy),
 		x	= x0 + (dx * t), //Util.lerp(x0, x1, t),
 		y	= y0 + (dy * t); //Util.lerp(y0, y1, t);
-	return [x,y]
+	return [ x, y ]
 }
 
 //From a point in space, closest spot to a 3D line
