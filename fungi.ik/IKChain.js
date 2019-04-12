@@ -39,6 +39,8 @@ class IKChain{
 	/////////////////////////////////////////////////////////////////////
 	// GETTERS - SETTERS
 	/////////////////////////////////////////////////////////////////////
+		getParent(){ return this.arm.bones[ this.idx[ 0 ] ].Node.parent; }
+
 		getBone( i ){ return this.arm.bones[ this.idx[ i ] ]; }
 		getLocalRot( i ){ return this.arm.bones[ this.idx[ i ] ].Bone.local.rot; }
 

@@ -1,0 +1,59 @@
+<!DOCTYPE html><html><head><title>Fungi</title></head><script type="module">
+import App,{ gl }	from "../fungi/engine/App.js";
+import { Vec3 }		from "../fungi/maths/Maths.js";
+import Ray 			from "./Ray.js";
+
+//#############################################################################
+App	.launch( null, true )
+	.then( dl=>dl
+		.add( "shader", "../fungi/shaders/VecWColor.txt" )
+		.start() )
+	.then( ()=>		App.loadScene( true, true ) )
+	.then( ()=>		init() )
+	.catch( err=>	console.error( err ) );
+
+
+//#############################################################################
+function onDraw( dt, ss ){ App.ecs.updateSystems(); }
+
+
+//#############################################################################
+let seg_a = new Vec3( -1, 1, 2 ),
+	seg_b = new Vec3( 3, -0.5, -1 );
+
+function init(){
+	App.cameraCtrl.setOrbit( -20, 20, 6 );
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	gl.ctx.canvas.addEventListener( "mouseup", onRightClick );
+
+	App.debug.line( seg_a, seg_b, 0 );
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	App.input.onInput = ()=>{ window.requestAnimationFrame( onDraw ); } // App.loop.start();
+	onDraw();
+}
+
+//#############################################################################
+
+let gRay = new Ray();
+function onRightClick( e ){
+	if( e.button != 2 ) return;
+	e.preventDefault(); e.stopPropagation();
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	let pos = App.input.toCoord( e );
+	Ray.MouseSegment( pos[0], pos[1], gRay, true ); //Enable AABB optimization
+	App.debug.line( gRay.origin, gRay.end, 6 );
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	let info = Ray.nearSegmentPoints( gRay, seg_a, seg_b );
+	if( info != null ){
+		//console.log( info );
+		App.debug
+			.point( info[0], 0 )
+			.point( info[1], 6 )
+			.line( info[0], info[1], 0, 6 );
+	}
+}
+</script><body></body></html>

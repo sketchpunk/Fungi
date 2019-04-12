@@ -1,6 +1,18 @@
 ...........................................
-Derivatives Rules
+
+abs( fract( X - 0.5 ) - 0.5 )
+	Zero will Equal 1
+	Any Whole Number Will Equal 0
+	Any 0.5 number will Equal 0.5
+	Any Number over before or after 0.5 will be its opposite on the 0-1 range.
+	0 = 1 -> 0.2 = 0.8 -> 0.5 = 0.5 -> 0.7 = 0.3 -> 1.0 = 0
+
+
+...........................................
+Derivatives Rules :: https://www.mathsisfun.com/calculus/derivatives-rules.html
+
 	Sum / Difference (+ or -) : treat each side as a function that you need to make a derivative of.
+	f + g -> f' + g'
 
 	constant = 0, variable = 1 :: x - 1 become 1 - 0
 	
@@ -8,20 +20,80 @@ Derivatives Rules
 
 	sqrt(x) : 1 / (2 * sqrt(x))
 
+	function * variable = ax -> a
+		(-P0 + P2) * t -> (-P0 + P2)
+
 	Power Rule :  x^2 = D( n*x^n-1 ) = 2x^1
 				 example2:	3x^2  ->  3 * 2x^1  ->  6x^1
 	
 	Product Rule : f() * g() =  f() * g'() + g() * f'();
+		fg -> f g' + f' g
 
 	Chain Rule :  f(g()) = f'( g() ) * g'();
 
 	Quatient Rule : f() / g() :: g()*f'() - f() * g'() / g() * g()
+		f/g ->  (f' g - g' f) / g^2
+
+	Reciprocal Rule
+		1 / f -> -f' / f^2
 
 	inversCOT(x) = -1 / 1 + x^2
 
 	sin(x) = cos(x)
 	cos(x) = -sin(x)
+	tan(x) = sec^2( x )
 
+
+(2t³ - 3t² + 1) * p0 + 
+(t³ - 2t² + t) * m0 + 
+(-2t³ + 3t²) * p1 + 
+(t³ - t²) * m1
+
+
+(6t² - 6t)p0 + 
+(3t² - 4t + 1)m0 + 
+(-6t² + 6t)p1 + 
+(3t² - 2t)m1
+
+
+----------------------------------------------
+
+0.5 * ( 
+    (2 * P1) +
+    (-P0 + P2) * t + 
+    (2*P0 - 5*P1 + 4*P2 - P3) * t² + 
+    (-P0 + 3*P1- 3*P2 + P3) * t³
+ )
+
+
+2 * P1 -> 0 * 1 = 0
+(-P0 + P2) * t -> ax -> a --> (-P0 + P2 )
+
+(2*P0 - 5*P1 + 4*P2 - P3) * t²
+	(2*P0 - 5*P1 + 4*P2 - P3) * 2t
+	(-P0 + 3*P1- 3*P2 + P3) * t³
+
+
+0.5 *( 
+	(-P0 + P2) + 
+	2*(2*P0 - 5*P1 + 4*P2 - P3) * t + 
+	3*(-P0 + 3*P1- 3*P2 + P3) * t²
+)
+
+
+----------------------------------------------
+(s*P0 - s*P1) + 
+( (s - 2) * P0 + (3-2*s) * P1 + s*P2 ) * t +
+( (2-z) * P0 + P3  ) * t^2 +
+( -s * P0 + 2*s*P1-s * P2 ) * t^3
+
+( (s-2) *P0 + (3-2*s)*P1 + s*P2 ) +
+2 * ((2-s)*P0 +                    P3  ) * t
+3 * (-s*P0    + 2*s*P1      -s*P2      ) * t^2
+
+
+p1.x + d0x * t + (- 3 * p1.x + 3 * p2.x - 2 * d0x - d1x) * tt + ( 2 * p1.x - 2 * p2.x + d0x + d1x) * ttt
+d0x + 2 * (- 3 * p1.x + 3 * p2.x - 2 * d0x - d1x) * t + 3 * ( 2 * p1.x - 2 * p2.x + d0x + d1x) * tt
 
 ...........................................
 MISC - GOOD TO KNOW, Some of the stuff can help simplify equations

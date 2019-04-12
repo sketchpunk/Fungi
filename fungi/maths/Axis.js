@@ -114,6 +114,47 @@ class Axis{
 			return out;
 		}
 
+		rotate(rad, axis = "x", out = null){
+			out = out || this;
+
+			let sin = Math.sin(rad),
+				cos = Math.cos(rad),
+				x, y, z;
+
+			switch(axis){
+				case "y": //..........................
+					x = this.x[0];	z = this.x[2];
+					this.x[0]	= z*sin + x*cos; //x
+					this.x[2]	= z*cos - x*sin; //z
+
+					x = this.z[0];	z = this.z[2];
+					this.z[0]	= z*sin + x*cos; //x
+					this.z[2]	= z*cos - x*sin; //z
+				break;
+				case "x": //..........................
+					y = this.y[1];	z = this.y[2];
+					this.y[1]	= y*cos - z*sin; //y
+					this.y[2]	= y*sin + z*cos; //z
+
+					y = this.z[1];	z = this.z[2];
+					this.z[1]	= y*cos - z*sin; //y
+					this.z[2]	= y*sin + z*cos; //z
+				break;
+				case "z": //..........................
+					x = this.x[0];	y = this.x[1];
+					this.x[0]	= x*cos - y*sin; //x
+					this.x[1]	= x*sin + y*cos; //y
+
+					x = this.y[0];	y = this.y[1];
+					this.y[0]	= x*cos - y*sin; //x
+					this.y[1]	= x*sin + y*cos; //y
+				break;
+			}
+
+			return out;
+		}
+
+
 
 	////////////////////////////////////////////////////////////////////
 	// STATIC

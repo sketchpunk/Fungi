@@ -28,18 +28,12 @@ class IKRig_Human{
 		this.leg_r	= new IKChain( e.Armature, json.leg_r, "y" );
 		this.arm_l 	= new IKChain( e.Armature, json.arm_l, "x" );
 		this.arm_r 	= new IKChain( e.Armature, json.arm_r, "x" );
-		//this.arm_r_chain = null;
 
-		//this.spine_chain = null;
-
-		//this.neck	= null;
-		
 		this.hip	= Armature.getBone( e.Armature, json.hip ).Bone.order;
-		this.hand_l	= Armature.getBone( e.Armature, json.hand_l ).Bone.order;
-		this.hand_r	= Armature.getBone( e.Armature, json.hand_r ).Bone.order;
-
-		//this.foot_l = null;
-		//this.foot_r = null;
+		this.spine	= new IKChain( e.Armature, json.spine );;
+		
+		//this.hand_l	= Armature.getBone( e.Armature, json.hand_l ).Bone.order;
+		//this.hand_r	= Armature.getBone( e.Armature, json.hand_r ).Bone.order;
 	}
 
 	getEBone( i ){ return this.entity.Armature.bones[ i ]; }

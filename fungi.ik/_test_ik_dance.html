@@ -4,6 +4,7 @@ import ArmTest				from "../fungi.armature/ArmTest.js";
 import IKRig_Human			from "./IKRig_Human.js";
 
 import Maths, { Vec3, Quat }	from "../fungi/maths/Maths.js";
+import Axis 					from "../fungi/maths/Axis.js";
 import Transform from "../fungi/maths/Transform.js";
 import { Solver, IKTarget } from "./Solver.js";
 
@@ -33,7 +34,7 @@ let gEntity, gRig, gDance;
 
 //#############################################################################
 function onDraw(dt, ss){
-	gDance.update( dt, ss );
+	//gDance.update( dt, ss );
 
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	
 	App.ecs.updateSystems();
@@ -49,6 +50,7 @@ function init(){
 		leg_r: [ "RightUpLeg","RightLeg" ],
 		arm_l: [ "LeftArm","LeftForeArm" ],
 		arm_r: [ "RightArm","RightForeArm" ],
+		spine: [ "Spine", "Spine1", "Spine2" ],
 		hand_l: "LeftHand",
 		hand_r: "RightHand",
 		hip:"Hips"
@@ -76,6 +78,8 @@ function init(){
 	gDance	= new IKRig_Human_Dance( gRig );
 
 	gDance.update( 0.03, 0.1 );
+
+	
 
 	//IKTest( gRig );
 	//IKTest_Leg( gRig );
@@ -360,7 +364,7 @@ function aim2( chain, target, pose, wt ){
 	
 	//Quat.fromAxis( L, U, F, qTarget );
 
-	qTarget.flip();
+	qTarget.negate();
 	//fromAxis( F, L, U, qTarget ).normalize();
 	//fromAxis( Vec3.FORWARD, Vec3.RIGHT, Vec3.DOWN, qTarget ).normalize();
 
@@ -401,7 +405,7 @@ function limbOLD( chain, target, pose, wt ){
 	// FIRST BONE - Aim then rotate by the angle.
 	rot = Quat.mul( wt.rot, chain.bind[ 0 ].rot, rot );		// Get Worldspace rotation of the first bone
 
-	if( Quat.dot( rot, qTarget ) < 0 ) qTarget.flip();		// Axis can be pointing in the wrong direction, Flip the signs
+	if( Quat.dot( rot, qTarget ) < 0 ) qTarget.negate();		// Axis can be pointing in the wrong direction, Flip the signs
 
 	Quat.mul( qTarget, rot.invert( tmp ), tmp );			// Diff between starting rotation and final rotation
 
@@ -434,6 +438,7 @@ function limbOLD( chain, target, pose, wt ){
 	//else			chain.updateBone( 1, rot );
 }
 
+//=======================
 function _aimBone( chain, target, wt, out ){
 	// Create the rotation that aligns to the target's z Axis, that also points the bending at targets y axis
 	// -- Targets Forward becomes Bone's Up
@@ -446,7 +451,7 @@ function _aimBone( chain, target, wt, out ){
 
 	Quat.mul( wt.rot, chain.bind[ 0 ].rot, out );			// Get Worldspace rotation of the first bone
 
-	if( Quat.dot( out, qTarget ) < 0 ) qTarget.flip();		// Axis can be pointing in the wrong direction, Flip the signs: Thx @gszauer
+	if( Quat.dot( out, qTarget ) < 0 ) qTarget.negate();		// Axis can be pointing in the wrong direction, Flip the signs: Thx @gszauer
 
 	Quat.mul( qTarget, out.invert( tmp ), tmp );			// Diff between starting rotation and final rotation
 
@@ -454,7 +459,6 @@ function _aimBone( chain, target, wt, out ){
 
 	return out;
 }
-
 
 function limb( chain, target, pose, wt ){
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -543,9 +547,10 @@ class IKRig_Human_Dance{
 	constructor( rig ){
 		this.rig = rig;
 		this.hipHeight = rig.getEBone( rig.hip ).Bone.bind.pos.y;
-		this.hipMaxMove = -0.3;
-		this.hipMin		= 0.05;
+		this.hipMaxMove = -0.24;
+		this.hipMin		= 0.08;
 
+		this.noise		= new NoiseCycle( 0.8 );
 		this.stepClock = new NumberCycle( 0.5 );	// How long to take a step.
 		//this.stepClock.value = 0.5;
 
@@ -557,6 +562,9 @@ class IKRig_Human_Dance{
 			Vec3.scale( Vec3.LEFT, this.footDistance * 0.5 ),
 			Vec3.scale( Vec3.RIGHT, this.footDistance * 0.5 )
 		];
+
+		this.spineMin = new Vec3( Maths.toRad(-8), Maths.toRad(-12), Maths.toRad(-13) );
+		this.spineMax = new Vec3( Maths.toRad(20), Maths.toRad(12), Maths.toRad(13) );
 
 		this.target = new IKTarget();
 
@@ -582,6 +590,7 @@ class IKRig_Human_Dance{
 	update( dt, ss ){
 		App.debug.reset();
 		this.stepClock.update( dt );	// Move Animation Time Forward
+		this.noise.update( dt );
 
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		// Update Shared values for this frame.
@@ -596,10 +605,17 @@ class IKRig_Human_Dance{
 		this.f.stepIdxPivot	= (this.f.stepNum + 1) & 1;
 
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		
+		let wt = new Transform();
+
 		this.handleFeet();	// figure out where the feet are going to be positioned
 		this.handleHip();	// .. Which helps determine where the hip is going to be.
-		this.ik_hip_feet2();	
+		this.ik_hip_feet2( wt );	//Apply IK to Feet and Hips, Start Tracking World Transform
+
+		this.handleSpine( wt );
+		this.handleArms( wt );
+
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		this.rig.pose.apply();
 	}
 
 	//////////////////////////////////////////////////////////////////
@@ -658,15 +674,16 @@ class IKRig_Human_Dance{
 		App.debug.point( this.f.stepPos );
 	}
 
-
 	handleHip(){
 		let pFoot	= this.feet[ this.f.pivotIdx ],
 			pos		= new Vec3();
 
 		Vec3.lerp( pFoot, this.f.stepPos, 0.5, pos );
 
-		pos.y = this.hipHeight + this.hipMin + this.hipMaxMove 
+		pos.y = (this.hipHeight - this.hipMin) + this.hipMaxMove 
 					* ( Math.sin( this.f.stepGrad * Maths.PI_2 * 2 ) * 0.5 + 0.5 );
+
+		//pos.y = this.hipHeight - this.hipMin;
 
 		//TODO another additive of noise might improve things on pos.y;
 
@@ -690,16 +707,99 @@ class IKRig_Human_Dance{
 		//App.debug.point( pos, 2 ).line( pos, Vec3.add( pos, dir.scale(0.2) ), 2 );
 	}
 
+	handleSpine( wt ){
+		let rot 	= new Quat(),
+			q 		= new Quat(),
+			chain	= this.rig.spine,
+			pose	= this.rig.pose,
+			i, b;
+
+		Quat.fromEuler( rot,
+			Maths.lerp( this.spineMin.x, this.spineMax.x, this.noise.get( true, 1, 0 ) ),
+			Maths.lerp( this.spineMin.y, this.spineMax.y, this.noise.get( true, 1, 0.5 ) ),
+			Maths.lerp( this.spineMin.z, this.spineMax.z, this.noise.get( true, 1, 1.4 ) ),
+		);
+
+		for( i=0; i < chain.cnt; i++ ){
+			b = chain.bind[ i ];
+			Quat.mul( b.rot, rot, q );
+			pose.updateBone( chain.idx[ i ], q );
+
+			wt.add( q, b.pos, b.scl );
+			//App.debug.point( wt.pos, 6 );
+		}
+
+		//App.debug.line( wt.pos, Vec3.transformQuat( Vec3.FORWARD, wt.rot ).add( wt.pos), 1 );
+		//App.debug.line( wt.pos, Vec3.transformQuat( Vec3.LEFT, wt.rot ).add( wt.pos), 0 );
+		//App.debug.line( wt.pos, Vec3.transformQuat( Vec3.UP, wt.rot ).add( wt.pos), 2 );
+	}
+
+	handleArms( wt ){
+		let axis	= new Axis().fromQuat( wt.rot ),
+			t		= new Transform(),
+			p;
+
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		// GET WORLD POSITION STARTING POINT FOR LEFT ARM
+		// VERY HACKY, Because there can be multiple OR no bones between the first arm bone and the chest.
+		// But in the meshes I'm using there tends to be a shoulder bone between the two
+		// TODO : Come up with a better way to work with multiple skeletons.
+		p = this.rig.arm_l.getParent();
+		Transform.add( wt, p.Bone.bind, t );
+		this.handleArm( this.rig.arm_l, this.rig.pose, t, axis );
+
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		p = this.rig.arm_r.getParent();
+		Transform.add( wt, p.Bone.bind, t );
+		this.handleArm( this.rig.arm_r, this.rig.pose, t, axis, 8.11 );
+	}
+
+	handleArm( chain, pose, wt, axis, nOffset=0 ){
+		let ct		= Transform.add( wt, chain.bind[0] ),
+			q		= new Quat(),
+			rot 	= new Quat(),
+			fwd		= axis.z.clone(),
+			up 		= axis.y.clone(),
+			lenMin	= chain.len * 0.5,
+			rndLen 	= Maths.lerp( lenMin, chain.len, this.noise.get( true, 1, 0.3+nOffset ) ),
+			isR 	= (nOffset == 0)? 1 : -1,
+			rad;
+
+		// Vertical Movement
+		rad = Maths.lerp( Maths.toRad(-10*isR), Maths.toRad(90*isR), this.noise.get( true, 1, 0.8+nOffset ) );
+		rot.setAxisAngle( axis.y, rad ); //rot.mul( q.setAxisAngle( axis.y, rad ) );
+
+		// Horizontal Movement
+		rad = Maths.lerp( Maths.toRad(-60*isR), Maths.toRad(60*isR), this.noise.get( true, 1, nOffset ) );
+		rot.mul( q.setAxisAngle( axis.x, rad ) );
+
+		// Twist Movement (Elbow Points At)
+		rad = Maths.lerp( Maths.toRad(-80*isR), Maths.toRad(-180*isR), this.noise.get( true, 1, 1.32+nOffset ) );
+		rot.mul( q.setAxisAngle( axis.z, rad ) );
+		//rot.mul( q.setAxisAngle( axis.z, Maths.toRad(90) ) );
+
+		// End Effector & Bend Direction
+		Vec3.transformQuat( fwd, rot, fwd ).scale( rndLen ).add( ct.pos );
+		Vec3.transformQuat( up, rot, up );
+
+		//Axis.debug( App.debug, axis, ct.pos );
+		App.debug.line( ct.pos, fwd, 6 ).point( fwd, 0 );
+		App.debug.line( ct.pos, Vec3.add( up, ct.pos ), 8 );
+
+		this.ik_limb( chain, pose, wt, fwd, up );
+	}
+
+
 	//////////////////////////////////////////////////////////////////
 	// IK
 	//////////////////////////////////////////////////////////////////
-	ik_hip_feet2(){
+	ik_hip_feet2( wt ){
 		// Target Point
 		//let v = new Vec3( 0.1, 0.2, 0.2 );
 		//App.debug.point( v, 2 );
 
+		wt.copy( this.rig.getPHip().local );
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		let wt = new Transform( this.rig.getPHip().local );
 		let bend = Vec3.FORWARD.clone();
 		wt.transformVec( bend );
 
@@ -726,9 +826,6 @@ class IKRig_Human_Dance{
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		//this.target.byPos( t.pos, v, this.f.hipDir );
 		//IKTarget.debug( App.debug, this.target );
-
-		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		this.rig.pose.apply();
 	}
 
 

@@ -84,7 +84,7 @@ class Quaternion extends Float32Array{
 
 		clone(){ return new Quaternion(this); }
 
-		flip( out ){
+		negate( out ){
 			out = out || this;
 			out[0] = -this[0];
 			out[1] = -this[1];
