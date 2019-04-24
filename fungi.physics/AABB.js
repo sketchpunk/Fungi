@@ -1,8 +1,8 @@
 import { Vec3 }		from "../fungi/maths/Maths.js";
 import Transform	from "../fungi/maths/Transform.js";
 
-
-class BoundingBox{
+//############################################################################
+class AABB{
 	constructor(){
 		this.name = "AABB";
 
@@ -66,4 +66,6 @@ class BoundingBox{
 	}
 }
 
-export default BoundingBox;
+
+//############################################################################
+export default AABB;

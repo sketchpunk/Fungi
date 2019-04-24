@@ -1,0 +1,64 @@
+<!DOCTYPE html><html><head><title></title></head><script type="module">
+import App from "../fungi/engine/App.js";
+
+
+//#############################################################################
+App	.launch( onDraw, true )
+	.then( dl=>dl
+		.add( "shader", "../fungi/shaders/VecWColor.txt" )
+		.start() )
+	.then( ()=>		App.loadScene( true, true ) )
+	.then( ()=>		Setup.gizmos( 3, 15 ) )
+	.then( sys=>	gGizmoSys = sys )
+	.then( ()=>		init() )
+	.catch( err=>	console.error( err ) );
+
+
+//#############################################################################
+function onDraw( dt, ss ){
+	App.ecs.updateSystems();
+}
+
+//#############################################################################
+let gGizmoSys;
+
+function init(){
+	App.cameraCtrl.setOrbit( -20, 30, 4 );
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	let gGizmo = gGizmoSys.entity();
+
+	gGizmo = gGizmoSys.entity();
+	gGizmo.Node.local.pos.set( 0.5, 0.5, -0.5 );
+
+	gGizmo.Node.isModified = true;
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	//App.input.onInput = ()=>{ window.requestAnimationFrame( onDraw ); } 
+	//onDraw();
+	App.loop.start();
+}
+
+//#############################################################################
+
+class Setup{
+	static async gizmos( drawConfig=3, camScale=8, root = "..", priority=50 ){
+		let modGiz, modRay, modTran, pAry = [
+			import( root + "/fungi.gizmo/TranslateGizmo.js" )	.then( mod=>{ modTran = mod.default; } ),
+			import( root + "/fungi.gizmo/Gizmo.js" )			.then( mod=>{ modGiz = mod.GizmoSystem; } ),
+			import( root + "/fungi.ray/RayIntersectSystem.js" )	.then( mod=>{ modRay = mod.default; } ),
+		];
+
+		await Promise.all( pAry );
+
+		modTran.DrawConfig = drawConfig;
+		modGiz.CameraScale = camScale;
+
+		let sysGiz = modGiz.init( App.ecs, priority+1 );
+		modRay.init( App.ecs, priority, sysGiz.onRayBind );
+
+		return sysGiz;
+	}
+}
+
+</script><body></body></html>
