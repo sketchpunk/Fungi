@@ -6,7 +6,7 @@ import App from "../fungi/engine/App.js"; //Todo just for debug, remove.
 
 
 class IKChain{
-	constructor( arm, bNames, ikFwd="y" ){
+	constructor( arm, bNames, ikAlignAxis="z" ){
 		this.arm	= arm;			// Reference to Armature Object
 		
 		this.idx	= new Array();	// List of Index values to the armature Bones that make up a chain
@@ -17,7 +17,7 @@ class IKChain{
 		this.len 	= 0;			// Chain Length
 		this.lenSqr	= 0;			// Chain Length Squared, Cached for Checks without SQRT
 
-		this.ikTargetFwd = ikFwd;		
+		this.ikAlignAxis = ikAlignAxis;		
 		
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		// Get The Bone Indices and

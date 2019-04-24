@@ -24,8 +24,8 @@ class IKRig_Human{
 		//this.chain	= new IKChain( e.Armature, bNames );
 		this.pose	= new Pose( e.Armature, true );
 
-		this.leg_l	= new IKChain( e.Armature, json.leg_l, "y" );
-		this.leg_r	= new IKChain( e.Armature, json.leg_r, "y" );
+		this.leg_l	= new IKChain( e.Armature, json.leg_l, "z" );
+		this.leg_r	= new IKChain( e.Armature, json.leg_r, "z" );
 		this.arm_l 	= new IKChain( e.Armature, json.arm_l, "x" );
 		this.arm_r 	= new IKChain( e.Armature, json.arm_r, "x" );
 

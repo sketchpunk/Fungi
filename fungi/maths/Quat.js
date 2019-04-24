@@ -227,7 +227,7 @@ class Quaternion extends Float32Array{
 		//http://glmatrix.net/docs/quat.js.html#line548
 		static rotationTo( a, b, out = null ){
 			let dot = Vec3.dot(a, b);
-			out = out || new Quat();
+			out = out || new Quaternion();
 
 		    if (dot < -0.999999) {
 		      let tmp = Vec3.cross(Vec3.LEFT, a);
@@ -494,6 +494,15 @@ class Quaternion extends Float32Array{
 
 		static dot( a, b ){
   			return a[0] * b[0] + a[1] * b[1] + a[2] * b[2] + a[3] * b[3];
+		}
+
+		static conjugate( q, out ){
+			out = out || new Quaternion();
+  			out[0] = -q[0];
+  			out[1] = -q[1];
+  			out[2] = -q[2];
+  			out[3] = q[3];
+  			return out;
 		}
 
 		static rotateVec3( qa, va, out = null ){
