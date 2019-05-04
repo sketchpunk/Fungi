@@ -1,0 +1,76 @@
+<!DOCTYPE html><html><head><title></title></head><script type="module">
+import App				from "../fungi/engine/App.js";
+import Maths, { Quat, Vec3 }	from "../fungi/maths/Maths.js";
+import FacedCube		from "../fungi/primitives/FacedCube.js";
+
+import RotateTo, { RotateToSystem } from "./RotateTo.js";
+
+//#############################################################################
+App	.launch( onDraw, true )
+	.then( dl=>dl
+		.add( "shader", "../fungi/shaders/VecWColor.txt" )
+		.start() )
+	.then( ()=>		App.loadScene( true, true ) )
+	.then( ()=>		init() )
+	.catch( err=>	console.error( err ) );
+
+
+//#############################################################################
+const DISTANCE 	= 1;
+const DISTANCE2	= DISTANCE * 2;
+
+let V = new Vec3(), Q = new Quat();
+function rnd(){
+	V.set(
+			Math.random() * DISTANCE2 - DISTANCE,
+			Math.random() * DISTANCE2 - DISTANCE,
+			Math.random() * DISTANCE2 - DISTANCE		
+	).normalize();
+	App.debug.reset().line( Vec3.ZERO, V, 6 );
+	return Quat.lookRotation( V, Vec3.UP, Q );
+}
+function onDraw( dt, ss ){
+	/*  */
+	gTime += dt;
+	if( gTime > 3 ){
+		gTime = 0;
+		gCube.RotateTo.go( rnd() );
+	}
+
+	App.ecs.sys_run();
+}
+
+
+//#############################################################################
+let gCube, gTime = 0;
+
+function init(){
+	App.cameraCtrl.setTarget( 0, 0, 0 ).setOrbit( 0, 25, 5.0 );
+	RotateToSystem.init( App.ecs );
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	gCube = FacedCube( "Cube" );
+
+	let r = RotateTo.$( gCube ).RotateTo;
+	
+	//.................................	
+	// CONSTANT VELOCITY TEST
+	//r.mode = RotateTo.TARGET;
+	//r.rot.setAxisAngle( [ 1, 0, 0 ], Maths.toRad( -45 ) );
+
+	//r.vel.set( 0.2, 0, 0 );
+
+	//.................................
+	// TARGET LOCOMOTION TEST
+	r
+		//.loco( "Linear" )
+		.loco( "Springy" )
+		//.loco( "SpringAccel" )
+		.go( rnd() );
+
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	App.loop.start();
+}
+
+</script><body></body></html>

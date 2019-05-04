@@ -1,0 +1,64 @@
+<!DOCTYPE html><html><head><title></title></head><script type="module">
+import App	from "../fungi/engine/App.js";
+import MoveTo, { MoveToSystem } from "./MoveTo.js";
+
+//#############################################################################
+App	.launch( onDraw, true )
+	.then( dl=>dl
+		.add( "shader", "../fungi/shaders/VecWColor.txt" )
+		.start() )
+	.then( ()=>		App.loadScene( true, true ) )
+	.then( ()=>		init() )
+	.catch( err=>	console.error( err ) );
+
+
+//#############################################################################
+const DISTANCE 	= 1;
+const DISTANCE2	= DISTANCE * 2;
+
+function rnd(){ return [ Math.random() * DISTANCE2 - DISTANCE, Math.random() * DISTANCE2 - DISTANCE, Math.random() * DISTANCE2 - DISTANCE ] }
+function onDraw( dt, ss ){
+	/* */
+	gTime += dt;
+	if( gTime > 3 ){
+		gTime = 0;
+
+		gPnt.MoveTo.go( rnd() );
+	}
+	
+	App.ecs.sys_run();
+}
+
+
+//#############################################################################
+let gPnt, gTime = 0;
+
+function init(){
+	App.cameraCtrl.setTarget( 0, 0, 0 ).setOrbit( 0, 25, 3.0 );
+	MoveToSystem.init( App.ecs );
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	gPnt = App.ecs.entity_find("Debug_Point");
+	App.debug.point( [0,0,0], 6 );
+
+	let m = MoveTo.$( gPnt ).MoveTo;
+	
+	//.................................	
+	// CONSTANT VELOCITY TEST
+	//m.mode = MoveTo.CONSTANT;
+	//m.vel.set( 0.2, 0, 0 );
+
+	//.................................
+	// TARGET LOCOMOTION TEST
+	m
+		//.loco( "Linear" )
+		//.loco( "Springy" )
+		.loco( "SpringAccel" )
+		.go( [ 2, 0, 0 ] );
+
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	App.loop.start();
+}
+
+</script><body></body></html>

@@ -7,7 +7,7 @@ class Collider{
 	}
 
 	static $( e ){
-		if( !e.Collider ) Entity.addByName( e, "Collider");
+		if( !e.Collider ) Entity.com_fromName( e, "Collider");
 		return e;
 	}
 } Components( Collider );
