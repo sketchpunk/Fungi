@@ -1,7 +1,7 @@
 <!DOCTYPE html><html><head><title>Fungi</title></head><script type="module">
 
-import App, { Material } from "./App.js";
-import FacedCube	from "../primitives/FacedCube.js";
+import App, { Material }	from "./App.js";
+import FacedCube			from "../primitives/FacedCube.js";
 
 //import DVerts, { DynamicVertsSystem } from "./ecs/DynamicVerts.js";
 //import Debug from "./Debug.js";
@@ -81,7 +81,7 @@ function onDraw( dt, ss ){
 	cubeA.Node.setRotAxis( [0,1,0], Math.sin( ss ) * Math.PI );
 	cubeB.Node.setRotAxis( [0,1,0], Math.sin( ss ) * Math.PI );
 
-	App.ecs.updateSystems();
+	App.ecs.sys_run();
 }
 
 

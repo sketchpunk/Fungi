@@ -9,7 +9,7 @@ import Page			from "./lib/Page.js";
 import RenderLoop 	from "./RenderLoop.js";
 import InputTracker from "./lib/InputTracker.js";
 
-import Ecs, { Entity, Assemblages, System, Components } from "./Ecs.js";
+import Ecs, { Entity, System, Components } from "./Ecs.js";
 import Camera, { CameraSystem }	from "./ecs/Camera.js";
 import Node, { NodeSystem } 	from "./ecs/Node.js";
 import { DrawSystem }			from "./ecs/Draw.js";
@@ -70,7 +70,7 @@ class App{
 		static async loadScene( useFloor=true, useDebug=false ){
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			// CAMERA
-			App.camera = App.ecs.newEntity( "MainCamera", [ "Node", "Camera" ] );		
+			App.camera = App.ecs.entity( "MainCamera", [ "Node", "Camera" ] );		
 			Camera.setPerspective( App.camera );
 
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -90,16 +90,16 @@ class App{
 	//////////////////////////////////////////////
 	// ENTITY MANAGEMENT
 	//////////////////////////////////////////////
-		static $Node( name ){ return this.ecs.newAssemblage( "Node", name ); }
+		static $Node( name ){ return App.ecs.entity( name, "Node" ); }
 
 		static $Draw( name, vao = null, mat = null, mode = 4 ){ 
-			let e = this.ecs.newAssemblage( "Draw", name );
+			let e = App.ecs.entity( name, [ "Node", "Draw" ] );
 			if( vao ) e.Draw.add( vao, mat, mode );
 			return e;
 		}
 
 		static $Grp( name ){ 
-			let e = this.ecs.newAssemblage( "Node", name );
+			let e = App.ecs.entity( name, "Node" );
 			e.add = function( e, updateLevels = true ){
 				Node.addChild( this, e, updateLevels );
 				return this;
@@ -191,11 +191,6 @@ class App{
 
 	function init_ecs(){
 		App.ecs = new Ecs();
-
-		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		// ASSEMBLAGES
-		Assemblages.add( "Node", ["Node"] );
-		Assemblages.add( "Draw", ["Node", "Draw"] );
 
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		// SYSTEMS

@@ -326,15 +326,11 @@ class Node{
 
 
 //#########################################################################
-const QUERY_COM = [ "Node" ];
-
-
 /**
 * ECS System that handles updating Transform Hierachy data along with create ModelMatrix based on World Space Transform
 * @extends System
 */
 class NodeSystem extends System{
-
 	/**
 	 * Setup the system automaticly to an ECS reference
 	 * @param {Ecs} ecs - Instance of an Ecs object
@@ -342,8 +338,8 @@ class NodeSystem extends System{
 	 * @param {number} [priority2=] - Priority for the second system that handles cleanup for Nodes.
 	 */
 	static init( ecs, priority = 800, priority2 = 1000 ){ 
-		ecs.addSystem( new NodeSystem(), priority );
-		ecs.addSystem( new NodeCleanupSystem(), priority2 );
+		ecs.sys_add( new NodeSystem(), priority );
+		ecs.sys_add( new NodeCleanupSystem(), priority2 );
 	}
 
 	constructor(){ super(); }
@@ -352,15 +348,10 @@ class NodeSystem extends System{
 	* System Update
 	* @param {Ecs} ecs
 	*/
-	update( ecs ){
-		let e,		// Entity
-			cn,		// Child Node ( only if parent node exists )
-			ary	= ecs.queryEntities( QUERY_COM, thSort );
+	run( ecs ){
+		let cn, ary = ecs.query_comp( "Node", thSort, "node_levels" );
 
-		for( e of ary ){
-			cn = e.Node;
-
-
+		for( cn of ary ){
 			// if parent has been modified, then child should also be concidered modified.
 			if( cn.parent !== null && cn.parent.Node.isModified ) cn.isModified = true;
 			if( !cn.isModified ) continue;
@@ -371,9 +362,6 @@ class NodeSystem extends System{
 
 			// Create Model Matrix for Shaders
 			Mat4.fromQuaternionTranslationScale( cn.world.rot, cn.world.pos, cn.world.scl, cn.modelMatrix );
-
-			//.............................................
-			//cn.isModified = true; // To simplify things, this should be done in a Sub System after rendering.
 		}
 	}
 }
@@ -385,13 +373,9 @@ class NodeSystem extends System{
 * @extends System
 */
 class NodeCleanupSystem extends System{
-	/**
-	* System Update
-	* @param {Ecs} ecs
-	*/
-	update(ecs){
-		let e, ary = ecs.queryEntities( QUERY_COM, thSort );
-		for( e of ary ) if( e.Node.isModified ) e.Node.isModified = false;
+	run(ecs){
+		let n, ary = ecs.query_comp( "Node" );
+		for( n of ary ) if( n.isModified ) n.isModified = false;
 	}
 }
 
@@ -408,12 +392,9 @@ class NodeCleanupSystem extends System{
  */
 function thSort( a, b ){
 	//Sort by Hierarachy Levels so parents are calculated before children
-	let lvlA = a.Node.level,
-		lvlB = b.Node.level;
-
-	if(lvlA == lvlB)		return  0;	// A = B
-	else if(lvlA < lvlB)	return -1;	// A < B
-	else					return  1;	// A > B
+	if(a.level == b.level)		return  0;	// A = B
+	else if(a.level < b.level)	return -1;	// A < B
+	else						return  1;	// A > B
 }
 
 /**
@@ -426,7 +407,7 @@ function updateChildLevel( n ){
 	for(c of n.children){
 		cn			= c.Node;
 		cn.level	= n.level + 1;
-		if(cn.children.length > 0) updateChildLevel( cn );
+		if( cn.children.length > 0 ) updateChildLevel( cn );
 	}
 }
 

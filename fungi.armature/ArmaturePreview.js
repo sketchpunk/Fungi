@@ -2,7 +2,7 @@ import App			from "../fungi/engine/App.js";
 import Vao			from "../fungi/core/Vao.js";
 import gl			from "../fungi/core/gl.js";
 import Shader			from "../fungi/core/Shader.js";
-import { Entity, Assemblages, Components, System } from "../fungi/engine/Ecs.js";
+import { Entity, Components, System } from "../fungi/engine/Ecs.js";
 
 const ATTRIB_ROT_LOC = 8;
 const ATTRIB_POS_LOC = 9;
@@ -162,7 +162,7 @@ class ArmaturePreview{
 			ap.flatRotation	= new Float32Array( bLen * 4 );
 			ap.flatPosition	= new Float32Array( bLen * 3 );
 			ap.flatScale	= new Float32Array( bLen * 3 );
-			Entity.addCom( e, ap );
+			Entity.com_add( e, ap );
 
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			buildPreviewVao( e, mat, meshType );
@@ -228,11 +228,11 @@ class ArmaturePreview{
 const QUERY_COM		= [ "Armature", "ArmaturePreview" ];
 class ArmaturePreviewSystem extends System{
 	static init( ecs, priority = 810 ){
-		ecs.addSystem( new ArmaturePreviewSystem(), priority );
+		ecs.sys_add( new ArmaturePreviewSystem(), priority );
 	}
 
-	update( ecs ){
-		let e, ary = ecs.queryEntities( QUERY_COM );
+	run( ecs ){
+		let e, ary = ecs.query_entities( QUERY_COM );
 		for( e of ary ){
 			if( e.Armature.isModified ){
 				ArmaturePreview.flattenData( e );

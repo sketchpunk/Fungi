@@ -11,18 +11,13 @@ App	.launch( onDraw, true )
 	.catch( err	=> console.error( err ) );
 
 //#############################################################################
-function onDraw(dt, ss){
-
-	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	
-	App.ecs.updateSystems();
-}
+function onDraw(dt, ss){ App.ecs.sys_run(); }
 
 function init(){
 	App.cameraCtrl.setTarget( 0, 0.75, 0 ).setOrbit( -35, 15, 2.1 );
 
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	let e = ArmTest.previewHuman();
-
 
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	App.loop.start();

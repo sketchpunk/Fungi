@@ -1,7 +1,7 @@
 import App			from "../fungi/engine/App.js";
 import Transform	from "../fungi/maths/Transform.js";
 import DualQuat		from "../fungi/maths/DualQuat.js";
-import { Entity, Assemblages, Components, System } from "../fungi/engine/Ecs.js";
+import { Entity, Components, System } from "../fungi/engine/Ecs.js";
 
 
 //#################################################################
@@ -45,7 +45,7 @@ class Armature{
 	// INITIALIZERS
 	///////////////////////////////////////////////////////////
 		static $( e ){
-			if( e instanceof Entity && !e.Armature ) Entity.addByName( e, "Armature" );
+			if( e instanceof Entity && !e.Armature ) Entity.com_fromName( e, "Armature" );
 			return e;
 		}
 
@@ -73,8 +73,7 @@ class Armature{
 	// BONES
 	///////////////////////////////////////////////////////////
 		static addBone( arm, name, len = 1, pe = null, order = null ){
-			let e = App.ecs.newAssemblage( ABONE_NAME, name );
-
+			let e = App.ecs.entity( name, [ "Node", "Bone"] ); 	// Make it easier to create new bones
 			e.Bone.length	= len;
 			e.Bone.order	= ( order == null )? arm.bones.length : order;
 
@@ -212,20 +211,16 @@ static updateWorld( e ){
 //#################################################################
 // Run After TransformSystem
 
-// This should search for Entitys with Node and Bone,
-// If the node has been modified, then take every bone and update its dqOffset
-const BONE_QUERY_COM	= [ "Bone", "Node" ];
-const ARM_QUERY_COM		= [ "Armature" ];
-const ABONE_NAME = "Bone";	// constant name for a Bone Assemblage
-
 /** After TransformSystem, BoneSystem can then turn all the World Transform into world Dual Quaternions. */
 class BoneSystem extends System{
-	update( ecs ){
-		let ary	= ecs.queryEntities( BONE_QUERY_COM ),
+	run( ecs ){
+		let ary	= ecs.query_comp( "Bone" ),
 			dq 	= new DualQuat(),
-			e;
+			e, b;
 
-		for( e of ary ){
+		for( b of ary ){
+			e = ecs.entities[ b.entityID ];
+
 			if( e.Node.isModified ){
 				dq.set( e.Node.world.rot, e.Node.world.pos );
 				DualQuat.mul( dq, e.Bone.dqBindPose, e.Bone.dqOffset );
@@ -237,33 +232,27 @@ class BoneSystem extends System{
 /** System handles flattening all the DualQuat bone data */
 class ArmatureSystem extends System{
 	static init( ecs, priority = 801 ){
-		ecs.addSystem( new BoneSystem(), priority );
-		ecs.addSystem( new ArmatureSystem(), priority+1 ); //Armature needs to run after Bones are Updated.		
-		ecs.addSystem( new ArmatureCleanupSystem(), 1000 );
+		ecs.sys_add( new BoneSystem(), priority );
+		ecs.sys_add( new ArmatureSystem(), priority+1 ); //Armature needs to run after Bones are Updated.		
+		ecs.sys_add( new ArmatureCleanupSystem(), 1000 );
 	}
 
-	update( ecs ){
-		let e, ary = ecs.queryEntities( ARM_QUERY_COM );
-		for( e of ary ){
-			if( e.Armature.isModified ) Armature.flattenData( e );
-		}
-		//e.Armature.isModified = false; //Do A Cleanup System, so I can use isModified for Preview Updating.
+	run( ecs ){
+		let a, ary = ecs.query_comp( "Armature" );
+		for( a of ary ) if( a.isModified ) Armature.flattenData( ecs.entities[ a.entityID ] );
 	}
 }
 
 /** System to handle cleanup like setting isModified to false */
 class ArmatureCleanupSystem extends System{
-	update( ecs ){
-		let e, ary = ecs.queryEntities( ARM_QUERY_COM );
-		for( e of ary ){
-			if( e.Armature.isModified ) e.Armature.isModified = false;
-		}
+	run( ecs ){
+		let a, ary = ecs.query_comp( "Armature" );
+		for( a of ary ) if( a.isModified ) a.isModified = false;
 	}
 }
 
 
 //#################################################################
-Assemblages.add( ABONE_NAME, [ "Node", "Bone"] );	// Make it easier to create new bones
 
 /** Sort Bone Array by Node.Level */
 function fSort_bone_lvl( a, b ){

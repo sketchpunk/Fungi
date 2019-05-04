@@ -17,7 +17,7 @@ let cubeA, cubeB;
 function onDraw( dt, ss ){
 	cubeA.Node.setRotAxis( [0,1,0], Math.sin( ss ) * Math.PI );
 	cubeB.Node.setRotAxis( [0,1,0], Math.sin( ss ) * Math.PI );
-	App.ecs.updateSystems();
+	App.ecs.sys_run();
 }
 
 //#############################################################################

@@ -35,10 +35,10 @@ let gEntity, gRig, gDance;
 
 //#############################################################################
 function onDraw(dt, ss){
-	//gDance.update( dt, ss );
+	gDance.update( dt, ss );
 
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	
-	App.ecs.updateSystems();
+	App.ecs.sys_run();
 }
 
 function init(){
@@ -72,8 +72,8 @@ function init(){
 	//gRig 	= new IKRig_Human( gEntity, json );
 	//TPose.human_rig( gRig );
 
-	let e = App.ecs.getEntityByName( "Mesh01" );
-	gRig 	= new IKRig_Human( e, json );
+	let e = App.ecs.entity_find( "Mesh01" );
+	gRig = new IKRig_Human( e, json );
 	//TPose.human_rig( gRig ); //TODO Something with T Pose screws up Legs
 
 	//let n = e.Armature.bones[ 0 ].Node;
@@ -89,7 +89,6 @@ function init(){
 
 	gDance = new IKRig_Human_Dance( gRig );
 	gDance.update( 0.03, 0.1 );
-
 	
 
 	//IKTest( gRig );
@@ -316,7 +315,7 @@ function IKTestL( rig ){
 }
 
 function IKTest_Leg( rig ){
-	let v = new Vec3( 0.2, 0.5, 0.2 );
+	let v = new Vec3( 0.3, 0.2, 0.1 );
 	let bendDir = Vec3.FORWARD;
 
 	let b = rig.leg_l.getBone( 0 );
@@ -330,11 +329,11 @@ function IKTest_Leg( rig ){
 
 	IKTarget.debug( App.debug, target );
 
-	//if( target.distanceSqr < rig.leg_l.lenSqr ){
-	//	limb2( rig.leg_l, target, null, wt);
-	//}else{
+	if( target.distanceSqr < rig.leg_l.lenSqr ){
+		limb2( rig.leg_l, target, null, wt);
+	}else{
 		aim2( rig.leg_l, target, null, wt );	
-	//}
+	}
 
 	return;
 

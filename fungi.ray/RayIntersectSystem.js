@@ -7,7 +7,7 @@ import Ray from "./Ray.js";
 class RayIntersectSystem{
 	static init( ecs, priority = 50, cb = null ){
 		let sys = new RayIntersectSystem( cb );
-		ecs.addSystem( sys, priority );
+		ecs.sys_add( sys, priority );
 		return sys;
 	}
 
@@ -17,18 +17,18 @@ class RayIntersectSystem{
 		gl.ctx.canvas.addEventListener( "mousedown", this.onRightClick.bind( this ) );
 	}
 
-	update( ecs ){
+	run( ecs ){
 		if( this.queue.length == 0 ) return;
 
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		let ray, c, e, isHit, list = ecs.queryEntities( ["Collider"] );
+		let ray, c, e, isHit, list = ecs.query_comp( "Collider" );
 		let queue = this.queue.splice( 0, this.queue.length );
 
 		// TODO, Better to get distance from Ray Origin, then sort by distance.
 		// So the first complete hit test ends that ray.
 
-		for( e of list ){
-			c = e.Collider;
+		for( c of list ){
+			e = ecs.entities[ c.entityID ];
 
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			// Do any Prep

@@ -26,7 +26,7 @@ const QUERY_COM = [ "Node", "Draw" ];
 
 class DrawSystem extends System{
 	static init( ecs, priority = 950 ){ 
-		ecs.addSystem( new DrawSystem(), priority );
+		ecs.sys_add( new DrawSystem(), priority );
 	}
 
 	constructor(){ 
@@ -34,19 +34,20 @@ class DrawSystem extends System{
 		this.render = new Renderer();
 	}
 
-	update( ecs ){
-		let i, e, d, ary = ecs.queryEntities( QUERY_COM, thSort );
-
+	run( ecs ){
+		let i, e, d, ary = ecs.query_comp( "Draw", thSort, "draw_priority" );
 		this.render.beginFrame(); // Prepare to start rendering new frame
 
-		for( e of ary ){
+		for( d of ary ){
+			e = ecs.entities[ d.entityID ];
+
 			// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			// If entity isn't active Or there are no VAOs in the draw component
 			// then continue to the next entity for rendering.
 			if( !e.info.active || e.Draw.items.length == 0 ) continue;
 			
 			// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			d = e.Draw;
+			//d = e.Draw;
 			if( !d.onDraw ){ // No Custom Manual Control Over Rendering
 				
 				// Get ModelMatrix sent to GPU plus whatever else
@@ -68,8 +69,10 @@ class DrawSystem extends System{
 }
 
 function thSort( a, b ){
-	return (a.Draw.priority == b.Draw.priority) ? 0 :
-			(a.Draw.priority < b.Draw.priority) ? -1 : 1;
+	//return (a.Draw.priority == b.Draw.priority) ? 0 :
+	//		(a.Draw.priority < b.Draw.priority) ? -1 : 1;
+	return (a.priority == b.priority) ? 0 :
+			(a.priority < b.priority) ? -1 : 1;
 }
 
 

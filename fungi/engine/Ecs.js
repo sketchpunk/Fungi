@@ -12,6 +12,44 @@ function hashCode( str ){ // Create an hash Int based on string input.
 //	return (+new Date()) + (Math.random() * 100000000 | 0) + (++randomID.nextID);
 //} randomID.nextID = 0;
 
+class SortedArray extends Array{
+	constructor( sFunc, size = 0 ){
+		super( size );
+		this._sort_index = sFunc
+	}
+
+	add( itm ){
+		let saveIdx	= this._sort_index( this, itm );
+
+		if( saveIdx == -1 ) this.push( itm );
+		else{
+			this.push( null );								// Add blank space to the array
+
+			let x;
+			for(x = this.length-1; x > saveIdx; x-- ){		// Shift the array contents one index up
+				this[ x ] = this[ x-1 ];
+			}
+
+			this[ saveIdx ] = itm;							// Save new Item in its sorted location
+		}
+
+		return this;
+	}
+}
+
+function sys_idx( ary, itm ){
+	let s, i=-1, saveIdx = -1;
+	for( s of ary ){
+		i++;
+		if(s.priority < itm.priority) continue;							// Order by Priority First
+		if(s.priority == itm.priority && s.order < itm.order) continue;	// Then by Order of Insertion
+		
+		saveIdx = i;
+		break;
+	}
+	return saveIdx;
+}
+
 
 /*####################################################################################
 	Components
@@ -43,11 +81,13 @@ function Components( com ){
 
 			let typeID = hashCode( com.name );						// Generate Hash Integer
 			com.prototype.componentTypeID	= typeID;				// Add Type ID to Object's Prototype
-			//com.prototype.entity			= null;					// Reference to the Entity attached To.
+			com.prototype.entityID			= null;					// Reference to the Entity attached To.
+			com.prototype.recycled			= false;				
 
 			Components.list.set( com.name, { 			// Add object to list with extra meta data that may be needed.
 				typeID	: typeID, 
-				object	: com 
+				object	: com,
+				cache 	: new Array(),
 			});
 
 			//console.info( "Registered Component : %s, TypeID: %s", com.name, typeID );
@@ -58,24 +98,42 @@ function Components( com ){
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		// Create a new component by using its Name
 		case "string":
-			let c = Components.list.get( com );
-			return (c)? new c.object() : null;
-		break;
-
-		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		// Create a new component by using its TypeID
-		case "number":
-			let v;
-			for([,v] of Components.list){
-				if( v.typeID == com ) return new v.object();
+			
+			let cInfo = Components.list.get( com );
+			if( !cInfo ){
+				console.error("Component not found ", com);
+				return null;
 			}
+
+			//................................
+			// Find Something to reuse
+			let c, i;
+			for(i=0; i < cInfo.cache.length; i++ ){
+				if( cInfo.cache[i].recycled ){
+					//console.log("Recycle Component of", com );
+					c = cInfo.cache[i];
+					c.recycled = false;
+
+					if( cInfo.object.reset ) cInfo.object.reset( c );
+					break;
+				}
+			}
+
+			//................................
+			// Create New Instance
+			if( !c ) cInfo.cache.push( c = new cInfo.object() );
+
+			return c;
 		break;
 	}
 	return null;
 }
 Components.list		= new Map();
-Components.exists 	= function( name ){ return Components.list.has(name); }
-Components.dispose	= function( c ){ c.entity = null; }
+Components.exists 	= function( name ){ return Components.list.has( name ); }
+Components.dispose	= function( c ){ 
+	c.entityID = null;
+	c.recycled = true;
+}
 
 
 /*####################################################################################
@@ -87,12 +145,14 @@ Components.dispose	= function( c ){ c.entity = null; }
 class Entity{
 	constructor( name = "", comList = null ){
 		this.info 	= {
-			id 		: 0,	// Idenifier for Entity  randomID()
-			name	: name, // Given name of entity
-			active	: true,	// Is entity Active
+			id 			: 0,		// Idenifier for Entity  randomID()
+			name		: name,		// Given name of entity
+			active		: true,		// Is entity Active
+			recycled	: false,
+			tag			: null,
 		};
 
-		if( comList ) Entity.addByArray( this, comList );
+		if( comList ) Entity.com_fromArray( this, comList );
 	}
 
 	///////////////////////////////////////////////
@@ -100,38 +160,33 @@ class Entity{
 	///////////////////////////////////////////////
 
 		//Add component instance to Entity
-		static addCom( e, c ){
-			if( !c.componentTypeID){
-				console.log("Entity.addCom : not an component instance");
+		static com_add( e, c ){
+			if( !c.componentTypeID ){
+				console.error("Entity.addCom : not an component instance");
 				return this;
 			}
 
-			//c.entity				= e;
+			c.entityID				= e.info.id;
 			e[ c.constructor.name ]	= c;
 			return this;
 		}
 
 		//Add Component by Component Name, Pass in Component Instance or Array of Component Names
-		static addByName( e, cName ){
+		static com_fromName( e, cName ){
 			let c;
-			if( !(c = Components(cName)) ){
-				console.log("Could not found component ", cName);
-				return null;
-			}
-			Entity.addCom( e, c );
+			if( !(c = Components( cName )) ) return null;
+
+			Entity.com_add( e, c );
 			return c;
 		}
 
-		static addByArray( e, ary ){
+		static com_fromArray( e, ary ){
 			let i, c;
-			for( i of ary ){
-				if( c = Components(i) )	Entity.addCom( e, c );
-				else					console.log("Could not found component ", i);
-			}
+			for( i of ary ) if( c = Components(i) ) Entity.com_add( e, c );
 			return Entity;
 		}
 
-		static removeCom( e, name ){
+		static com_rm( e, name ){
 			if( e[ name ] ){
 				Components.dispose( e[ name ] );
 				delete e[ name ];
@@ -145,56 +200,26 @@ class Entity{
 	//////////////////////////////////////////////
 		static dispose( e ){
 			let c;
-			for( c in e ) Entity.removeCom( e, c );
+			for( c in e ){
+				if( c == "info") continue;
+
+				//console.log("Rm Com", c ," in", e.info.name );
+				Entity.com_rm( e, c );
+			}
 		}
 }
-
-
-/*####################################################################################
-	Assemblages
-	Some predefined entities, to make it easy to create common entity objects
-	with the right set of components.
-
-	Ex:
-
-	Assemblages.add("particle", ["Movement", "Transform"]);
-	var ent = Assemblages.new("particle","MyParticle");
-####################################################################################*/
-class Assemblages{
-	static async add( name, comList ){
-		//..............................
-		//Dynamicly Load in components that are not registered.
-		for(let c of comList){
-			if(!Components.exists(c)) await import(`./components/${c}.js`);
-		}
-
-		//..............................
-		//Create Assemblage Item
-		Assemblages.list.set(name, { componentList : comList });
-
-		//console.log("New Assemblage : %s with components : %s", name, comList.join(", ") );
-		return Assemblages;
-	}
-
-	static new(aName, eName="New_Entity"){
-		let itm = Assemblages.list.get(aName);
-
-		if(itm)	return new Entity(eName, itm.componentList);
-		else 	console.log("No Assemblage with the name: ", name);
-
-		return null;
-	}
-}
-
-Assemblages.list = new Map();
 
 
 /*####################################################################################
 	Systems
 	Logic that will execute on the component data of an entity
+	NOTE: After changes, Systems don't really need to extend from System.
 ####################################################################################*/
 class System{
-	constructor(){ this.active = true; }
+	constructor(){}
+	run( ecs ){
+		console.log( "Run not implemented for: ", this.constructor.name );
+	}
 }
 
 
@@ -205,53 +230,59 @@ let gSystemCount = 0; // Used to create an Order ID for Systems when added to an
 
 class Ecs{
 	constructor(){
-		this.Entities		= new Array();
-		this.Systems		= new Array();
-		this.QueryCache		= new Map();
+		this.entities		= new Array();
+		this.systems		= new SortedArray( sys_idx ); //new Array();
+		this.queryCache		= new Map();
 	}
 
 
 	//////////////////////////////////////////////////////
 	// ENTITIES
 	//////////////////////////////////////////////////////
-		//Create a new Entity based on an Aessmblage Name
-		newAssemblage( aName, eName="New_Entity" ){
-			let e = Assemblages.new( aName, eName );
-
-			if(e){ this.addEntity(e); return e; }
-			return null;
-		}
-
 		//Create a new Entity and add to the list automaticly
-		newEntity( eName="New_Entity", comList = null ){
-			let e = new Entity(eName, comList);
+		entity( eName="New_Entity", comList = null ){
+			let i, e;
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			// Reuse one or 
+			for( i=0; i < this.entities.length; i++ ){
+				if( this.entities[ i ].info.recycled ){
+					//console.log("Recycling Entity");
+					e = this.entities[ i ];
+					e.info.recycled = false;
+					e.info.name 	= eName;
+					e.info.active	= true;
+					break;	
+				} 
+			}
 
-			if(e){ this.addEntity(e); return e; }
-			return null;
+			if( !e ) e = this.entity_add( new Entity( eName ) );
+
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			if( comList ){
+				if( typeof(comList) == "string" )	Entity.com_fromName( e, comList );
+				else 								Entity.com_fromArray( e, comList );
+			}
+
+			return e;
 		}
 
 		//Add Entity Instance to the List
-		addEntity( e ){
-			e.info.id = this.Entities.length;
-			this.Entities.push( e ); 
+		entity_add( e ){
+			e.info.id = this.entities.length;
+			this.entities.push( e ); 
+			return e;
+		}
+
+		entity_rm( e ){
+			e.info.active	= false;
+			e.info.recycled	= true;
+			Entity.dispose( e );
 			return this;
 		}
 
-		removeEntity( idx ){
-			console.log("TODO- RemoveEntity is not implemented");
-			/*
-			let e = this.Entities.get( eID );
-			if(e){
-				Entity.dispose( e );
-				this.Entities.remove( eID );
-			}else console.log("Entity does not exist when trying to remove : ", eID);
-			*/
-			return this;
-		}
-
-		getEntityByName( eName ){
+		entity_find( eName ){
 			let e;
-			for( e of this.Entities ) if( e.info.name == eName ) return e;
+			for( e of this.entities ) if( e.info.name == eName ) return e;
 			return null;
 		}
 
@@ -259,79 +290,62 @@ class Ecs{
 	//////////////////////////////////////////////////////
 	// SYSTEMS
 	//////////////////////////////////////////////////////
-		addSystem( system, priority = 50 ){
-			let order	= ++gSystemCount,
-				itm		= { system, priority, order, name:system.constructor.name },
-				saveIdx	= -1,
-				i 		= -1,
-				s;
+		sys_add( sys, priority = 50, active = true ){
+			//if( ! sys instanceof System ){ console.error( "System not extended from system." ); return this; }
 
-			//...................................
-			//Find where on the area to put the system
-			for(s of this.Systems){
-				i++;
+			this.systems.add({
+				system	: sys,
+				order	: ++gSystemCount,
+				name	: sys.constructor.name,
+				priority, 
+				active,
+			});
 
-				if(s.priority < priority) continue;						//Order by Priority First
-				if(s.priority == priority && s.order < order) continue;	//Then by Order of Insertion
-
-				saveIdx = i;
-				break;
-			}
-
-			//...................................
-			//Insert system in the sorted location in the array.
-			if(saveIdx == -1) this.Systems.push(itm);
-			else{
-				this.Systems.push(null);								//Add blank space to the array
-
-				for(var x = this.Systems.length-1; x > saveIdx; x--){	//Shift the array contents one index up
-					this.Systems[x] = this.Systems[x-1];
-				}
-
-				this.Systems[saveIdx] = itm;							//Save new Item in its sorted location
-			}
-
-			//console.info("Adding System: %s with priority: %s and insert order of %d", system.constructor.name, priority, order);
 			return this;
 		}
 
-		updateSystems(){
+		sys_run(){
 			let s;
-			for(s of this.Systems) s.system.update( this );
+			for( s of this.systems ) if( s.active ) s.system.run( this );
 			return this;
 		}
 
-		removeSystem( sName ){
+		sys_rm( sName ){
 			let i;
-			for(i=0; i < this.Systems.length; i++){
-				if(this.Systems[i].name == sName){
-					this.Systems.splice(i,1);
-					//console.log("Removing System :", sName);
+			for( i=0; i < this.systems.length; i++ ){
+				if( this.systems[ i ].name == sName ){
+					this.systems.splice( i, 1 ); // console.log("Removing System :", sName);
 					break;
 				}
 			}
 			return this;
 		}
 
+		sys_active( sName, state = true ){
+			let i;
+			for( i of this.systems ) if( i.name == sName ){ i.active = state; break; }
+			return this;	
+		}
+
 
 	//////////////////////////////////////////////////////
 	// QUERIES
 	//////////////////////////////////////////////////////
-		queryEntities( comList, sortFunc=null ){
-			//.............................
+		query_entities( comList, sortFunc=null ){
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			//Check if query has already been cached
-			let queryName	= "query~" +comList.join("_"),
-				out			= this.QueryCache.get(queryName);
-			if(out) return out;
+			let queryName	= "query~" + comList.join("_"),
+				out			= this.queryCache.get( queryName );
+			if( out ) return out;
 
-			//.............................
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			//Not in cache, Run search
 			let cLen	= comList.length,
 				cFind	= 0,
 				e,c;
 
 			out	= new Array();
-			for( e of this.Entities ){
+			for( e of this.entities ){
 				cFind = 0;
 				for(c of comList){
 					if(! e[c])	break;		//Break Loop if Component Not Found
@@ -340,17 +354,63 @@ class Ecs{
 				if(cFind == cLen) out.push( e );
 			}
 
-			//.............................
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			//Save Results for other systems
 			if(out.length > 0){
-				this.QueryCache.set( queryName, out );
-				if(sortFunc) out.sort( sortFunc );
+				this.queryCache.set( queryName, out );
+				if( sortFunc ) out.sort( sortFunc );
 			}
+
 			return out;
+		}
+
+		query_tag( tagName, sortFunc=null ){
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			//Check if query has already been cached
+			let queryName	= "tag~" + tagName,
+				out			= this.queryCache.get( queryName );
+			if( out ) return out;
+			out	= new Array();
+
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			//Not in cache, Run search
+			let e;
+			for( e of this.entities ) if( e.info.tag == tagName ) out.push( e );
+
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			//Save Results for other systems
+			if( out.length > 0 ){
+				this.queryCache.set( queryName, out );
+				if( sortFunc ) out.sort( sortFunc );
+			}
+
+			return out;
+		}
+
+		query_comp( name, sortFunc=null, cacheName=null ){
+			let out;
+			if( cacheName ){
+				out = this.queryCache.get( cacheName );
+				if( out ) return out;
+			}
+
+			out = Components.list.get( name );
+			if( !out ){	console.error("Component not found ", com); return null; }
+			if( out.cache.length == 0 ) return null;
+
+			if( sortFunc ){
+				out = [...out.cache];
+				out.sort( sortFunc );
+
+				if( cacheName ) this.queryCache.set( cacheName, out );
+				return out;
+			}	
+
+			return out.cache;
 		}
 }
 
 
 ///////////////////////////////////////////////////////////////////////////////////
-export { Components, Assemblages, Entity, System };
+export { Components, Entity, System };
 export default Ecs;

@@ -118,17 +118,19 @@ class Camera{
 
 
 //#########################################################################
-const QUERY_COM = [ "Node", "Camera" ];
-
 class CameraSystem extends System{
 	static init( ecs, priority = 801, priority2 = 1000 ){ 
-		ecs.addSystem( new CameraSystem(), priority );
+		ecs.sys_add( new CameraSystem(), priority );
 	}
 
 	constructor(){ super(); }
-	update( ecs ){
-		let e, ary = ecs.queryEntities( QUERY_COM );
-		for( e of ary ) if( e.Node.isModified ) Camera.update( e );
+	run( ecs ){
+		let c, e, ary = ecs.query_comp( "Camera" );
+
+		for( c of ary ){
+			e = ecs.entities[ c.entityID ];
+			if( e.Node.isModified ) Camera.update( e );
+		}
 	}
 }
 

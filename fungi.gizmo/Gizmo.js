@@ -10,7 +10,7 @@ import Collider from "../fungi.physics/Collider.js";
 //##############################################################################################
 class Gizmo{
 	static $( e ){
-		if( !e.Gizmo ) Entity.addByName( e, "Gizmo" );
+		if( !e.Gizmo ) Entity.com_fromName( e, "Gizmo" );
 		return e;
 	}
 
@@ -43,7 +43,7 @@ class Gizmo{
 class GizmoSystem extends System{
 	static init( ecs, priority = 51 ){
 		let sys = new GizmoSystem();
-		ecs.addSystem( sys, priority );
+		ecs.sys_add( sys, priority );
 		return sys;
 	}
 
@@ -76,7 +76,7 @@ class GizmoSystem extends System{
 	//////////////////////////////////////////////////////////
 	//
 	//////////////////////////////////////////////////////////
-		update( ecs ){
+		run( ecs ){
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			// Handle Selected Gizmo
 			if( this.selectedItem ){
@@ -90,9 +90,9 @@ class GizmoSystem extends System{
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			// Update Camera Scale on Gizmos
 			if( App.camera.Node.isModified ){
-				let e, list = ecs.queryEntities( ["Gizmo"] );
+				let c, list = ecs.query_comp( "Gizmo" );
 
-				for( e of list ) Gizmo.cameraAdjust( e );	
+				for( c of list ) Gizmo.cameraAdjust( ecs.entities[ c.entityID ] );
 			}
 		}
 

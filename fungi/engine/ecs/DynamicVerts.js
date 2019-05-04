@@ -21,7 +21,7 @@ class DynamicVerts{
 	// INITIALIZERS
 	////////////////////////////////////////////////////////////////////
 		static $( e, name, mat, mode=0, startSize=10, vecCompLen=4 ){
-			if( !e.DynamicVerts ) Entity.addByName( e, "DynamicVerts" );
+			if( !e.DynamicVerts ) Entity.com_fromName( e, "DynamicVerts" );
 
 			let vao = Vao.buildEmpty( name, vecCompLen, startSize );
 
@@ -109,19 +109,17 @@ class DynamicVerts{
 
 
 //#########################################################################
-const QUERY_COM = ["DynamicVerts"];
-
 class DynamicVertsSystem extends System{
-	static init( ecs, priority = 100 ){ ecs.addSystem( new DynamicVertsSystem(), priority ); }
+	static init( ecs, priority = 100 ){ ecs.sys_add( new DynamicVertsSystem(), priority ); }
 
 	constructor(){ super(); }
-	update( ecs ){
-		let d, e, ary = ecs.queryEntities( QUERY_COM );
+	run( ecs ){
+		let d, e, ary = ecs.query_comp( "DynamicVerts" );
 
-		for( e of ary ){
-			if( !e.info.active || !e.DynamicVerts.isModified ) continue;
+		for( d of ary ){
+			e = ecs.entities[ d.entityID ];
+			if( !e.info.active || !d.isModified ) continue;
 
-			d = e.DynamicVerts;
 			d.buf.update();
 			d.isModified = false;
 

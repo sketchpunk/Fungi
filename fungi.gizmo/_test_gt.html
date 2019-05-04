@@ -15,9 +15,7 @@ App	.launch( onDraw, true )
 
 
 //#############################################################################
-function onDraw( dt, ss ){
-	App.ecs.updateSystems();
-}
+function onDraw( dt, ss ){ App.ecs.sys_run(); }
 
 //#############################################################################
 let gGizmoSys;

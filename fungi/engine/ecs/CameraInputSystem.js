@@ -45,7 +45,7 @@ function cartesianToPolar( v, out ){
 class CameraInputSystem extends System{
 	static init( ecs, priority = 1 ){ 
 		let sys = new CameraInputSystem();
-		ecs.addSystem( sys, priority );
+		ecs.sys_add( sys, priority );
 		return sys;
 	}
 
@@ -71,7 +71,7 @@ class CameraInputSystem extends System{
 		this.lastXChange = 0;
 	}
 
-	update( ecs ){
+	run( ecs ){
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		if( App.input.keyCount > 0 ) this.handleKeyboard();		// Handle Keyboard Input
 

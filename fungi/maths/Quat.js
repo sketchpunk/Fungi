@@ -225,6 +225,7 @@ class Quaternion extends Float32Array{
 
 		//Using unit vectors, Shortest rotation from Direction A to Direction B
 		//http://glmatrix.net/docs/quat.js.html#line548
+		//http://physicsforgames.blogspot.com/2010/03/quaternion-tricks.html
 		static rotationTo( a, b, out = null ){
 			let dot = Vec3.dot(a, b);
 			out = out || new Quaternion();
