@@ -1,0 +1,44 @@
+<!DOCTYPE html><html><head><title></title></head><script type="module">
+import App		from "../fungi/engine/App.js";
+import KBSpline from "./KochanekBartelsSpline.js";
+
+//#############################################################################
+App	.launch( onDraw, true )
+	.then( dl=>dl
+		.add( "shader", "../fungi/shaders/VecWColor.txt" )
+		.start() )
+	.then( ()=>		App.loadScene( true, true ) )
+	.then( ()=>		init() )
+	.catch( err=>	console.error( err ) );
+
+
+//#############################################################################
+function onDraw( dt, ss ){ App.ecs.sys_run(); }
+
+
+//#############################################################################
+let gPnt, gTime = 0;
+
+function init(){
+	App.cameraCtrl.setTarget( 0, 0, 0 ).setOrbit( 0, 25, 3.0 );
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+	let kb = new KBSpline( 7 );
+	kb	.set( 1, null, null, null, 1.0 )
+		.set( 2, null, null, 0.4, 1.0 )
+		//.set( 2, null, null, 0.4, 1.0, 2.0, 5.0 )
+		.set( 3, null, null, -0.2 )
+		.set( 4, null, null, 0.1 )
+		.set( null, 2.3, 0.4, 0 )
+		.set( null, 2.6, 0.3, 0.5 )
+		;
+
+	kb.debug( App.debug, 15 );
+
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	App.loop.start();
+}
+
+</script><body></body></html>
