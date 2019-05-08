@@ -214,10 +214,11 @@ static updateWorld( e ){
 /** After TransformSystem, BoneSystem can then turn all the World Transform into world Dual Quaternions. */
 class BoneSystem extends System{
 	run( ecs ){
-		let ary	= ecs.query_comp( "Bone" ),
-			dq 	= new DualQuat(),
-			e, b;
-
+		let ary	= ecs.query_comp( "Bone" );
+		if( ary == null ) return; // No Bones Loaded, Exit Early
+		
+		let e, b, dq = new DualQuat();
+			
 		for( b of ary ){
 			e = ecs.entities[ b.entityID ];
 
@@ -239,6 +240,8 @@ class ArmatureSystem extends System{
 
 	run( ecs ){
 		let a, ary = ecs.query_comp( "Armature" );
+		if( ary == null ) return; // No Bones Loaded, Exit Early
+
 		for( a of ary ) if( a.isModified ) Armature.flattenData( ecs.entities[ a.entityID ] );
 	}
 }
@@ -247,6 +250,8 @@ class ArmatureSystem extends System{
 class ArmatureCleanupSystem extends System{
 	run( ecs ){
 		let a, ary = ecs.query_comp( "Armature" );
+		if( ary == null ) return; // No Bones Loaded, Exit Early
+
 		for( a of ary ) if( a.isModified ) a.isModified = false;
 	}
 }

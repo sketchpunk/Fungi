@@ -177,8 +177,8 @@ class App{
 		//............................
 		if( (App.useArmature) & 1 == 1 ){
 			let ubo = new Ubo( "UBOArmature" );
-			Ubo .addItem( ubo, "bones", "mat2x4", 70 )
-				.addItem( ubo, "scale", "vec3", 70 )
+			Ubo .addItem( ubo, "bones", "mat2x4", 90 )
+				.addItem( ubo, "scale", "vec3", 90 )
 				.addItem( ubo, "boneCount", "int" )
 				.finalize( ubo, 4 );
 

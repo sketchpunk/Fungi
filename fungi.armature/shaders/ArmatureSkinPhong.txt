@@ -30,8 +30,8 @@
 	};
 
 	uniform UBOArmature{
-		mat2x4[70]	bones;
-		vec3[70]	scale;
+		mat2x4[90]	bones;
+		vec3[90]	scale;
 		int 		boneCount;
 	} Arm;
 
@@ -55,7 +55,7 @@
 		return pos + tran;
 	}
 
-	vec3 dqBoneTransform_4(vec3 pos, mat2x4[70] bDQ, vec4 bIndex, vec4 bWeight, vec3[70] bScale){
+	vec3 dqBoneTransform_4(vec3 pos, mat2x4[90] bDQ, vec4 bIndex, vec4 bWeight, vec3[90] bScale){
 		/* NORMALIZE DATA FIRST */
 		int a = int( bIndex.x ),
 			b = int( bIndex.y ),

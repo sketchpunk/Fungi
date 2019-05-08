@@ -24,13 +24,13 @@ class IKRig_Human{
 		//this.chain	= new IKChain( e.Armature, bNames );
 		this.pose	= new Pose( e.Armature, true );
 
-		this.leg_l	= new IKChain( e.Armature, json.leg_l, "z" );
-		this.leg_r	= new IKChain( e.Armature, json.leg_r, "z" );
-		this.arm_l 	= new IKChain( e.Armature, json.arm_l, "x" );
-		this.arm_r 	= new IKChain( e.Armature, json.arm_r, "x" );
+		if( json.leg_l ) this.leg_l	= new IKChain( e.Armature, json.leg_l, "z" );
+		if( json.leg_r ) this.leg_r	= new IKChain( e.Armature, json.leg_r, "z" );
+		if( json.arm_l ) this.arm_l	= new IKChain( e.Armature, json.arm_l, "x" );
+		if( json.arm_r ) this.arm_r	= new IKChain( e.Armature, json.arm_r, "x" );
 
-		this.hip	= Armature.getBone( e.Armature, json.hip ).Bone.order;
-		this.spine	= new IKChain( e.Armature, json.spine );;
+		if( json.hip )   this.hip   = Armature.getBone( e.Armature, json.hip ).Bone.order;
+		if( json.spine ) this.spine	= new IKChain( e.Armature, json.spine );;
 		
 		//this.hand_l	= Armature.getBone( e.Armature, json.hand_l ).Bone.order;
 		//this.hand_r	= Armature.getBone( e.Armature, json.hand_r ).Bone.order;
