@@ -352,63 +352,44 @@ HandlerTypes.gltf = class{
 	}
 
 	static load( dl ){
+		let e, bones;
 		for( let i of dl.gltf ){
-			if( i.skinName )	this.skinnedEntity( i );
-			else				this.meshEntity( i.name, i.matName, i.meshNames, i.json, i.bin );
+			e = this.meshEntity( i.name, i.matName, i.meshNames, i.json, i.bin );
+
+			if( i.skinName ){
+				Armature.$( e );
+				let bones = Gltf.getSkin( i.skinName, i.json );
+				this.loadBones( e, bones );
+
+				//console.log( JSON.stringify( Armature.serialize( e.Armature, false ) ) );
+				ArmaturePreview.$( e, "ArmaturePreview", 2 );
+			}
 		}
 		return true;
 	}
 
 	static meshEntity( name, matName, meshNames, json, bin ){
-		let aryPrim = Gltf.getMesh( meshNames[0], json, bin, true );
-		let p = aryPrim[ 0 ];
+		let e = App.$Draw( name );
+		let prims, p, vao, mName;
 
-		let vao = Vao.buildFromBin( meshNames[0], p, bin );
+		for( mName of meshNames ){
+			prims = Gltf.getMesh( mName, json, bin, true ); // Spec Only
+			console.log("------------Primitive Spec Load %s", mName );
+			console.log( JSON.stringify( prims ) );
+			for( p of prims ){
+				console.log("Vao for %s_%s", name, p.name );
+				vao = Vao.buildFromBin( name + "_" + p.name, p, bin );
+				e.Draw.add( vao, matName, p.mode );
+			}
 
-		let e = App.$Draw( name, vao, matName, p.mode ); //gl.ctx.TRIANGLES
-		if( p.rotation )	e.Node.setRot( p.rotation );
-		if( p.position )	e.Node.setPos( p.position );
-		if( p.scale ) 		e.Node.setScl( p.scale );
-	}
+			//This only Works if each Primitive is its own Entity, but not for meshes broken out as pieces 
+			//and each piece shares the same main mesh local space
+			//if( p.rotation )	e.Node.setRot( p.rotation );
+			//if( p.position )	e.Node.setPos( p.position );
+			//if( p.scale ) 	e.Node.setScl( p.scale );
+		}
 
-	static skinnedEntity( i ){
-		//console.log( "skinned Entity " );
-		//console.log( Gltf.getMesh( i.meshNames[0], i.json, i.bin, true ) );
-		//return;
-		//let aryPrim = Gltf.getMesh( i.meshNames[0], i.json, i.bin );
-		let aryPrim = Gltf.getMesh( i.meshNames[0], i.json, i.bin, true );
-		let p = aryPrim[ 0 ];
-
-		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		// Load up Mesh Data
-		/*		
-		let vao = Vao.buildSkinning( i.name + "_vao", 
-			p.vertices.compLen, 
-			p.vertices.data,
-			(p.normal)?		p.normal.data	: null, 
-			(p.uv)? 		p.uv.data		: null,
-			(p.indices)?	p.indices.data	: null,
-			p.joints.data,
-			p.weights.data
-		);
-		*/		
-		let e;
-		if( i.loadSkin ){
-			let vao = Vao.buildFromBin( i.meshNames[0], p, i.bin );
-			e = App.$Draw( i.name, vao, i.matName, p.mode );		
-			//e.info.active = false;
-			if( p.rotation )	e.Node.setRot( p.rotation );
-			if( p.position )	e.Node.setPos( p.position );
-			if( p.scale ) 		e.Node.setScl( p.scale );
-		}else e = App.$Draw( i.name );
-
-		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		Armature.$( e );
-
-		let bones = Gltf.getSkin( i.skinName, i.json );
-		this.loadBones( e, bones );
-
-		ArmaturePreview.$( e, "ArmaturePreview", 2 );
+		return e;
 	}
 
 	static loadBones( e, bones ){

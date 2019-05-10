@@ -262,6 +262,49 @@ class Vao{
 
 
 	///////////////////////////////////////////////////////
+	// QUICK BUFFERS
+	///////////////////////////////////////////////////////
+		static index_bin( vao, dvBin, bStart, bLen ){
+			vao.isIndexed = true;
+			vao.buf[ BUF_IDX_NAME ] = Buffer.fromBin( gl.ctx.ELEMENT_ARRAY_BUFFER, dvBin, bStart, bLen, true );
+			return this;
+		}
+
+		static vert_bin( vao, dvBin, bStart, bLen, compLen ){
+			vao.buf[ BUF_V_NAME ] = Buffer.fromBin( gl.ctx.ARRAY_BUFFER, dvBin, bStart, bLen, true, gl.ctx.FLOAT, Shader.POSITION_LOC, compLen );
+			return this;
+		}
+
+		static norm_bin( vao, dvBin, bStart, bLen ){
+			vao.buf[ BUF_N_NAME ] = Buffer.fromBin( gl.ctx.ARRAY_BUFFER, dvBin, bStart, bLen, true, gl.ctx.FLOAT, Shader.NORMAL_LOC, 3 );
+			return this;
+		}
+
+		static uv_bin( vao, dvBin, bStart, bLen ){
+			vao.buf[ BUF_UV_NAME ] = Buffer.fromBin( gl.ctx.ARRAY_BUFFER, dvBin, bStart, bLen, true, gl.ctx.FLOAT, Shader.UV_LOC, 2 );
+			return this;
+		}
+
+		static weight_bin( vao, dvBin, bStart, bLen, compLen ){
+			vao.buf[ BUF_BW_NAME ] = Buffer.fromBin( gl.ctx.ARRAY_BUFFER, dvBin, bStart, bLen, true, gl.ctx.FLOAT, Shader.BONE_WEIGHT_LOC, compLen );
+			return this;
+		}
+
+		static joint_bin( vao, bin, bStart, elmCnt, compLen ){
+			// JOINT INDICES
+			// Can make this work BUT need to parse joints out of BIN as a Uint16 array, then pass
+			// that to Buffer.array instead of fromBin. Javascript knows well enough how to convert
+			// Uint16Array to Float32Array before saving it to the GPU. This is an issue because
+			// there does not seem to be a way to use Uint16 Buffers other then Index. Only option is
+			// to use float buffers, so this conversion is needed.
+
+			// elmCount * compLen = Total Uints ( not total bytes )
+			let uiAry = new Uint16Array( bin, bStart, elmCnt * compLen );
+			this.floatBuffer( vao, BUF_BI_NAME, uiAry, Shader.BONE_IDX_LOC, compLen );
+			return this
+		}
+
+	///////////////////////////////////////////////////////
 	// STATIC FUNC
 	///////////////////////////////////////////////////////
 		

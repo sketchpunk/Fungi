@@ -1,0 +1,228 @@
+<!DOCTYPE html><html><head><title></title></head><script type="module">
+import App		from "../fungi/engine/App.js";
+import Armature from "./fungi.armature/Armature.js";
+import ArmaturePreview from "./fungi.armature/ArmaturePreview.js";
+import Maths	from "./fungi/maths/Maths.js";
+import Downloader, { HandlerTypes }	from "./fungi/engine/lib/Downloader.js";
+
+import Vao, { Buffer } from "./fungi/core/Vao.js";
+import gl from "./fungi/core/gl.js";
+import Shader from "./fungi/core/shader.js";
+
+//#############################################################################
+function onDraw(dt, ss){
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~	
+	App.ecs.sys_run();
+}
+
+function init(){
+	App.cameraCtrl.setTarget( 0, 0.75, 0 ).setOrbit( -2, 15, 3.0 );
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	let b;
+	let e = App.ecs.entity_find( "Mesh01" );
+	e.Armature.isModified = true;
+
+	b = Armature.getBone( e.Armature, "bip_hip_L" );
+	b.Node.local.rot.rx( Maths.toRad(35) );
+	b.Node.isModified = true;
+	
+	//b = Armature.getBone( e.Armature, "Neck" );
+	//b.Node.local.rot.setAxisAngle( [1,0,0], -45 * Math.PI / 180 );
+	//b.Node.isModified = true;
+
+	//b = Armature.getBone( e.Armature, "LeftArm" );
+	//b.Node.local.rot.setAxisAngle( [1,0,0], 65 * Math.PI / 180 );
+	//b.Node.local.rot.rz( -35 * Math.PI / 180 )
+	//b.Node.isModified = true;
+
+	//b = Armature.getBone( e.Armature, "LeftForeArm" );
+	//b.Node.local.rot.setAxisAngle( [1,0,0], 35 * Math.PI / 180 );
+	//b.Node.local.rot.rz( 75 * Math.PI / 180 )
+	//b.Node.isModified = true;
+	
+
+	//b = Armature.getBone( e.Armature, "RightArm" );
+	//b.Node.local.rot.setAxisAngle( [1,0,0], 65 * Math.PI / 180 );
+	//b.Node.isModified = true;
+
+	//b = Armature.getBone( e.Armature, "RightArm" );
+	//b.Node.local.rot.setAxisAngle( [1,0,0], 65 * Math.PI / 180 );
+	//b.Node.isModified = true;
+
+	//b = Armature.getBone( e.Armature, "LeftUpLeg" );
+	//b.Node.local.rot.rx( 65 * Math.PI / 180 );
+	//b.Node.local.rot.rz( -5 * Math.PI / 180 );
+	//b.Node.isModified = true;
+
+	//b = Armature.getBone( e.Armature, "LeftLeg" );
+	//b.Node.local.rot.setAxisAngle( [1,0,0], -65 * Math.PI / 180 );
+	//b.Node.local.rot.rx( -65 * Math.PI / 180 );
+	//b.Node.isModified = true;
+	
+	//b = Armature.getBone( e.Armature, "Spine" );
+	//b.Node.local.rot.setAxisAngle( [1,0,0], -20 * Math.PI / 180 );
+	//b.Node.isModified = true;
+
+	//b = Armature.getBone( e.Armature, "Spine1" );
+	//b.Node.local.rot.setAxisAngle( [1,0,0], -20 * Math.PI / 180 );
+	//b.Node.isModified = true;
+
+	//b = Armature.getBone( e.Armature, "Spine2" );
+	//b.Node.local.rot.setAxisAngle( [1,0,0], -20 * Math.PI / 180 );
+	//b.Node.isModified = true;
+
+	/**/
+	//b = Armature.getBone( e.Armature, "Hips" );
+	//b.Node.local.pos.z = -3;
+	//b.Node.isModified = true;
+	
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	App.loop.start();
+}
+
+
+
+//#############################################################################
+
+// Hacking the prototype is to be frawned apo, but it makes a better API usage.
+Downloader.prototype.addEntity = function( name, file, configName ){
+	this._queue.push({ 
+		name,
+		configName,
+		handler		: "entity", 
+		files		: [
+			{ url: file + ".txt", type:"text" },
+			{ url: file + ".bin", type:"arraybuffer" }
+		]
+	});
+	return this;
+}
+
+// vert_opt = 1 : Indices, 2: UV, 4:Normals
+HandlerTypes.entity = class{
+	static downloaded( dl, xhr ){
+		switch( xhr.activeItem.files.length ){
+			case 1: xhr.activeItem.text	= xhr.response; break;
+			case 0: xhr.activeItem.bin	= xhr.response; break;
+		}
+	}
+
+	static load( dl ){
+		let e, json, eConfig, dConfig;
+
+		for( let i of dl.entity ){
+			json = this.parseSection( "Entity", i.text );
+			if( !json ){ console.error("Error loading entity section"); continue; }
+
+			eConfig = json.ent_config[ i.configName ];
+			dConfig = json.draw_config[ eConfig.draw ];
+
+			e = this.build_entity( i, eConfig, dConfig );
+
+			if( eConfig.use_arm ){
+				this.loadArmature( e, i );
+				if( eConfig.use_arm_preview ) ArmaturePreview.$( e, "ArmaturePreview", 2 );
+			}
+		}
+		return true;
+	}
+
+	static build_entity( info, eConfig, dConfig ){
+		let json = this.parseSection( "Vao", info.text );
+
+		// To Bind to GL Buffers, need DataView but to bind to TypeArrays need ArrayBuffer
+		let dv 	= ( info.bin instanceof ArrayBuffer )? new DataView( info.bin ) : info.bin; 		
+		let e = App.$Draw( info.name );
+		let i, spec, vao;
+
+		for( i of dConfig ){
+			spec	= json[ i.name ];
+			vao		= new Vao();
+
+			Vao.bind( vao );
+			Vao.vert_bin( vao, dv, spec.vertices.byteStart, spec.vertices.byteLen, spec.vertices.compLen );
+			
+			if( (eConfig.vert_opt & 1) != 0 ) Vao.index_bin( vao, dv, spec.indices.byteStart, spec.indices.byteLen );
+			if( (eConfig.vert_opt & 2) != 0 ) Vao.uv_bin( vao, dv, spec.uv.byteStart, spec.uv.byteLen );
+			if( (eConfig.vert_opt & 4) != 0 ) Vao.norm_bin( vao, dv, spec.normal.byteStart, spec.normal.byteLen );
+
+			if( eConfig.use_arm && spec.weights && spec.joints ){
+				Vao.weight_bin( vao, dv, spec.weights.byteStart, spec.weights.byteLen, spec.weights.compLen );
+				Vao.joint_bin( vao, info.bin, spec.joints.byteStart, spec.joints.elmCount, spec.joints.compLen );	
+			}
+
+			Vao.finalize( vao, info.name+"_"+i.name, ((spec.indices)? spec.indices.elmCount : spec.vertices.elmCount) );
+			e.Draw.add( vao, i.mat, spec.mode );
+		}
+		Vao.bind();
+
+		return e;
+	}
+
+	static parseSection( sec, txt ){
+		let aPos = txt.indexOf( "<" + sec + ">" ) + sec.length + 2;
+		let bPos = txt.indexOf( "</" + sec + ">" );
+
+		if( aPos == -1 || bPos == -1 || bPos <= aPos ) return null;
+
+		let tmp	= txt.substring( aPos, bPos );
+
+		try{ return JSON.parse( tmp ); }
+		catch(err){ console.error( err.message, "\n" , tmp ); }
+
+		return null;
+	}
+
+	static loadArmature( e, info ){
+		let json = this.parseSection( "Armature", info.text );
+
+		Armature.$( e );
+
+		let i, b, ab, bLen = json.length, arm = e.Armature;
+
+		for( i=0; i < bLen; i++ ){
+			b	= json[i];
+			ab 	= Armature.addBone( arm, b.name, b.len, null, b.idx );
+
+			// Can not have levels updated automaticly, Callstack limits get hit
+			// Instead, using the Level from bones to manually set it.
+			if( b.p_idx != null ) App.node.addChild( arm.bones[ b.p_idx ], ab, false );
+
+			// Manual set node level, Must do it after addChild, else it will get overwritten.
+			ab.Node.level = b.lvl; 
+
+			if( b.rot ) ab.Node.setRot( b.rot );
+			if( b.pos ) ab.Node.setPos( b.pos );
+			if( b.scl ) ab.Node.setScl( b.scl );
+		}
+		Armature.finalize( e );	//This updates World Transform
+	}
+}; HandlerTypes.entity.priority = 100;
+
+
+//#############################################################################
+App.useArmature = 3;
+App	.launch( onDraw, true )
+	.then( dl	=> dl
+		.addGrp( "shader", 
+			"../fungi/shaders/VecWColor.txt",
+			"../fungi/shaders/LowPolyPhong.txt",
+			"../fungi.armature/shaders/ArmaturePreview.txt",
+			"../fungi.armature/shaders/ArmatureSkinPhong.txt",
+		)
+		.addEntity( "Mesh01", "./pitohui", "debug" )
+		//.addGLTF( "Mesh01", "./Vegeta", "ArmatureSkinPhong", ["Vegeta"], "Armature" )
+		//.addGLTF( "Mesh01", "./dummy", "ArmatureSkinPhong", ["Base"], "CielArmature" )
+		//.addGLTF( "Mesh01", "./pitohui", "ArmatureSkinPhong", ["body","skin","hair","eyes"], "armature" )
+		//.addGLTF( "Mesh01", "./pitohui", "LowPolyPhong", ["body","skin","hair","eyes"] )
+		.start() )
+	.then( ()	=> App.loadScene( true, true ) )
+	.then( ()	=> init() )
+	.catch( err	=> console.error( err ) );
+
+
+//#############################################################################
+</script><body></body></html>
