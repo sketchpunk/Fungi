@@ -374,14 +374,10 @@ HandlerTypes.gltf = class{
 
 		for( mName of meshNames ){
 			prims = Gltf.getMesh( mName, json, bin, true ); // Spec Only
-			console.log("------------Primitive Spec Load %s", mName );
-			console.log( JSON.stringify( prims ) );
 			for( p of prims ){
-				console.log("Vao for %s_%s", name, p.name );
 				vao = Vao.buildFromBin( name + "_" + p.name, p, bin );
 				e.Draw.add( vao, matName, p.mode );
 			}
-
 			//This only Works if each Primitive is its own Entity, but not for meshes broken out as pieces 
 			//and each piece shares the same main mesh local space
 			//if( p.rotation )	e.Node.setRot( p.rotation );

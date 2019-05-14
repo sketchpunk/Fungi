@@ -265,12 +265,14 @@ class Vao{
 	// QUICK BUFFERS
 	///////////////////////////////////////////////////////
 		static index_bin( vao, dvBin, bStart, bLen ){
+			//console.log("INDICES", bStart, bLen );
 			vao.isIndexed = true;
 			vao.buf[ BUF_IDX_NAME ] = Buffer.fromBin( gl.ctx.ELEMENT_ARRAY_BUFFER, dvBin, bStart, bLen, true );
 			return this;
 		}
 
 		static vert_bin( vao, dvBin, bStart, bLen, compLen ){
+			//console.log("VERTICES", bStart, bLen, compLen );
 			vao.buf[ BUF_V_NAME ] = Buffer.fromBin( gl.ctx.ARRAY_BUFFER, dvBin, bStart, bLen, true, gl.ctx.FLOAT, Shader.POSITION_LOC, compLen );
 			return this;
 		}
@@ -310,7 +312,7 @@ class Vao{
 		
 		static finalize( vao, name, elmCount = null ){
 			vao.name = name;
-
+			//console.log( name, elmCount );
 			if( elmCount ) vao.elmCount = elmCount;
 
 			// Clean up

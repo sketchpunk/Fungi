@@ -1,0 +1,53 @@
+<!DOCTYPE html><html><head><title></title></head><script type="module">
+import App		from "../fungi/engine/App.js";
+import Gltf		from "../fungi.misc/GLTF.js";
+import Armature from "../fungi.armature/Armature.js";
+import {Quat}	from "../fungi/maths/Maths.js";
+
+
+//#############################################################################
+App.useArmature = 3;
+App	.launch( onDraw, true )
+	.then( dl	=> dl
+		.addGrp( "shader", 
+			"../fungi/shaders/VecWColor.txt",
+			//"../fungi/shaders/LowPolyPhong.txt",
+			"../fungi.armature/shaders/ArmaturePreview.txt",
+			"../fungi.armature/shaders/ArmatureSkinPhong.txt",
+		)
+		//.addGLTF( "Mesh01", "./Vegeta", "ArmatureSkinPhong", ["Vegeta"], "Armature" )
+		//.addGLTF( "Mesh01", "./dummy", "ArmatureSkinPhong", ["Base"], "CielArmature" )
+		.addGLTF( "Mesh01", "../pitohui", "ArmatureSkinPhong", ["body","skin","eyes","hair"], "armature" )
+		.start() )
+	.then( ()	=> App.loadScene( true, true ) )
+	.then( ()	=> init() )
+	.catch( err	=> console.error( err ) );
+
+
+//#############################################################################
+function onDraw(dt, ss){ App.ecs.sys_run(); }
+
+function init(){
+	App.cameraCtrl.setTarget( 0, 0.75, 0 ).setOrbit( -35, 15, 2.1 );
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	let b;
+	let e = App.ecs.entity_find( "Mesh01" );
+	//e.Node.setScl( 0.05 );
+	e.Armature.isModified = true;
+	
+	/*
+	b = Armature.getBone( e.Armature, "bip_hip_L");
+	//b.Node.local.rot.pmul( new Quat().setAxisAngle( [-1,0,0], 35 * Math.PI / 180 ) );
+	b.Node.local.rot.rx( 35 * Math.PI / 180 );
+	b.Node.isModified = true;
+	console.log( b );
+	*/
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	App.loop.start();
+}
+
+
+//#############################################################################
+</script><body></body></html>

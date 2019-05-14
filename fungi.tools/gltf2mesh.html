@@ -1,0 +1,135 @@
+<!DOCTYPE html><html><head><title></title></head><script type="module">
+import App, { Vao } 	from "../fungi/engine/App.js";
+import Gltf				from "../fungi.misc/GLTF.js";
+import Armature 		from "../fungi.armature/Armature.js";
+import ArmaturePreview	from "../fungi.armature/ArmaturePreview.js";
+import Downloader, { HandlerTypes }	from "../fungi/engine/lib/Downloader.js";
+//import {Quat}	from "../fungi/maths/Maths.js";
+
+//#############################################################################
+
+Downloader.prototype.convert = function( name, file, matName, meshNames, skinName=null, loadSkin=true ){
+	this._queue.push( { name, matName, 
+		handler		: "convert", 
+		meshNames,
+		skinName,
+		loadSkin,
+		files 	: [
+			{ url: file + ".gltf", type:"json" },
+			{ url: file + ".bin", type:"arraybuffer" }
+		]
+	});
+	return this;
+}
+
+HandlerTypes.convert = class{
+	static downloaded( dl, xhr ){
+		switch( xhr.activeItem.files.length ){
+			case 1: xhr.activeItem.json	= xhr.response; break;
+			case 0: xhr.activeItem.bin	= xhr.response; break;
+		}
+	}
+
+	static load( dl ){
+		console.log(dl);
+		let bones;
+		let i = dl.convert[0];
+
+		let e = mesh_entity( i.name, i.matName, i.meshNames, i.json, i.bin );
+
+		if( i.skinName ){
+			Armature.$( e );
+			let bones = Gltf.getSkin( i.skinName, i.json );
+			HandlerTypes.gltf.loadBones( e, bones );
+			ArmaturePreview.$( e, "ArmaturePreview", 2 );
+
+			output_bones( e );
+		}
+
+		return true;
+	}
+}; HandlerTypes.convert.priority = 100;
+
+
+//#############################################################################
+App.useArmature = 3;
+App	.launch( onDraw, true )
+	.then( dl	=> dl
+		.addGrp( "shader", 
+			"../fungi/shaders/VecWColor.txt",
+			//"../fungi/shaders/LowPolyPhong.txt",
+			"../fungi.armature/shaders/ArmaturePreview.txt",
+			"../fungi.armature/shaders/ArmatureSkinPhong.txt",
+		)
+		.convert( "Mesh01", "../Vegeta", "ArmatureSkinPhong", ["Vegeta"], "Armature" )
+		//.addGLTF( "Mesh01", "./dummy", "ArmatureSkinPhong", ["Base"], "CielArmature" )
+		//.addGLTF( "Mesh01", "../pitohui", "ArmatureSkinPhong", ["body","skin","eyes","hair"], "armature" )
+		.start() )
+	.then( ()	=> App.loadScene( true, true ) )
+	.then( ()	=> init() )
+	.catch( err	=> console.error( err ) );
+
+
+//#############################################################################
+function onDraw(dt, ss){ App.ecs.sys_run(); }
+
+function init(){
+	App.cameraCtrl.setTarget( 0, 1.5, 0 ).setOrbit( 0, 15, 4.0 );
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	App.loop.start();
+}
+
+
+//#############################################################################
+function mesh_entity( name, matName, meshNames, json, bin ){
+	let e = App.$Draw( name );
+	let prims, p, vao, mName;
+	let buf = "";
+	let i;
+
+	for( mName of meshNames ){
+		prims = Gltf.getMesh( mName, json, bin, true ); // Spec Only
+
+		for( i=0; i < prims.length; i++ ){
+			p = prims[ i ]; 
+
+			vao = Vao.buildFromBin( name + "_" + p.name, p, bin );
+			e.Draw.add( vao, matName, p.mode );
+
+			if( i != 0 ) buf += ",";
+			buf += '"'+p.name+'":';
+			delete p.name;
+			buf += JSON.stringify( p );
+
+			console.log( p.name );
+			console.log( p );
+
+		}
+
+		console.log( "<Vao>{ " + buf + " }</Vao>" );
+		//This only Works if each Primitive is its own Entity, but not for meshes broken out as pieces 
+		//and each piece shares the same main mesh local space
+		//if( p.rotation )	e.Node.setRot( p.rotation );
+		//if( p.position )	e.Node.setPos( p.position );
+		//if( p.scale ) 	e.Node.setScl( p.scale );
+	}
+
+	return e;
+}
+
+
+function output_bones( e ){
+	let json = Armature.serialize( e.Armature, false );
+	let buf = "";
+
+	for( let i=0; i < json.length; i++ ){
+		if( i != 0 ) buf += ",\n";
+		buf += JSON.stringify( json[ i ] );
+	}
+
+	console.log( "<Armature>\n[\n" + buf + "\n]\n</Armature>" );
+}
+
+//#############################################################################
+</script><body></body></html>

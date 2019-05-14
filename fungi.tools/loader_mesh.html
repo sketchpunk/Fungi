@@ -1,0 +1,49 @@
+<!DOCTYPE html><html><head><title></title></head><script type="module">
+import App		from "../fungi/engine/App.js";
+import Armature from "../fungi.armature/Armature.js";
+import Maths	from "../fungi/maths/Maths.js";
+import _NA		from "../fungi.misc/MeshLoader.js";
+
+
+//#############################################################################
+App.useArmature = 3;
+App	.launch( onDraw, true )
+	.then( dl	=> dl
+		.addGrp( "shader", 
+			"../fungi/shaders/VecWColor.txt",
+			//"../fungi/shaders/LowPolyPhong.txt",
+			"../fungi.armature/shaders/ArmaturePreview.txt",
+			"../fungi.armature/shaders/ArmatureSkinPhong.txt",
+		)
+		//.addEntity( "Mesh01", "../pitohui", "ArmatureSkinPhong", 7, 25, ["body"] )
+		.addEntity( "Mesh01", "../vegeta", "ArmatureSkinPhong", 7, 25 )
+		.start() )
+	.then( ()	=> App.loadScene( true, true ) )
+	.then( ()	=> init() )
+	.catch( err	=> console.error( err ) );
+
+
+//#############################################################################
+function onDraw(dt, ss){ App.ecs.sys_run(); }
+
+function init(){
+	App.cameraCtrl.setTarget( 0, 0.75, 0 ).setOrbit( -2, 15, 3.0 );
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	/*
+	let b;
+	let e = App.ecs.entity_find( "Mesh01" );
+	e.Armature.isModified = true;
+
+	b = Armature.getBone( e.Armature, "bip_hip_L" );
+	b.Node.local.rot.rx( Maths.toRad(35) );
+	b.Node.isModified = true;
+	*/
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	App.loop.start();
+}
+
+
+//#############################################################################
+</script><body></body></html>
