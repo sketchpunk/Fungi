@@ -23,8 +23,8 @@ App	.launch( onDraw, true )
 			"../fungi.armature/shaders/ArmaturePreview.txt", 
 			"../fungi.armature/shaders/ArmatureSkinPhong.txt",
 		)
-		//.addGLTF( "Mesh01", "../Vegeta", "ArmatureSkinPhong", ["Vegeta"], "Armature", true )
-		.addGLTF( "Mesh01", "../dummy", "ArmatureSkinPhong", ["Base"], "CielArmature" )
+		.addGLTF( "Mesh01", "../Vegeta", "ArmatureSkinPhong", ["Vegeta"], "Armature", true )
+		//.addGLTF( "Mesh01", "../dummy", "ArmatureSkinPhong", ["Base"], "CielArmature" )
 		.start() )
 	.then( ()	=> App.loadScene( true, true ) )
 	.then( ()	=> init() )
@@ -46,7 +46,7 @@ function init(){
 	App.cache.getMaterial( "VecWColor" ).options.depthTest = false;
 
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	let jsonx = { 	
+	let json = { 	
 		leg_l: [ "LeftUpLeg","LeftLeg" ],
 		leg_r: [ "RightUpLeg","RightLeg" ],
 		arm_l: [ "LeftArm","LeftForeArm" ],
@@ -57,7 +57,7 @@ function init(){
 		hip:"Hips"
 	};
 
-	let json = { 	
+	let jsonx = { 	
 		leg_l: [ "UpperLeg_L","LowerLeg_L" ],
 		leg_r: [ "UpperLeg_R","LowerLeg_R" ],
 		arm_l: [ "UpperArm_L","LowerArm_L" ],
@@ -632,7 +632,7 @@ function aim( chain, target, pose, wt ){
 }
 
 //=======================
-function _aimBone2( chain, target, wt, out ){
+function _aimBone2x( chain, target, wt, out ){
 	/*
 	The idea is to Aim the root bone in the direction of the target. Originally used a lookAt rotation 
 	then correcting it to take in account the bone's points up, not forward.
@@ -694,7 +694,7 @@ function _aimBone2( chain, target, wt, out ){
 	return out;
 }
 
-function limb2( chain, target, pose, wt ){
+function limb2x( chain, target, pose, wt ){
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Using law of cos SSS, so need the length of all sides of the triangle
 	let aLen	= chain.lens[ 0 ],
@@ -733,7 +733,7 @@ function limb2( chain, target, pose, wt ){
 	else		chain.updateBone( 1, rot );
 }
 
-function aim2( chain, target, pose, wt ){
+function aim2xz( chain, target, pose, wt ){
 	let rot = new Quat();
 
 	_aimBone2( chain, target, wt, rot );		
@@ -1065,7 +1065,7 @@ class IKRig_Human_Dance{
 	}
 
 
-	ik_hip_feet(){
+	ik_hip_feetOLD(){
 		// Find World Transform for Hip, No Need for Entity World Transform.
 		// this.rig.pose.bones[ this ]
 		// Set Let Target
@@ -1110,10 +1110,10 @@ class IKRig_Human_Dance{
 		//IKTarget.debug( App.debug, this.target );
 
 		if( this.target.distanceSqr < chain.lenSqr ){
-			limb2( chain, this.target, pose, wt );
+			Solver.limb( chain, this.target, pose, wt );
 		}else{
 			//console.log( "aim" );
-			aim2( chain, this.target, pose, wt );
+			Solver.aim( chain, this.target, pose, wt );
 			pose.updateBone( chain.idx[ 1 ], Quat.ZERO );
 		}
 	}
