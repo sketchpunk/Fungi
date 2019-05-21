@@ -15,8 +15,8 @@ App	.launch( onDraw, true )
 			"../fungi.armature/shaders/ArmaturePreview.txt",
 			"../fungi.armature/shaders/ArmatureSkinPhong.txt",
 		)
-		//.addEntity( "Mesh01", "../pitohui", "ArmatureSkinPhong", 7, 25, ["body"] )
-		.addEntity( "Mesh01", "../vegeta", "ArmatureSkinPhong", 7, 25 )
+		//.addEntity( "Mesh01", "../files/models/pitohui", "ArmatureSkinPhong", 7, 25, ["body"] )
+		.addEntity( "Mesh01", "../files/models/vegeta", "ArmatureSkinPhong", 7, 25 )
 		.start() )
 	.then( ()	=> App.loadScene( true, true ) )
 	.then( ()	=> init() )

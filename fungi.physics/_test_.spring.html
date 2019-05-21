@@ -1,0 +1,354 @@
+<!DOCTYPE html><html><head><title></title></head><script type="module">
+import App, { Components, Entity }			from "./fungi/engine/App.js";
+import Maths, {Vec3, Quat} from "./fungi/maths/Maths.js";
+import Transform	from "./fungi/maths/Transform.js";
+
+//#############################################################################
+App	.launch( onDraw, true )
+	.then( dl=>dl
+		.add( "shader", "./fungi/shaders/VecWColor.txt" )
+		.start() )
+	.then( ()=>		App.loadScene( true, true ) )
+	.then( ()=>		init() )
+	.catch( err=>	console.error( err ) );
+
+
+//#############################################################################
+function onDraw( dt, ss ){ 
+	//run_test( dt, ss );
+	
+	/**/
+	gTime += dt;
+	if( gTime > 3 ){
+		//gSpring.set( Math.random() * 2 - 1 );
+		gTime = 0;
+
+		gE.MoveTo.go([
+			Math.random() * 2 - 1,
+			Math.random() * 2 - 1,
+			Math.random() * 2 - 1,
+		]);
+	}
+	
+	
+	App.ecs.sys_run();
+}
+
+
+//#############################################################################
+let gPnt, gLine, gSpring, gTime = 0;
+let gE;
+
+function run_test( dt, ss ){
+	gTime += dt;
+	if( gTime > 3 ){
+		gSpring.set( Math.random() * 2 - 1 );
+		gTime = 0;
+	}
+
+	//gPnt.local.pos.x += 1 * dt;
+	//gPnt.isModified = true;
+
+	gPnt.x( gSpring.update( dt ) );
+}
+
+function init(){
+	App.cameraCtrl.setTarget( 0, 0, 0 ).setOrbit( 0, 25, 3.0 );
+	MoveToSystem.init( App.ecs );
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	gSpring = new SpringFloat( );
+	gPnt	= App.ecs.entity_find("Debug_Point").Node;
+	gLine	= App.ecs.entity_find("Debug_Line").Node;
+
+	App.debug.point( [0,0,0], 6 );
+	//App.debug.line( [0,0,0], [0,0.2,0], 6 );
+	//
+	gSpring.set( 1 );
+
+
+	gE = App.ecs.entity_find( gPnt );
+	let m = MoveTo.$( gE ).MoveTo;
+	m.mode			= MoveTo.TARGET;
+
+	//m.locomotion	= new Loco_Linear();
+	//m.locomotion	= new Loco_Springy();
+	m.locomotion 	= new Local_SpringAccel();
+
+	m.target.set( 2, 0, 0 );
+
+	/*
+	let csc = ( x )=>{ return 1 / Math.sin(x); }; //Calculate the cosecant of a value, defined as csc(x) = 1/sin(x)
+	
+
+	let DecayTime = 5.0, Stopped = 0.01, Pull = 1.0, CycleNum = 4.0;
+
+	let friction = csc(Math.PI * CycleNum) * (((2 * Math.PI * CycleNum * Math.cos(Math.PI * CycleNum)) / DecayTime) - ((2 * Math.PI * CycleNum * 1 * Pull) / (DecayTime * Stopped)));
+   	let aftePow = Math.exp( -(DecayTime * friction) / 2 );
+    let frictionplus1Part1 = Math.PI * CycleNum * (2 * Math.cos(Math.PI *  CycleNum) * aftePow * Stopped - DecayTime * friction * Pull - 2 * Pull);
+    let frictionplus1Part2 = DecayTime * ( Math.sin(Math.PI * CycleNum) * aftePow * Stopped - (Math.PI * CycleNum * Pull));
+    let frictionplus1 = frictionplus1Part1 / frictionplus1Part2;
+
+    console.log( friction, frictionplus1Part1, frictionplus1Part2, frictionplus1 );
+	*/
+	/*
+	let Friction =	csc( Math.PI * CycleNum ) * 
+					( 
+						2 * Math.PI * CycleNum * Math.cos( Math.PI * CycleNum ) / DecayTime
+                    	- 2 * Math.PI * CycleNum * Math.exp( -( DecayTime * Friction / 2 ) ) * 
+                    	Pull / (DecayTime * Stopped)
+                    );
+	*/
+	//let Friction = 1.842068074395236;
+	//let stiffness = ((DecayTime * DecayTime) * (Friction * Friction) + 4 * ( Math.PI * Math.PI ) * (CycleNum * CycleNum)) / (4 * DecayTime * DecayTime);
+	//console.log( stiffness );
+
+	/*
+	App.debug
+		.point( [-1,1,0], 0)
+		.rawPoint( 0, 1, 0, 1 )
+		.point( new Vec3(1,1,0), 2 )
+
+		.line( [-1,1,0], new Vec3(0,1,0), 0 , 1 )	// Dual Color Line using Array and Vectors
+		.line( [ 0,1,0], [1,1,0], 1 , 2 )			// Dual Color Line using just arrays
+		.line( [0,0,0], [0,1,0], 6 )				// Single Color Line
+
+		.quat( 
+			Quat.fromEuler(null, 
+				Maths.toRad(-45), 
+				Maths.toRad(-45), 
+				Maths.toRad(45)), 
+			[0, 0.2, 1], 
+			0.5
+		)
+
+		.rawBox( -2,-2,-2, 2,2,2, 4 )
+		.box( [-1.5, -1.5, -1.5], new Vec3(1.5, 1.5, 1.5), 7 )
+	;
+	*/
+
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	App.loop.start();
+}
+
+//#############################################################################
+//http://codeflow.org/entries/2010/aug/28/integration-by-example-euler-vs-verlet-vs-runge-kutta/
+
+//https://jsfiddle.net/bkanber/pDngH/
+//https://github.com/pqml/spring
+//http://lolengine.net/blog/2015/05/03/damping-with-delta-time
+//https://github.com/keijiro/SmoothingTest
+//https://gafferongames.com/post/spring_physics/
+//https://stackoverflow.com/questions/5100811/algorithm-to-control-acceleration-until-a-position-is-reached
+//
+//http://lolengine.net/blog/2015/05/03/damping-with-delta-time
+/*
+http://www.rorydriscoll.com/2016/03/07/frame-rate-independent-damping-using-lerp/
+Damping from A to B.
+Smoothing rate dictates the proportion of source remaining after one second
+public static float Damp(float source, float target, float smoothing, float dt)
+{
+    return Mathf.Lerp(source, target, 1 - Mathf.Pow(smoothing, dt))
+}
+
+Both functions should produce about the same value.
+public static float Damp(float a, float b, float lambda, float dt)
+{
+    return Mathf.Lerp(a, b, 1 - Mathf.Exp(-lambda * dt))
+}
+
+This damps v value to zero
+public static float Damp(float source, float smoothing, float dt)
+{
+    return source * Mathf.Pow(smoothing, dt);
+}
+*/
+
+class MoveTo{
+	static $( e ){
+		if( !e.MoveTo ) Entity.com_fromName( e, "MoveTo" );
+		return e;
+	}
+	constructor(){
+		this.vel 		= new Vec3();
+		this.target 	= new Vec3();
+		this.mode 		= 0; // 0:Off, 1:Constant Velocity, 2: ToTarget
+		this.locomotion = null; //Funtion of how to Handle Motion
+	}
+
+	go( v ){ this.target.copy( v ); this.mode = MoveTo.TARGET; }
+} Components( MoveTo );
+
+MoveTo.OFF		= 0;
+MoveTo.CONSTANT	= 1;
+MoveTo.TARGET	= 2;
+
+class MoveToSystem{
+	static init( ecs, priority=700, isActive=true ){ ecs.sys_add( new MoveToSystem(), priority, isActive ); }
+
+	run( ecs ){
+		let list	= ecs.query_comp( "MoveTo" ),
+			v		= new Vec3(),
+			dt		= App.deltaTime,
+			m, e;
+
+		if( list == null ) return;
+
+		for( m of list ){
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			if( m.mode == MoveTo.OFF ) continue;
+
+			e = ecs.entities[ m.entityID ];
+			if( !e.info.active ) continue;
+
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			switch( m.mode ){
+				//................................
+				case MoveTo.CONSTANT: 
+					e.Node.addPos( m.vel.scale( dt, v ) );
+					break;
+
+				//................................
+				case MoveTo.TARGET:
+					m.locomotion.run( e, dt );
+
+					if( m.vel.lengthSqr() < 0.00001 && Vec3.lenSqr( e.Node.local.pos, m.target ) < 0.00001 ){
+						m.mode = MoveTo.OFF;
+						e.Node.local.pos.copy( m.target );
+
+						console.log("STOP");
+					}
+					break;
+			}
+			
+		}
+	}
+}
+
+class Loco_Springy{
+	constructor( stiff = 0.1, damp = 0.3, dtScale = 40 ){
+		this.dtScale	= dtScale;
+		this.frameRate	= 60;
+		this.stiffness 	= stiff;
+		this.damping 	= damp;
+		this.D			= 1 - damp / this.frameRate;
+	}
+
+	run( e, dt ){
+		// dt *= scale;
+		// accel = -this.stiffness * ( at - to );
+		// vel = ( this.vel + accel * dt ) * Math.pow( 1 - this.damping / this.frameRate, this.frameRate * dt ); 
+		// at = at + vel * dt;
+		dt *= this.dtScale;
+
+		let m	= e.MoveTo,
+			lp	= e.Node.local.pos,
+			v	= Vec3.sub( lp, m.target ).scale( -this.stiffness ),
+			d	= Math.pow( this.D, this.frameRate * dt );
+
+		v.scale( dt ).add( m.vel ).scale( d, m.vel );
+		lp.add( m.vel.scale( dt, v ) );
+
+		e.Node.isModified = true;
+	}
+}
+
+class Loco_Linear{
+	constructor( sp = 0.2 ){ this.speed = sp; }
+	run( e, dt ){ e.Node.addPos( Vec3.sub( e.MoveTo.target, e.Node.local.pos ).normalize().scale( this.speed * dt ) ); }
+}
+
+class Local_SpringAccel{
+	constructor( stiff = 1, damp = 1.3 ){
+		this.stiffness 	= stiff;
+		this.damping 	= damp;
+	}
+
+	run( e, dt ){
+		// GOOD, Slow accell and decell.
+		// let accel = -this.stiffness * ( this.at - this.to ); // Accell = Force / Mass, but not using mass.
+    	// this.vel += ( accel - this.damping * this.vel ) * dt;
+    	// this.at = this.at + this.vel * dt;
+
+		let m		= e.MoveTo,
+			lp		= e.Node.local.pos,
+			accel 	= Vec3.sub( lp, m.target ).scale( -this.stiffness ),
+			v		= Vec3.scale( m.vel, this.damping );
+
+		m.vel.add( accel.sub( v ).scale( dt ) );
+		lp.add( m.vel.scale( dt, v ) );
+
+		e.Node.isModified = true;
+	}
+}
+
+class SpringFloat{
+	constructor( stiff=0.1, damp=0.3 ){
+		this.to			= 0;
+		this.at			= 0;
+
+		this.vel 		= 0;
+		this.stiffness	= stiff;	//tension
+		this.damping 	= damp;		
+		this.rate 		= 10 / 16.67; // 60 FPS
+
+		//this.damping 	= Math.pow( 1-damp, 10 / 16 );
+	}
+
+	set( to, at=null ){
+		this.to = to;
+		if( at != null ) this.at = at;
+		return this;
+	}
+
+	dif(){ return this.at - this.to; }
+
+	setAt( v ){ this.at = v; return this; }
+
+	update( dt ){
+		//let accel 	= ( -this.stiffness * ( this.at - this.to ) ) + (-this.damping * this.vel);
+		//this.vel	+= accel * this.rate;
+		//this.at		+= this.vel * this.rate;
+	
+		this.stiffness	= 0.1;	//tension
+		this.damping 	= 0.35;
+		
+		//GOOD, very springy and fast
+		//let accel = -this.stiffness * ( this.at - this.to );
+		//this.vel = ( this.vel + accel * this.rate ) * Math.pow( 1 - this.damping, this.rate ); 
+		//this.at = this.at + this.vel * this.rate;
+
+		dt *= 40;
+
+		//let accel = -this.stiffness * ( this.at - this.to );
+		//this.vel = ( this.vel + accel * dt ) * Math.pow( 1 - this.damping, dt ); 
+		//this.at = this.at + this.vel * dt;
+
+		//http://lolengine.net/blog/2015/05/03/damping-with-delta-time
+		let frameRate = 60;
+		let accel = -this.stiffness * ( this.at - this.to );
+		this.vel = ( this.vel + accel * dt ) * Math.pow( 1 - this.damping / frameRate, frameRate * dt ); 
+		this.at = this.at + this.vel * dt;
+
+		//GOOD, Slow accell and decell.
+		//let accel = -this.stiffness * ( this.at - this.to ); // Accell = Force / Mass, but not using mass.
+    	//this.vel += ( accel - this.damping * this.vel ) * dt;
+    	//this.at = this.at + this.vel * dt;
+
+
+		//if( Math.abs( this.at - this.to ) < 0.0001 ) console.log( "done" );
+		//
+		//test for Velocity and Distance to be sure we're done.
+		//if( Math.abs( this.vel ) < 0.00005 ){
+			//console.log( "done" );
+			//this.at = this.to;
+		//}
+
+		//console.log( this.at, this.to );
+		//console.log("accel", accel, "velocity", this.vel, "dif", ( this.at - this.to ), -this.stiffness * ( this.at - this.to )   );
+
+		return this.at;
+	}
+}
+</script><body></body></html>

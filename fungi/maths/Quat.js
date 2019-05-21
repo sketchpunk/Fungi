@@ -699,6 +699,19 @@ Quaternion.ZERO = new Quaternion();
 export default Quaternion;
 
 
+/*
+function decompSwingTwist( q, qSwing, qTwist ){
+	//q_z = ( 0, 0, z, w ) / sqrt( z^2 + w^2 )
+	let denom = Math.sqrt( q[2]*q[2] + q[3]*q[3] );
+	qTwist[0] = 0;
+	qTwist[1] = 0;
+	qTwist[2] = q[2] / denom;
+	qTwist[3] = q[3] / denom;
+
+	//q_xy = q * conjugate( q_z );
+	Quat.mul( q, Quat.conjugate( qTwist ), qSwing );
+}
+*/
 
 //https://github.com/libgdx/libgdx/blob/master/gdx/src/com/badlogic/gdx/math/Quaternion.java
 //http://physicsforgames.blogspot.com/2010/03/quaternion-tricks.html

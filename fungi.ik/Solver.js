@@ -1,13 +1,13 @@
 import Maths, { Vec3, Quat } from "../fungi/maths/Maths.js";
 
-import App from "../fungi/engine/App.js"; //TODO Delete
-import Axis from "../fungi/maths/Axis.js";
-import Transform from "../fungi/maths/Transform.js";
+import App			from "../fungi/engine/App.js"; //TODO Delete
+import Axis			from "../fungi/maths/Axis.js";
+import Transform	from "../fungi/maths/Transform.js";
 
 
-//#####################################################################
 const QUAT_FWD2UP = [0.7071067690849304, 0, 0, 0.7071067690849304]; //new Quat().setAxisAngle(Vec3.LEFT, Maths.toRad(90));
 
+//#####################################################################
 class IKTarget{
 	constructor(){
 		this.startPos		= new Vec3();	// World Position start of an IK Chain
@@ -46,136 +46,118 @@ class IKTarget{
 }
 
 
+//#####################################################################
 class Solver{
 	///////////////////////////////////////////////////////////////////
 	// Single Bone Solvers
 	///////////////////////////////////////////////////////////////////
-		static aim( chain, target, pose, wt, doUpFix=true ){
-			let bIdx	= chain.idx[ 0 ],
-				rot 	= target.axis.toQuat(),
-				q		= new Quat();
 
-			// Use Target Axis as the starting rotation Axis.
-			// Then using the AxisX, rotate by 90 degrees to make Forward UP
-			// Then need to preMultiple the inverse parent world rotation to set the proper heirachy offset.
-			if( doUpFix ) rot.pmul( Quat.axisAngle( target.axis.x, Maths.PI_H, q ) )
-			rot.pmul( Quat.invert( wt.rot, q ));
+		static _aim_bone( chain, target, wt, out ){
+			/*
+			The idea is to Aim the root bone in the direction of the target. Originally used a lookAt rotation 
+			then correcting it to take in account the bone's points up, not forward.
 
-			if( pose )	pose.updateBone( bIdx, rot );
-			else 		chain.updateBone( bIdx, rot);
+			Instead, Build a rotation based on axis direction. Start by using target's fwd dir as the bone's up dir.
+			To Help keep orientation, use the bone's Bind( or TPose ) world space fwd as a starting point to help get
+			the left dir. With UP and Left, do another cross product for fwd to keep the axis orthogonal.
 
-			return this;
+			This aims the limb pretty well at the target. The final step is to twist the limb so its joint (elbow, knee)
+			is pointing at the UP dir of the target axis. This helps define how much twisting we need to apply to the bone.
+			Arm and Knees tend to have different natural pose. The leg's fwd is fwd but the arm's fwd may be point down or back,
+			all depends on how the rigging was setup.
+
+			Since he bone is now aligned to the target, it shares the same Direction axis that we can then easily apply a twist
+			rotation. The target's UP is final dir, so we take the lumb's aligning axis's world space dire and simply use 
+			Quat.rotateTo( v1, v2 ). This function creates a rotation needed to get from One Vector dir to the other.
+			*/
+			
+			let rot = Quat.mul( wt.rot, chain.bind[ 0 ].rot ),	// Get World Space Rotation for Bone
+				up	= target.axis.z,							// Main Direction, Point Bone up toward axis forward.
+				fwd	= Vec3.transformQuat( Vec3.FORWARD, rot ),	// Get Bone's World Space Forward Direction.
+				lft	= Vec3.cross( up, fwd ).normalize();		// Figure out World Space Left Direction
+			
+			Vec3.cross( lft, up, fwd ).normalize();				// Realign forward to keep axis orthogonal for proper rotation
+
+			Quat.fromAxis( lft, up, fwd, out );					// Final World Space Rotation
+
+			if( Quat.dot( out, rot ) < 0 ) out.negate();		// If axis is point in the opposite direction of the bind rot, flip the signs : Thx @gszauer
+
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			// Need to apply a twist rotation to aim the bending joint 
+			// (elbow,knee) in the direction of the IK Target UP Axis.
+
+			let alignDir;
+			switch( chain.ikAlignAxis ){ // Arm/Legs have different Axis to align to Twisting.
+				case "x": alignDir = lft.clone(); break;
+				case "z": alignDir = fwd.clone(); break;
+			}
+
+			// Shortest Twisting Direction
+			if( Vec3.dot( alignDir, target.axis.y ) < 0 ) alignDir.invert();
+
+			// Create and apply twist rotation.
+			let q = Quat.rotationTo( alignDir, target.axis.y ); 
+			//rad = Vec3.angle( alignDir, target.axis.y ),		// Angle between
+			out.pmul( q );
+
+			return out;
 		}
 
-		/*
-		static aim( chain, pose, doOffset=false ){
-			// parentRotInv * lookRot * bindRot * FwdUpOffset
-			// Need to basicly  to LookRot - ParentRot, Gives an offset to rotate to Look.
-			// We add that offset to the bindRotation, then if needed, the Fwd to Up Fix rotation, because bones's real forward is up.
-			let q = Quat.invert( chain.world.rot )
-					.mul( Quat.lookRotation( chain.targetDir, Vec3.UP ) )									
-					.mul( chain.getBone(0).Bone.initial.rot );
+		static aim( chain, target, pose, wt ){
+			let rot = new Quat();
 
-			if( doOffset ) q.mul( QUAT_FWD2UP );
+			this._aim_bone( chain, target, wt, rot );		
 
-			pose.updateBone( chain.idx[0], q );
-			return this;
+			rot.pmul( Quat.invert( wt.rot ) );	// Convert to Bone's Local Space by mul invert of parent bone rotation
+
+			if( pose )	pose.updateBone( chain.idx[ 0 ], rot );
+			else		chain.updateBone( 0, rot );
 		}
-		*/
+
 
 	///////////////////////////////////////////////////////////////////
 	// Multi Bone Solvers
 	///////////////////////////////////////////////////////////////////
-		
-		static limb( chain, target, pose, wt, doUpFix=true ){
-			//let t = Transform.invert( wt );
-			//console.log( t );
-			//let zz = t.transformVec( target.axis.z, new Vec3() ).normalize();
-			//let yy = t.transformVec( target.axis.y, new Vec3() ).normalize();
-			//let xx = Vec3.cross( zz, yy );
 
-			//console.log( zz, xx );
-			//
-			let t = new Transform();
-			Transform.add( wt, pose.bones[ chain.idx[0] ].local, t );
-
-
+		static limb( chain, target, pose, wt ){
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			// Using law of cos SSS, so need the length of all sides of the triangle
 			let aLen	= chain.lens[ 0 ],
 				bLen	= chain.lens[ 1 ],
 				cLen	= Math.sqrt( target.distanceSqr ),
-				xAxis 	= Vec3.cross( target.axis.z, target.axis.y ), // Flipping z and y, need new X
-				q 		= new Quat();
+				wq 		= new Quat(),
+				rot 	= new Quat(),	
+				tmp		= new Quat(),
+				rad;
 
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			// Solve angle for the second bone
-			//q.setAxisAngle( xx, Math.PI - Maths.lawcos_sss( aLen, bLen, cLen ) ); //Up is Forward Fix ( PI - angle )
-			//if( pose )	pose.updateBone( chain.idx[ 1 ], q );
-			//else		chain.updateBone( chain.idx[ 1 ], q );
-
-			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			// Solve for first Bone
-			// By aligning it first by flipping around the target's axis. The t.z -> b.y, t.y -> b.z
-			// Then we calc
-			let x	= Maths.lawcos_sss( aLen, cLen, bLen ),
-				rot	= Quat.fromAxis( xAxis, target.axis.z, target.axis.y );
-
-			Quat.mul( wt.rot, chain.getBone( 0 ).Bone.initial.rot, q );
-			//Quat.mul( wt.rot, pose.bones[ chain.idx[0] ].local.rot, q ).invert();
+			// FIRST BONE - Aim then rotate by the angle.
+			this._aim_bone( chain, target, wt, rot );				// Aim the first bone toward the target oriented with the bend direction.
 			
-			//q.copy( chain.getBone( 0 ).Bone.initial.rot ).invert();
-			//console.log( q );
+			rad	= Maths.lawcos_sss( aLen, cLen, bLen );				// Get the Angle between First Bone and Target.
+			tmp.setAxisAngle( target.axis.x, -rad );				// Use the Target's X axis for rotation
+			rot.pmul( tmp );										// Rotate the the aimed bone by the angle from SSS
+			wq.copy( rot );											// Save a Copy as World Rotation before converting to local space
 
-			//rot.pmul( chain.getBone( 0 ).Bone.initial.rot );
+			rot.pmul( wt.rot.invert( tmp ) );						// Convert to Bone's Local Space by mul invert of parent bone rotation
 
-			//App.debug.quat( rot )
-			//App.debug.quat( q )
-
-			//rot.pmul( Quat.axisAngle( xx,  x, q ) );
-			//rot.pmul( Quat.axisAngle( target.axis.x, Maths.PI_H + x, q ) )
-			//rot.pmul( Quat.invert( wt.rot, q ));
-			//rot.pmul( Quat.invert( chain.getBone(0).Bone.initial.rot ) );
-
-			if( pose )	pose.updateBone( chain.idx[ 0 ], rot );
-			else		chain.updateBone( chain.idx[ 0 ], rot );
-
-			return this;
-		}
-
-		/*
-		static limbORG( chain, pose, doOffset=false ){
-			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			// Using law of cos SSS, so need the length of all sides of the triangle
-			let aLen	= chain.lens[ 0 ],
-				bLen	= chain.lens[ 1 ],
-				cLen	= Math.sqrt( chain.targetLenStr ),
-				rot 	= new Quat(),
-				angle	= new Quat();
+			if( pose )	pose.updateBone( chain.idx[ 0 ], rot );		// Save result to bone.
+			else		chain.updateBone( 0, rot );
 
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			// Solve angle for the second bone
+			// SECOND BONE
+			// Need to rotate from Right to Left, So take the angle and subtract it from 180 to rotate from 
+			// the other direction. Ex. L->R 70 degrees == R->L 110 degrees
+			rad	= Math.PI - Maths.lawcos_sss( aLen, bLen, cLen );
 
-			angle.setAxisAngle( Vec3.LEFT, Math.PI - Maths.lawcos_sss( aLen, bLen, cLen ) ); //Up is Forward Fix ( PI - angle )
-			pose.updateBone( chain.idx[ 1 ], angle );
+			Quat.mul( wq, chain.bind[ 1 ].rot, rot ) 				// Add Bone 2's Local Bind Rotation to Bone 1's new World Rotation.
+				.pmul( tmp.setAxisAngle( target.axis.x, rad ) )		// Rotate it by the target's x-axis
+				.pmul( wq.invert( tmp ) );							// Convert to Bone's Local Space
 
-			//.......................................
-			// Solve for first Bone
-			let x = -Maths.lawcos_sss( aLen, cLen, bLen );
-			if( doOffset ) x += Maths.PI_H;						// Up is Forward Fix, Do this to avoid using QUAT_FWD2UP
-
-			Quat.lookRotation( chain.targetDir, Vec3.UP, rot )	// Look Direction toward the Target
-				.pmul( Quat.invert( chain.world.rot ) )			// Pre Multiple by Parent Rotation
-				.mul( angle.setAxisAngle( Vec3.LEFT, x ) );		// Move by the Angle of A and C
-				//.mul( chain.getBone(0).Bone.initial.rot );	// Add Bone's Bind Rotation
-
-			//if( doOffset ) rot.mul( QUAT_FWD2UP );				
-
-			//.......................................
-			pose.updateBone( chain.idx[ 0 ], rot );
-			return this;
+			if( pose )	pose.updateBone( chain.idx[ 1 ], rot );
+			else		chain.updateBone( 1, rot );
 		}
-		*/
+
 }
 
 
