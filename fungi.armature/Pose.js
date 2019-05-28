@@ -1,4 +1,6 @@
-import Transform from "../fungi/maths/Transform.js";
+import Transform		from "../fungi/maths/Transform.js";
+import Maths, { Quat }	from "../fungi/maths/Maths.js";
+import App 				from "../fungi/engine/App.js";
 
 
 //#####################################################################
@@ -28,6 +30,48 @@ class Pose{
 
 			return this;
 		}
+
+		append_wrot( bName, axis, ang, debug ){
+			let path	= this.arm.getParentPath( bName, true ),	// Get Parent Tree of Bone
+				last	= path.length - 1,
+				q 		= Quat.axisAngle( axis, Maths.toRad(ang) ),
+				p		= new Quat(),
+				b 		= this.bones[ path[0] ],					// Bone to Modify
+				c, i;
+
+			// Calc Parent Bones World Space Rotation
+			p.copy( this.bones[ path[last] ].local.rot );	// Start with root bone
+			for( i=last-1; i > 0; i-- ) p.mul( this.bones[ path[i] ].local.rot );
+
+			c = p.clone()				// Clone Parent World Rot
+				.mul( b.local.rot );		// Add Local to get Bone's World Rot
+
+			if( debug ) App.debug.quat( c );
+			
+			c.pmul( q )				// Apply New Rotation
+				.pmul( p.invert() );	// Convert to Local Space
+
+			b.local.set( c );
+			b.changeState |= Pose.ROT;
+
+			return this;
+		}
+
+		append_lrot( bName, axis, ang ){
+			let i = this.arm.names[ bName ],
+				b = this.bones[ i ],
+				q = Quat.axisAngle( axis, Maths.toRad(ang) );
+
+			b.local.rot.mul( q );
+			b.changeState |= Pose.ROT;
+			return this;
+		}
+
+		get_rot( bName ){
+			let i = this.arm.names[ bName ];
+			return this.bones[ i ].local.rot
+		}
+
 
 	/////////////////////////////////////////////////////////////////////
 	// ARMATURE

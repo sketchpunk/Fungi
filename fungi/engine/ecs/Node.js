@@ -266,15 +266,35 @@ class Node{
 		 * @param {?Quat} [out=null] - Passin a Quaternion Reference, else a new one will be created.
 		 * @public @return {Quat}
 		 */
-		static getWorldRot( e, out = null ){
+		static getWorldRot( e, out = null, incChild=true ){
 			out = out || new Quat();
 
 			if( !e.Node.parent ) return out.copy( e.Node.local.rot );
 
-			console.log( "TODO - Need to implement Node.getWorldRot" );
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			// Get the heirarchy nodes
+			let n 		= e.Node,
+				tree 	= [ ];
+
+			if( incChild ) tree.push( n ); // Incase we do not what to add the requested entity to the world transform.
+
+			while( n.parent != null ){
+				tree.push( n.parent.Node );
+				n = n.parent.Node;
+			}
+
+			// Nothing
+			if( tree.length == 0 ) return out.reset();
+
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			let i = tree.length - 1;
+			out.copy( tree[ i ].local.rot );						// Copy in the Root Parent
+			
+			for( i--; i > -1; i-- ) out.mul( tree[ i ].local.rot );	// Add Up All Transforms from root to child.
 
 			return out;
 		}
+
 
 		static getWorldTransform( e, out = null, incChild=true ){
 			out = out || new Transform();

@@ -33,6 +33,7 @@ class Bone{
 class Armature{
 	constructor(){
 		this.bones			= new Array();	// Main Bones Array : Ordered by Order Number
+		this.names			= {};
 
 		this.isModified		= true;
 		this.isActive		= true;			// Disable the Rendering of Armature
@@ -65,6 +66,11 @@ class Armature{
 			arm.flatOffset 	= new Float32Array( arm.bones.length * 8 );
 			arm.flatScale	= new Float32Array( arm.bones.length * 4 );
 
+			// Create a Lookup map between Bone Names and Their Array Index.
+			for( let i=0; i < arm.bones.length; i++ ){
+				arm.names[ arm.bones[i].info.name ] = i;
+			}
+
 			return e;
 		}
 
@@ -94,6 +100,29 @@ class Armature{
 				if( b.info.name == name ) return b;
 			}
 			return null;
+		}
+
+
+		getParentPath( bName, incChild=true ){
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			// Get the heirarchy nodes
+			let e 		= this.bones[ this.names[bName] ],
+				tree 	= [ ];
+
+			if( incChild ) tree.push( e.Bone.order ); // Incase we do not what to add the requested entity to the world transform.
+
+			while( e.Node.parent != null ){
+				tree.push( e.Node.parent.Bone.order );
+				e = e.Node.parent;
+			}
+
+			return tree;
+		}
+
+		set_rot_by_idx( i, q ){
+			this.bones[ i ].Node.local.rot.copy( q );
+			this.bones[ i ].Node.isModified = true;
+			return this;
 		}
 
 

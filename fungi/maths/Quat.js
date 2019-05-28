@@ -93,6 +93,13 @@ class Quaternion extends Float32Array{
 			return out;
 		}
 
+		mirror_x( out=null ){
+			out = out || this;
+			out[1] = -this[1];
+			out[2] = -this[2];
+			return out;
+		}
+
 
 	////////////////////////////////////////////////////////////////////
 	// INSTANCE OPERATIONS
