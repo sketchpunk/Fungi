@@ -84,20 +84,58 @@ class Quaternion extends Float32Array{
 
 		clone(){ return new Quaternion(this); }
 
-		negate( out ){
-			out = out || this;
-			out[0] = -this[0];
-			out[1] = -this[1];
-			out[2] = -this[2];
-			out[3] = -this[3];
-			return out;
+		from_mul( a, b ){
+			var ax = a[0], ay = a[1], az = a[2], aw = a[3],
+				bx = b[0], by = b[1], bz = b[2], bw = b[3];
+			this[0] = ax * bw + aw * bx + ay * bz - az * by;
+			this[1] = ay * bw + aw * by + az * bx - ax * bz;
+			this[2] = az * bw + aw * bz + ax * by - ay * bx;
+			this[3] = aw * bw - ax * bx - ay * by - az * bz;
+			return this;
 		}
 
-		mirror_x( out=null ){
-			out = out || this;
-			out[1] = -this[1];
-			out[2] = -this[2];
-			return out;
+		from_axis( xAxis, yAxis, zAxis ){
+			var m00 = xAxis[0], m01 = xAxis[1], m02 = xAxis[2],
+				m10 = yAxis[0], m11 = yAxis[1], m12 = yAxis[2],
+				m20 = zAxis[0], m21 = zAxis[1], m22 = zAxis[2],
+				t = m00 + m11 + m22,
+				x, y, z, w, s;
+
+			if(t > 0.0){
+				s = Math.sqrt(t + 1.0);
+				w = s * 0.5 ; // |w| >= 0.5
+				s = 0.5 / s;
+				x = (m12 - m21) * s;
+				y = (m20 - m02) * s;
+				z = (m01 - m10) * s;
+			}else if((m00 >= m11) && (m00 >= m22)){
+				s = Math.sqrt(1.0 + m00 - m11 - m22);
+				x = 0.5 * s;// |x| >= 0.5
+				s = 0.5 / s;
+				y = (m01 + m10) * s;
+				z = (m02 + m20) * s;
+				w = (m12 - m21) * s;
+			}else if(m11 > m22){
+				s = Math.sqrt(1.0 + m11 - m00 - m22);
+				y = 0.5 * s; // |y| >= 0.5
+				s = 0.5 / s;
+				x = (m10 + m01) * s;
+				z = (m21 + m12) * s;
+				w = (m20 - m02) * s;
+			}else{
+				s = Math.sqrt(1.0 + m22 - m00 - m11);
+				z = 0.5 * s; // |z| >= 0.5
+				s = 0.5 / s;
+				x = (m20 + m02) * s;
+				y = (m21 + m12) * s;
+				w = (m01 - m10) * s;
+			}
+
+			this[0] = x;
+			this[1] = y;
+			this[2] = z;
+			this[3] = w;
+			return this;
 		}
 
 
@@ -162,6 +200,22 @@ class Quaternion extends Float32Array{
 			out[1]	= -a1 * invDot;
 			out[2]	= -a2 * invDot;
 			out[3]	=  a3 * invDot;
+			return out;
+		}
+
+		negate( out ){
+			out = out || this;
+			out[0] = -this[0];
+			out[1] = -this[1];
+			out[2] = -this[2];
+			out[3] = -this[3];
+			return out;
+		}
+
+		mirror_x( out=null ){
+			out = out || this;
+			out[1] = -this[1];
+			out[2] = -this[2];
 			return out;
 		}
 

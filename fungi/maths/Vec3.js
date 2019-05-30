@@ -59,6 +59,15 @@ class Vec3 extends Float32Array{
 
 		dot( v ){ return this[0] * v[0] + this[1] * v[1] + this[2] * v[2]; }
 
+		from_cross( a, b ){
+			var ax = a[0], ay = a[1], az = a[2],
+				bx = b[0], by = b[1], bz = b[2];
+			this[0] = ay * bz - az * by;
+			this[1] = az * bx - ax * bz;
+			this[2] = ax * by - ay * bx;
+			return this;
+		}
+
 
 	////////////////////////////////////////////////////////////////////
 	// INSTANCE OPERATORS
@@ -232,6 +241,8 @@ class Vec3 extends Float32Array{
 			out[2] = this[2] * tMin1 + v[2] * t;
 			return out;
 		}
+
+		transform_quat( q ){ return Vec3.transformQuat( this, q, this ); }
 
 
 	////////////////////////////////////////////////////////////////////
