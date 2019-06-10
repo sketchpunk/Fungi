@@ -102,6 +102,8 @@ class Armature{
 			return null;
 		}
 
+		get_bone( bName ){ return this.bones[ this.names[ bName ] ]; }
+
 
 		getParentPath( bName, incChild=true ){
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

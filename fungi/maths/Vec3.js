@@ -68,6 +68,17 @@ class Vec3 extends Float32Array{
 			return this;
 		}
 
+		set_polar( lon, lat ) {
+			let phi 	= ( 90 - lat ) * 0.01745329251, //deg 2 rad
+				theta 	= lon * 0.01745329251,  //( lon + 180 ) * 0.01745329251,
+				sp     	= Math.sin(phi);
+
+			this[0] = -sp * Math.sin( theta );
+			this[1] = Math.cos( phi );
+			this[2] = sp * Math.cos( theta );
+			return this;
+		}
+
 
 	////////////////////////////////////////////////////////////////////
 	// INSTANCE OPERATORS
@@ -244,6 +255,23 @@ class Vec3 extends Float32Array{
 
 		transform_quat( q ){ return Vec3.transformQuat( this, q, this ); }
 
+		
+		rot_axis_angle( axis, rad, out ){
+			// Rodrigues Rotation formula:
+			// v_rot = v * cos(theta) + cross( axis, v ) * sin(theta) + axis * dot( axis, v) * (1-cos(theta))
+			let cp	= Vec3.cross( axis, this ),
+				dot	= Vec3.dot( axis, this ),
+				s	= Math.sin(rad),
+				c	= Math.cos(rad),
+				ci	= 1 - c;
+
+			out = out || this;
+			out[ 0 ] = this[0] * c + cp[0] * s + axis[0] * dot * ci;
+			out[ 1 ] = this[1] * c + cp[1] * s + axis[1] * dot * ci;
+			out[ 2 ] = this[2] * c + cp[2] * s + axis[2] * dot * ci;
+			return out;
+		}
+
 
 	////////////////////////////////////////////////////////////////////
 	// STATIC OPERATORS
@@ -332,6 +360,20 @@ class Vec3 extends Float32Array{
 		static angle( v0, v1 ){
 			let theta = this.dot( v0, v1 ) / ( Math.sqrt( v0.lengthSqr() * v1.lengthSqr() ) );
 			return Math.acos( Math.max( -1, Math.min( 1, theta ) ) ); // clamp ( t, -1, 1 )
+		}
+
+
+		static from_polar( lon, lat, out ) {
+			let phi 	= ( 90 - lat ) * 0.01745329251, //deg 2 rad
+				theta 	= lon * 0.01745329251, //( lon + 180 ) * 0.01745329251,
+				sp     	= Math.sin(phi);
+
+			out = out || new Vec3();
+			out[0] = -sp * Math.sin( theta );
+			out[1] = Math.cos( phi );
+			out[2] = sp * Math.cos( theta );
+			out.nearZero();
+			return out;
 		}
 
 		//https://github.com/toji/gl-matrix/blob/master/src/gl-matrix/vec3.js#L514

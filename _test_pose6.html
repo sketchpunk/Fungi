@@ -1,0 +1,154 @@
+<!DOCTYPE html><html><head><title></title></head><script type="module">
+import App					from "./fungi/engine/App.js";
+import Arm					from "./fungi.armature/Armature.js";
+import ArmTest				from "./fungi.armature/ArmTest.js";
+import Pose 				from "./fungi.armature/Pose.js";
+import Maths,{ Quat, Vec3 } from "./fungi/maths/Maths.js";
+
+import Track, {FramePose, FramePoseHandler} from "./fungi.misc/Track.js";
+
+import _NA		from "./fungi.misc/MeshLoader.js";
+
+//Awesome MESH with tutorial
+//https://iwanttobeananimator.wordpress.com/2017/01/29/tutorial-2/
+//https://rustyanimator.com/walk-cycle-animation/
+//https://www.youtube.com/watch?v=eb711PEJRmc Auto Stride and Foot Steps 
+
+//#############################################################################
+App.useArmature = 3;
+App	.launch( onDraw, true ) //
+	.then( dl	=> dl
+		.addGrp( "shader", 
+			"./fungi/shaders/VecWColor.txt", 
+			"./fungi.armature/shaders/ArmaturePreview.txt",
+			"./fungi.armature/shaders/ArmatureSkinPhong.txt" )
+		.addEntity( "Mesh01", "./files/models/vegeta", "ArmatureSkinPhong", 7, 25 )
+		.start() )
+	.then( ()	=> App.loadScene( true, true ) )
+	.then( ()	=> init() )
+	.catch( err	=> console.error( err ) );
+
+//#############################################################################
+function onDraw(dt, ss){
+	gTrack.next( dt );
+	additive();
+
+	App.ecs.sys_run();
+}
+
+let gBones, gPoseA, gPoseB, gAnimR, gIT, gAnimL;
+let gTrack;
+function init(){
+	App.cameraCtrl.setTarget( 0, 0.75, 0 ).setOrbit( -35, 15, 2.1 );
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	let e = App.ecs.entity_find( "Mesh01" );
+	gBones = e;
+
+	//gBones = ArmTest.previewHuman();
+	gPoseA = new Pose( e.Armature, true );
+	gPoseB = new Pose( e.Armature, true );
+
+	/**/
+	gPoseA.append_wrot( "LeftForeArm", [0,1,0], -90 );
+	gPoseA.append_wrot( "LeftArm", [0,0,1], -70 ).append_wrot( "LeftArm", [1,0,0], 75 );
+
+	gPoseA.append_wrot( "RightForeArm", [0,1,0], 110 );
+	gPoseA.append_wrot( "RightArm", [0,0,1], 70 ).append_wrot( "RightArm", [1,0,0], -45 )
+		
+	gPoseA.append_wrot( "LeftUpLeg", [1,0,0], -90 ); 
+	gPoseA.append_wrot( "LeftLeg", [1,0,0], 90 );
+	gPoseA.append_wrot( "RightUpLeg", [1,0,0], 33 ); 
+	gPoseA.append_wrot( "RightLeg", [1,0,0], 80 );
+	//gPoseA.apply();
+	
+
+	/**/
+	gPoseB.append_wrot( "RightForeArm", [0,1,0], 30 );
+	gPoseB.append_wrot( "LeftForeArm", [0,1,0], -30 );
+	
+	gPoseB.append_wrot( "LeftArm", [0,0,1], -70 );
+	gPoseB.append_wrot( "RightArm", [0,0,1], 70 );
+	
+	gPoseB.append_wrot( "LeftLeg", [1,0,0], 130 );
+	gPoseB.append_wrot( "LeftUpLeg", [1,0,0], -20 ); 
+	//gPoseB.apply();
+	
+
+	/**/
+
+	//-----------------
+	let f0 = new FramePose( 0 ).use_arm( e.Armature );
+	let f1 = new FramePose( 1 ).use_arm( e.Armature );
+	let f2 = new FramePose( 2 ).use_arm( e.Armature );
+	let f3 = new FramePose( 3 ).use_arm( e.Armature );
+	// RLeg Animation : B-R A-R M(B-L A-L)
+	// LLeg Animation : B-L A-L M(B-R A-R)
+
+	//let L = [ 14, 15, 7, 8, ];
+	//let R = [ 18, 19, 11, 12, ];
+	let a = e.Armature;
+	let L = [ a.names.LeftUpLeg, a.names.LeftLeg, a.names.LeftArm, a.names.LeftForeArm ];
+	let R = [ a.names.RightUpLeg, a.names.RightLeg, a.names.RightArm, a.names.RightForeArm ];
+	f0	.copy( R, gPoseB, R, false )
+		.copy( L, gPoseB, L, false );
+
+	f1	.copy( R, gPoseA, R, false )
+		.copy( L, gPoseA, L, false );
+	
+	f2	.copy( R, gPoseB, L, true )
+		.copy( L, gPoseB, R, true );
+	
+	f3	.copy( R, gPoseA, L, true )
+		.copy( L, gPoseA, R, true );
+
+	gTrack = new Track( new FramePoseHandler( e.Armature ), 1 )
+		.add( f0, f1, f2, f3 ).sort();
+	
+	
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	App.loop.start();
+	
+	// App.input.onInput = ()=>{ window.requestAnimationFrame( onDraw ); }
+	// onDraw( 0, 0 );
+}
+
+function additive(){
+	let p = new Quat();//.setAxisAngle()
+	let c = new Quat();
+	let a = gBones.Armature;
+	let e = a.get_bone( "LeftArm" );
+
+	App.node.getWorldRot( e, p, false );
+
+	c.from_mul( p, e.Node.local.rot );
+	c.pmul( Quat.axisAngle( [0,0,1], Maths.toRad(30) ) );
+	c.pmul( p.invert() );
+
+	e.Node.setRot( c );
+
+	//e = a.get_bone( "RightArm" );
+	//e.Node.setRot( c.mirror_x() );
+
+	let q = new Quat();
+	let rad = 10 * ( Math.cos(gTrack.get_t() * Math.PI * 4) * 0.5 + 0.5 ); 
+	q.setAxisAngle( Vec3.LEFT, Maths.toRad(rad) );
+
+	for( let i of ["Hips","Spine","Spine1","Spine2"] ){
+		e = a.get_bone( i );
+		e.Node.local.rot.pmul( q );
+		e.Node.isModified = true;
+	}
+
+	rad = 10 * ( Math.sin(gTrack.get_t() * Math.PI * 4) ); 
+	q.setAxisAngle( Vec3.LEFT, Maths.toRad(rad) );
+	for( let i of ["Neck","Head"] ){
+		e = a.get_bone( i );
+		e.Node.local.rot.pmul( q );
+		e.Node.isModified = true;
+	}
+
+}
+
+//#############################################################################
+</script><body></body></html>
