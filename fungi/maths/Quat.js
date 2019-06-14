@@ -138,6 +138,19 @@ class Quaternion extends Float32Array{
 			return this;
 		}
 
+		from_polar_rad( x, y ){
+			var c1 = Math.cos(x*0.5),
+				c2 = Math.cos(y*0.5),
+				s1 = Math.sin(x*0.5),
+				s2 = Math.sin(y*0.5);
+
+			this[0] = s1 * c2;
+			this[1] = c1 * s2;
+			this[2] = -s1 * s2;
+			this[3] = c1 * c2;
+			return this;
+		}
+
 
 	////////////////////////////////////////////////////////////////////
 	// INSTANCE OPERATIONS

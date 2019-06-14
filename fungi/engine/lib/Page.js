@@ -42,6 +42,7 @@ class Page{
 				let sec = document.createElement("section");
 				sec.style.gridArea	= "panel";
 				sec.id 				= "pgPanel";
+				sec.className		= "OverlayPanel";
 
 				Page.body.className	= "C2_R1";
 				Page.body.appendChild(sec);

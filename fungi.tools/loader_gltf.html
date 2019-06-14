@@ -17,7 +17,8 @@ App	.launch( onDraw, true )
 		)
 		//.addGLTF( "Mesh01", "./Vegeta", "ArmatureSkinPhong", ["Vegeta"], "Armature" )
 		//.addGLTF( "Mesh01", "./dummy", "ArmatureSkinPhong", ["Base"], "CielArmature" )
-		.addGLTF( "Mesh01", "../pitohui", "ArmatureSkinPhong", ["body","skin","eyes","hair"], "armature" )
+		//.addGLTF( "Mesh01", "../pitohui", "ArmatureSkinPhong", ["body","skin","eyes","hair"], "armature" )
+		.addGLTF( "Mesh01", "../files/models/baller", "ArmatureSkinPhong", ["Base"], "Armature" )
 		.start() )
 	.then( ()	=> App.loadScene( true, true ) )
 	.then( ()	=> init() )
@@ -28,13 +29,14 @@ App	.launch( onDraw, true )
 function onDraw(dt, ss){ App.ecs.sys_run(); }
 
 function init(){
-	App.cameraCtrl.setTarget( 0, 0.75, 0 ).setOrbit( -35, 15, 2.1 );
+	App.cameraCtrl.setTarget( 0, 0.75, 0 ).setOrbit( -35, 15, 4 );
 
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	let b;
 	let e = App.ecs.entity_find( "Mesh01" );
 	//e.Node.setScl( 0.05 );
 	e.Armature.isModified = true;
+	console.log( e.Armature.get_bone("root").Node.local.rot.reset() );
 	
 	/*
 	b = Armature.getBone( e.Armature, "bip_hip_L");

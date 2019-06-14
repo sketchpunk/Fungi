@@ -31,7 +31,7 @@ HandlerTypes.convert = class{
 	}
 
 	static load( dl ){
-		console.log(dl);
+		console.log("DL",dl);
 		let bones;
 		let i = dl.convert[0];
 
@@ -61,7 +61,8 @@ App	.launch( onDraw, true )
 			"../fungi.armature/shaders/ArmaturePreview.txt",
 			"../fungi.armature/shaders/ArmatureSkinPhong.txt",
 		)
-		.convert( "Mesh01", "../Vegeta", "ArmatureSkinPhong", ["Vegeta"], "Armature" )
+		//.convert( "Mesh01", "../Vegeta", "ArmatureSkinPhong", ["Vegeta"], "Armature" )
+		.convert( "Mesh01", "../files/models/baller", "ArmatureSkinPhong", ["Base","Ball"], "Armature" )
 		//.addGLTF( "Mesh01", "./dummy", "ArmatureSkinPhong", ["Base"], "CielArmature" )
 		//.addGLTF( "Mesh01", "../pitohui", "ArmatureSkinPhong", ["body","skin","eyes","hair"], "armature" )
 		.start() )
@@ -86,13 +87,18 @@ function mesh_entity( name, matName, meshNames, json, bin ){
 	let e = App.$Draw( name );
 	let prims, p, vao, mName;
 	let buf = "";
-	let i;
+	let i, cnt;
 
 	for( mName of meshNames ){
+		console.log( "Loading Mesh", mName );
 		prims = Gltf.getMesh( mName, json, bin, true ); // Spec Only
+
+		if( cnt != 0 ) buf += ",";
 
 		for( i=0; i < prims.length; i++ ){
 			p = prims[ i ]; 
+			console.log( i, p.name );
+			console.log( p );
 
 			vao = Vao.buildFromBin( name + "_" + p.name, p, bin );
 			e.Draw.add( vao, matName, p.mode );
@@ -101,19 +107,17 @@ function mesh_entity( name, matName, meshNames, json, bin ){
 			buf += '"'+p.name+'":';
 			delete p.name;
 			buf += JSON.stringify( p );
-
-			console.log( p.name );
-			console.log( p );
-
 		}
 
-		console.log( "<Vao>{ " + buf + " }</Vao>" );
+		cnt++;
 		//This only Works if each Primitive is its own Entity, but not for meshes broken out as pieces 
 		//and each piece shares the same main mesh local space
 		//if( p.rotation )	e.Node.setRot( p.rotation );
 		//if( p.position )	e.Node.setPos( p.position );
 		//if( p.scale ) 	e.Node.setScl( p.scale );
 	}
+	
+	console.log( "<Vao>{ " + buf + " }</Vao>" );
 
 	return e;
 }

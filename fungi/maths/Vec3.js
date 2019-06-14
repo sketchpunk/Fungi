@@ -68,6 +68,26 @@ class Vec3 extends Float32Array{
 			return this;
 		}
 
+		from_sub( a, b ){
+			this[0] = a[0] - b[0];
+			this[1] = a[1] - b[1];
+			this[2] = a[2] - b[2];
+			return this;
+		}
+
+		from_lerp( t, a, b ){ //Linear Interpolation : (1 - t) * v0 + t * v1;
+			var ti = 1 - t;
+			this[0] = a[0] * ti + b[0] * t;
+			this[1] = a[1] * ti + b[1] * t;
+			this[2] = a[2] * ti + b[2] * t;
+			return this;
+		}
+
+		from_quat( q, dir=null ){
+			Vec3.transformQuat( dir || Vec3.FORWARD, q, this );
+			return this;
+		}
+
 		set_polar( lon, lat ) {
 			let phi 	= ( 90 - lat ) * 0.01745329251, //deg 2 rad
 				theta 	= lon * 0.01745329251,  //( lon + 180 ) * 0.01745329251,
