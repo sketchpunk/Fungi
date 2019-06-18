@@ -2,7 +2,7 @@
 	"name"		: "VecWColor",
 	"ubo"		: [ "UBOGlobal", "UBOModel" ],
 	"uniforms"	: [
-		{ "name":"u_colorAry", "type":"vec3" }
+		{ "name":"u_colorAry", "type":"rgb" }
 	]
 }<\shader>
 		"ubo"		: [ "UBOGlobal", "UBOModel" ],
@@ -11,19 +11,20 @@
 	{ "name":"VecWColor",	
 		"options"	: { "depthTest":true, "blend":false },
 		"uniforms":[
-		{ "name":"u_colorAry", "type":"rgb", "value": ["ff0000","00dd00","0000ff","555555","999999","dddddd","000000","ff7f7f","ff8c00","ffff00"] }
+		{ "name":"u_colorAry", "value": ["ff0000","00dd00","0000ff","555555","999999","dddddd","000000","ff7f7f","ff8c00","ffff00"] }
 	]},
 	
 	{ "name":"MatGridFloor",	
 		"options"	: { "depthTest":true, "blend":false },
 		"uniforms":[
-		{ "name":"u_colorAry", "type":"rgb", "value": ["e6e6e6","ff9999","66ff66"] }
-	] },
+			{ "name":"u_colorAry", "value": ["e6e6e6","ff9999","66ff66"] }
+		]
+	},
 
 	{ "name":"MatGridFloorDark",
 		"options"	: { "depthTest":true, "blend":false },
 		"uniforms":[
-		{ "name":"u_colorAry", "type":"rgb", "value": ["555555","bb5555","118811"] }
+		{ "name":"u_colorAry", "value": ["555555","bb5555","118811"] }
 	] }
 ]<\materials>
 	

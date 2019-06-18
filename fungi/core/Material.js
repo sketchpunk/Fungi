@@ -1,5 +1,6 @@
 import gl		from "./gl.js";
 import Cache	from "./Cache.js";
+import Shader 	from "./Shader.js";
 
 class Material{
 	constructor( name = "Untitled_Shader", shader = null ){
@@ -37,14 +38,25 @@ class Material{
 		}
 
 		// modify stored uniform data
-		updateUniform( uName, uValue ){
+		update_uniform( uName, uValue ){
 			let itm = this.uniforms.get(uName);
 			if(!itm){
 				console.error("Material.setUniform: not found %s for material %s",uName, this.name);
 				return this;
 			}
 
-			itm.value = Material.parseData( uValue, itm.type );
+			let ut = this.shader.uniforms.get( uName ).type;
+			itm.value = Shader.parse_data( uValue, ut );
+			return this;
+		}
+
+		add_uniform( uName, uValue ){
+			let u = { value:null };
+			if( uValue ){
+				let ut = this.shader.uniforms.get( uName ).type;
+				u.value = Shader.parse_data( uValue, ut );
+			}
+			this.uniforms.set( uName, u );
 			return this;
 		}
 
@@ -70,18 +82,10 @@ class Material{
 			
 			for( [ key, itm ] of mat.uniforms ){
 				//TODO, Create ability to clone data.
-				Material.addUniform( m, key, itm.type, null );
+				m.add_uniform( key, null );
 			}		
 
 			return m;
-		}
-
-		static addUniform( mat, name, type, value = null ){
-			let dat = { type, value:null };
-			if( value ) dat.value = Material.parseData( value, type );
-
-			mat.uniforms.set( name, dat );
-			return Material;
 		}
 
 		// load initate materal from shader file
@@ -93,43 +97,15 @@ class Material{
 			let i;
 			if( json.options ){
 				for( i in json.options ){
-					if( mat.options[ i ] !== undefined ){
-						mat.options[ i ] = json.options[ i ];
-					}
+					if( mat.options[ i ] !== undefined ) mat.options[ i ] = json.options[ i ];
 				}
 			}
 
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			if( json.uniforms && json.uniforms.length ){
 				mat.uniforms.clear();
-
-				for( i of json.uniforms ){
-					Material.addUniform( mat, i.name, i.type, i.value );
-					//mat.uniforms.set( i.name, Material.parseData( i.value, i.type ) );
-				}
+				for( i of json.uniforms ) mat.add_uniform( i.name, i.value );
 			}
-		}
-
-		// interpret data incase of custom types needs to be transformed into something else.
-		static parseData( value, type ){
-			switch(type){
-				case "rgb"	: value = gl.rgbArray( value ); break;
-				case "rgba"	: value = gl.rgbaArray( value ); break;
-				
-				/*
-				case "tex"	: 
-					let tmp = (value instanceof WebGLTexture)? value : Fungi.getTexture( value ); 
-					if(tmp == null){
-						console.error("Material.checkData: Texture not found %s for material %s uniform %s",uValue, this.name, uName);
-						return this;
-					}else value = tmp;
-				break;
-				*/
-			}
-
-			if(Array.isArray(value) && value.length == 0) value = null;
-			
-			return value;
 		}
 }
 

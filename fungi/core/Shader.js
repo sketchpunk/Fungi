@@ -36,7 +36,6 @@ class Shader{
 			return shader;
 		}
 
-
 		static build( name, vShaderSrc, fShaderSrc, tFeedbackVar = null, tFeedbackInterleaved = true ){
 			// Compile the shader Code
 			let prog = gl.createShader( vShaderSrc, fShaderSrc, false, tFeedbackVar, tFeedbackInterleaved );
@@ -107,6 +106,28 @@ class Shader{
 			}
 
 			return rtn;
+		}
+
+		// interpret data incase of custom types needs to be transformed into something else.
+		static parse_data( value, type ){
+			switch(type){
+				case "rgb"	: value = gl.rgbArray( value ); break;
+				case "rgba"	: value = gl.rgbaArray( value ); break;
+				
+				/*
+				case "tex"	: 
+					let tmp = (value instanceof WebGLTexture)? value : Fungi.getTexture( value ); 
+					if(tmp == null){
+						console.error("Material.checkData: Texture not found %s for material %s uniform %s",uValue, this.name, uName);
+						return this;
+					}else value = tmp;
+				break;
+				*/
+			}
+
+			if(Array.isArray(value) && value.length == 0) value = null;
+			
+			return value;
 		}
 
 
