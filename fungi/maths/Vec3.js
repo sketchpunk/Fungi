@@ -382,6 +382,8 @@ class Vec3 extends Float32Array{
 			return Math.acos( Math.max( -1, Math.min( 1, theta ) ) ); // clamp ( t, -1, 1 )
 		}
 
+		static len_sqr( a, b ){ return (a[0]-b[0]) ** 2 + (a[1]-b[1]) ** 2 + (a[2]-b[2]) ** 2; }
+
 
 		static from_polar( lon, lat, out ) {
 			let phi 	= ( 90 - lat ) * 0.01745329251, //deg 2 rad

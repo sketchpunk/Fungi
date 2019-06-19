@@ -13,7 +13,7 @@ class Renderer{
 		this.UBOModel			= App.cache.getUBO("UBOModel");
 		this.UBOGlobal			= App.cache.getUBO("UBOGlobal");
 
-		if( (App.useArmature & 1) == 1 ){
+		if( (App.armature_opt & 1) == 1 ){
 			this.UBOArmature	= App.cache.getUBO("UBOArmature");
 		}
 
@@ -111,7 +111,7 @@ class Renderer{
 				.update();
 
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			if( App.useArmature && e.Armature && e.Armature.isActive ){
+			if( App.armature_opt && e.Armature && e.Armature.isActive ){
 				this.UBOArmature
 					.setItem( "bones", e.Armature.flatOffset )
 					.setItem( "scale", e.Armature.flatScale )

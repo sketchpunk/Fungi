@@ -1,6 +1,6 @@
 <!DOCTYPE html><html><head><title>Fungi</title></head><script type="module">
 
-import App, { Material }	from "./App.js";
+import App, { Material, AppBuilder }	from "./App.js";
 import FacedCube			from "../primitives/FacedCube.js";
 
 //import DVerts, { DynamicVertsSystem } from "./ecs/DynamicVerts.js";
@@ -8,13 +8,14 @@ import FacedCube			from "../primitives/FacedCube.js";
 
 
 //////////////////////////////////////////////////////////////////////
-App	.launch( onDraw, true )
-	.then( dl=>dl
-		.add( "shader", "../shaders/VecWColor.txt" )
-		.start() )
-	.then( ()=>		App.loadScene() )
-	.then( ()=>		init() )
-	.catch( err=>	console.error( err ) );
+(function(){new AppBuilder()
+	.launch()
+	.download( dl=>dl.addGrp( "shader", "../shaders/VecWColor.txt" ) )
+	.load_scene( true, true )
+	.add_task( init )
+	.render_loop( onDraw )
+	.build().catch( (e)=>console.error("error",e) );
+})();
 
 
 function init(){
@@ -31,7 +32,7 @@ function init(){
 
 	// Clone Material and Change the colors
 	let mat = Material.clone( "VecWColor", "Alt_VecWColor" );
-	mat.updateUniform( "u_colorAry", ["000000","000000","000000","000000","000000","000000"] );
+	mat.update_uniform( "u_colorAry", ["000000","000000","000000","000000","000000","000000"] );
 
 	let vao = FacedCube.vao();
 
@@ -72,12 +73,11 @@ function init(){
 	//console.log( App.node.getWorldRot( cube ) );
 
 	//App.ecs.updateSystems();
-	App.loop.start();
+	return true;
 }
 
 let cubeA, cubeB;
 function onDraw( dt, ss ){
-
 	cubeA.Node.setRotAxis( [0,1,0], Math.sin( ss ) * Math.PI );
 	cubeB.Node.setRotAxis( [0,1,0], Math.sin( ss ) * Math.PI );
 

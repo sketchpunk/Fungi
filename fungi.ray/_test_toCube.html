@@ -1,18 +1,19 @@
 <!DOCTYPE html><html><head><title>Fungi</title></head><script type="module">
-import App,{ gl }	from "../fungi/engine/App.js";
+import App,{ gl, AppBuilder }	from "../fungi/engine/App.js";
 import { Vec3 }		from "../fungi/maths/Maths.js";
 import Ray 			from "./Ray.js";
 
 import BoundingBox	from "./BoundingBox.js";
 
 //#############################################################################
-App	.launch( null, true )
-	.then( dl=>dl
-		.add( "shader", "../fungi/shaders/VecWColor.txt" )
-		.start() )
-	.then( ()=>		App.loadScene( true, true ) )
-	.then( ()=>		init() )
-	.catch( err=>	console.error( err ) );
+(function(){new AppBuilder()
+	.launch()
+	.download( dl=>dl.addGrp( "shader", "../fungi/shaders/VecWColor.txt" ) )
+	.load_scene( true, true )
+	.add_task( init )
+	.render_loop( onDraw )
+	.build().catch( (e)=>console.error("error",e) );
+})();
 
 
 //#############################################################################
@@ -31,10 +32,7 @@ function init(){
 	aabb.setWorldPos( [ -1.0, 0.5, -0.5 ] );
 	App.debug.box( aabb.worldBounds[0], aabb.worldBounds[1] );
 
-
-	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	App.input.onInput = ()=>{ window.requestAnimationFrame( onDraw ); } // App.loop.start();
-	onDraw();
+	return true;
 }
 
 //#############################################################################

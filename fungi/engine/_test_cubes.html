@@ -1,15 +1,16 @@
 <!DOCTYPE html><html><head><title>Fungi</title></head><script type="module">
-import App, { Material }from "./App.js";
+import App, { AppBuilder, Material } from "./App.js";
 import FacedCube	from "../primitives/FacedCube.js";
 
 //#############################################################################
-App	.launch( onDraw, true )
-	.then( dl=>dl
-		.add( "shader", "../shaders/VecWColor.txt" )
-		.start() )
-	.then( ()=>		App.loadScene() )
-	.then( ()=>		init() )
-	.catch( err=>	console.error( err ) );
+(function(){new AppBuilder()
+	.launch()
+	.download( dl=>dl.addGrp( "shader", "../shaders/VecWColor.txt" ) )
+	.load_scene( true, true )
+	.add_task( init )
+	.render_loop( onDraw )
+	.build().catch( (e)=>console.error("error",e) );
+})();
 
 
 //#############################################################################
@@ -55,9 +56,7 @@ function init(){
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// ASSIGN PARENTING
 	App.node.addChild( cubeA, cubeB );
-
-	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	App.loop.start();
+	return true;
 }
 
 </script><body></body></html>

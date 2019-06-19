@@ -1,17 +1,18 @@
 <!DOCTYPE html><html><head><title>Fungi</title></head><script type="module">
-import App			from "./App.js";
+import App, { AppBuilder }	from "./App.js";
 //import Debug		from "./Debug.js";
 import Maths, {Vec3, Quat} from "../maths/Maths.js";
 
 
 //#############################################################################
-App	.launch( onDraw, true )
-	.then( dl=>dl
-		.add( "shader", "/fungi/shaders/VecWColor.txt" )
-		.start() )
-	.then( ()=>		App.loadScene( true, true ) )
-	.then( ()=>		init() )
-	.catch( err=>	console.error( err ) );
+(function(){new AppBuilder()
+	.launch()
+	.download( dl=>dl.addGrp( "shader", "../shaders/VecWColor.txt" ) )
+	.load_scene( true, true )
+	.add_task( init )
+	.render_loop( onDraw )
+	.build().catch( (e)=>console.error("error",e) );
+})();
 
 
 //#############################################################################
@@ -50,9 +51,8 @@ function init(){
 		.box( [-1.5, -1.5, -1.5], new Vec3(1.5, 1.5, 1.5), 7 )
 	;
 
-
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	App.loop.start();
+	return true;
 }
 
 </script><body></body></html>

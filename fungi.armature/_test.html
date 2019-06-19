@@ -1,5 +1,5 @@
 <!DOCTYPE html><html><head><title>Fungi</title></head><script type="module">
-import App				from "../fungi/engine/App.js";
+import App, { AppBuilder }	from "../fungi/engine/App.js";
 import Geometry			from "../fungi.misc/Geometry.js";
 import Maths,{ Vec3 }	from "../fungi/maths/Maths.js";
 
@@ -7,6 +7,7 @@ import Armature			from "./Armature.js";
 import ArmaturePreview	from "./ArmaturePreview.js";
 
 //#############################################################################
+/*
 App.useArmature = 3;
 App	.launch( onDraw, true )
 	.then( dl=>dl
@@ -18,6 +19,21 @@ App	.launch( onDraw, true )
 	.then( ()=>		App.loadScene() )
 	.then( ()=>		init() )
 	.catch( err=>	console.error( err ) );
+*/
+(function(){new AppBuilder()
+	.launch()
+	.use_armature()
+	.download( dl=>dl.addGrp( "shader", 
+		"../fungi/shaders/VecWColor.txt",
+		"../fungi/shaders/BaseColor.txt",
+		"./shaders/ArmaturePreview.txt",
+		"./shaders/ArmatureSkin.txt",
+	))
+	.load_scene( true, true )
+	.add_task( init )
+	.render_loop( onDraw )
+	.build().catch( (e)=>console.error("error",e) );
+})();
 
 
 //#############################################################################
@@ -74,8 +90,8 @@ function init(){
 
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	gEntity = e;
-	App.loop.start();
 	//App.loop.runFrame( 0.01 );
+	return true;
 }
 
 

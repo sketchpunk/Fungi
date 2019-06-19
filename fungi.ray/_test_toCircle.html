@@ -1,16 +1,17 @@
 <!DOCTYPE html><html><head><title>Fungi</title></head><script type="module">
-import App,{ gl }	from "../fungi/engine/App.js";
+import App,{ gl, AppBuilder }	from "../fungi/engine/App.js";
 import Maths,{ Vec3 }		from "../fungi/maths/Maths.js";
 import Ray 			from "./Ray.js";
 
 //#############################################################################
-App	.launch( null, true )
-	.then( dl=>dl
-		.add( "shader", "../fungi/shaders/VecWColor.txt" )
-		.start() )
-	.then( ()=>		App.loadScene( true, true ) )
-	.then( ()=>		init() )
-	.catch( err=>	console.error( err ) );
+(function(){new AppBuilder()
+	.launch()
+	.download( dl=>dl.addGrp( "shader", "../fungi/shaders/VecWColor.txt" ) )
+	.load_scene( true, true )
+	.add_task( init )
+	.render_loop( onDraw )
+	.build().catch( (e)=>console.error("error",e) );
+})();
 
 
 //#############################################################################
@@ -46,8 +47,7 @@ function init(){
 	}
 
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	App.input.onInput = ()=>{ window.requestAnimationFrame( onDraw ); } // App.loop.start();
-	onDraw();
+	return true;
 }
 
 //#############################################################################
