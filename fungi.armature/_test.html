@@ -7,22 +7,9 @@ import Armature			from "./Armature.js";
 import ArmaturePreview	from "./ArmaturePreview.js";
 
 //#############################################################################
-/*
-App.useArmature = 3;
-App	.launch( onDraw, true )
-	.then( dl=>dl
-		.add( "shader", "../fungi/shaders/VecWColor.txt" )
-		.add( "shader", "../fungi/shaders/BaseColor.txt" )
-		.add( "shader", "./shaders/ArmaturePreview.txt" )
-		.add( "shader", "./shaders/ArmatureSkin.txt" )
-		.start() )
-	.then( ()=>		App.loadScene() )
-	.then( ()=>		init() )
-	.catch( err=>	console.error( err ) );
-*/
 (function(){new AppBuilder()
 	.launch()
-	.use_armature()
+	.load_armature()
 	.download( dl=>dl.addGrp( "shader", 
 		"../fungi/shaders/VecWColor.txt",
 		"../fungi/shaders/BaseColor.txt",

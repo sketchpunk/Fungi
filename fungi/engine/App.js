@@ -60,6 +60,8 @@ class AppBuilder{
 		this._promise	= null;
 		this._reject 	= null;
 		this._resolve	= null;
+		this._ecs_setup	= new Array();
+		this._mod_list	= new Array();
 	}
 
 	//////////////////////////////////////////////////////////
@@ -147,6 +149,8 @@ class AppBuilder{
 			return this;
 		}
 
+		load_module( mPath ){ this._mod_list.push( mPath ); return this; }
+
 		load_scene( useFloor=true, useDebug=false ){
 			this.add( async()=>{
 				//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -165,6 +169,25 @@ class AppBuilder{
 	
 				return true;
 			});
+			return this;
+		}
+
+		load_armature( opt=3 ){
+			App.armature_opt = opt;
+
+			if( (opt & 2) == 2 ) this.load_module( "../../fungi.armature/ArmaturePreview.js" ); //ary.push( import( "../../fungi.armature/ArmaturePreview.js" ).then( run_module_init ) );
+			if( (opt & 1) == 1 ){
+				this.load_module( "../../fungi.armature/Armature.js" );
+				this._ecs_setup.push( ()=>{
+					let ubo = new Ubo( "UBOArmature" );
+					Ubo .addItem( ubo, "bones", "mat2x4", 90 )
+						.addItem( ubo, "scale", "vec3", 90 )
+						.addItem( ubo, "boneCount", "int" )
+						.finalize( ubo, 4 );
+
+					ubo.setItem( "boneCount", 2 );
+				});
+			}
 			return this;
 		}
 
@@ -193,37 +216,12 @@ class AppBuilder{
 			});
 			return this;
 		}
-
-		use_armature( opt=3 ){
-			App.armature_opt = opt;
-
-			this.add(async()=>{
-				let ary = [];
-				
-
-				if( (opt & 2) == 2 ) ary.push( import( "../../fungi.armature/ArmaturePreview.js" ).then( runModuleInit ) );
-				
-				if( (opt & 1) == 1 ){
-					ary.push( import( "../../fungi.armature/Armature.js" ).then( runModuleInit ) );
-					
-					let ubo = new Ubo( "UBOArmature" );
-					Ubo .addItem( ubo, "bones", "mat2x4", 90 )
-						.addItem( ubo, "scale", "vec3", 90 )
-						.addItem( ubo, "boneCount", "int" )
-						.finalize( ubo, 4 );
-
-					ubo.setItem( "boneCount", 2 );
-				}
-
-				await Promise.all( ary );
-				return true;
-			});
-
-			return this;
-		}
 }
 
-function runModuleInit( mod ){
+
+//##################################################################
+
+function run_module_init( mod ){
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Run any System Init function if it exists
 	let sys;
@@ -278,9 +276,23 @@ async function init_gl(){
 	return true;
 }
 
-
-async function init_ecs(){
+async function init_ecs( bld ){
 	App.ecs = new Ecs();
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// Run speciual setups for ecs
+	if( bld._ecs_setup.length > 0 ){
+		for( let i=0; i < bld._ecs_setup.length; i++ ) bld._ecs_setup[i]();
+	}
+	
+	// Load up
+	if( bld._mod_list.length > 0 ){
+		let ary = new Array();
+		for( let i=0; i < bld._mod_list.length; i++ ){
+			ary.push( import( bld._mod_list[i] ).then( run_module_init ) );
+		}
+		await Promise.all( ary );
+	}
 
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// SYSTEMS

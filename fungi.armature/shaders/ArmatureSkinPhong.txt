@@ -2,17 +2,17 @@
 	"name"		: "ArmatureSkinPhong",
 	"ubo"		: [ "UBOGlobal", "UBOModel", "UBOArmature", "UBOLighting" ],
 	"uniforms":[
-		{ "name":"uBaseColor", "type":"vec4" }
+		{ "name":"uBaseColor", "type":"rgba" }
 	]
 }<\shader>
 
 <materials>[
 	{ "name":"ArmatureSkinPhong",	"uniforms":[
-		{ "name":"uBaseColor", "type":"rgba", "value": "ff7f7fff" }
+		{ "name":"uBaseColor", "value": "ff7f7fff" }
 	]},
 
 	{ "name":"LowPolyPhong_grayBlend",	"uniforms":[
-		{ "name":"uBaseColor", "type":"rgba", "value": "A0A0A099" }
+		{ "name":"uBaseColor", "value": "A0A0A099" }
 	], "options":{ "blend":true }}
 ]<\materials> "useBlending":false
 	

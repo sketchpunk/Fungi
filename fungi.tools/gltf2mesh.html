@@ -1,5 +1,5 @@
 <!DOCTYPE html><html><head><title></title></head><script type="module">
-import App, { Vao } 	from "../fungi/engine/App.js";
+import App, { Vao, AppBuilder } 	from "../fungi/engine/App.js";
 import Gltf				from "../fungi.misc/GLTF.js";
 import Armature 		from "../fungi.armature/Armature.js";
 import ArmaturePreview	from "../fungi.armature/ArmaturePreview.js";
@@ -52,34 +52,30 @@ HandlerTypes.convert = class{
 
 
 //#############################################################################
-App.useArmature = 3;
-App	.launch( onDraw, true )
-	.then( dl	=> dl
-		.addGrp( "shader", 
-			"../fungi/shaders/VecWColor.txt",
-			//"../fungi/shaders/LowPolyPhong.txt",
-			"../fungi.armature/shaders/ArmaturePreview.txt",
-			"../fungi.armature/shaders/ArmatureSkinPhong.txt",
-		)
-		//.convert( "Mesh01", "../Vegeta", "ArmatureSkinPhong", ["Vegeta"], "Armature" )
-		.convert( "Mesh01", "../files/models/baller", "ArmatureSkinPhong", ["Base","Ball"], "Armature" )
+(function(){new AppBuilder().launch()
+	.load_armature()
+	.download( dl=>dl.addGrp( "shader", 
+		"../fungi/shaders/VecWColor.txt",
+		"../fungi.armature/shaders/ArmaturePreview.txt",
+		"../fungi.armature/shaders/ArmatureSkinPhong.txt" )
+		.convert( "Mesh01", "../files/models/Vegeta", "ArmatureSkinPhong", ["Vegeta"], "Armature" )
+		//.convert( "Mesh01", "../files/models/baller", "ArmatureSkinPhong", ["Base","Ball"], "Armature" )
 		//.addGLTF( "Mesh01", "./dummy", "ArmatureSkinPhong", ["Base"], "CielArmature" )
 		//.addGLTF( "Mesh01", "../pitohui", "ArmatureSkinPhong", ["body","skin","eyes","hair"], "armature" )
-		.start() )
-	.then( ()	=> App.loadScene( true, true ) )
-	.then( ()	=> init() )
-	.catch( err	=> console.error( err ) );
+	)
+	.load_scene( true, true )
+	.set_camera( 0, 15, 4.0,  0, 1.5, 0 )
+	//.add_task( init )
+	.render_loop( onDraw )
+	.build().catch( (e)=>console.error("error",e) );
+})();
+
 
 
 //#############################################################################
 function onDraw(dt, ss){ App.ecs.sys_run(); }
 
-function init(){
-	App.cameraCtrl.setTarget( 0, 1.5, 0 ).setOrbit( 0, 15, 4.0 );
-
-	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	App.loop.start();
-}
+//function init(){ return true; }
 
 
 //#############################################################################

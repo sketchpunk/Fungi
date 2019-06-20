@@ -1,34 +1,33 @@
 <!DOCTYPE html><html><head><title></title></head><script type="module">
-import App		from "../fungi/engine/App.js";
+import App, { AppBuilder }	from "../fungi/engine/App.js";
 import Armature from "../fungi.armature/Armature.js";
 import Maths	from "../fungi/maths/Maths.js";
 import _NA		from "../fungi.misc/MeshLoader.js";
 
 
 //#############################################################################
-App.useArmature = 3;
-App	.launch( onDraw, true )
-	.then( dl	=> dl
-		.addGrp( "shader", 
-			"../fungi/shaders/VecWColor.txt",
-			//"../fungi/shaders/LowPolyPhong.txt",
-			"../fungi.armature/shaders/ArmaturePreview.txt",
-			"../fungi.armature/shaders/ArmatureSkinPhong.txt",
-		)
-		//.addEntity( "Mesh01", "../files/models/pitohui", "ArmatureSkinPhong", 7, 25, ["body"] )
-		.addEntity( "Mesh01", "../files/models/vegeta", "ArmatureSkinPhong", 7, 25 )
-		.start() )
-	.then( ()	=> App.loadScene( true, true ) )
-	.then( ()	=> init() )
-	.catch( err	=> console.error( err ) );
+(function(){new AppBuilder().launch()
+	.load_armature()
+	.download( dl=>dl.addGrp( "shader", 
+		"../fungi/shaders/VecWColor.txt",
+		"../fungi.armature/shaders/ArmaturePreview.txt",
+		"../fungi.armature/shaders/ArmatureSkinPhong.txt" )
+		.addEntity( "Mesh01", "../files/models/pitohui", "ArmatureSkinPhong", 7, 25, ["body"] )
+		//.addEntity( "Mesh01", "../files/models/baller", "ArmatureSkinPhong", 7, 25 )
+	)
+	.load_scene( true, true )
+	.set_camera( -2, 15, 3.0 )
+	.add_task( init )
+	.render_loop( onDraw )
+	.build().catch( (e)=>console.error("error",e) );
+})();
+
 
 
 //#############################################################################
 function onDraw(dt, ss){ App.ecs.sys_run(); }
 
 function init(){
-	App.cameraCtrl.setTarget( 0, 0.75, 0 ).setOrbit( -2, 15, 3.0 );
-
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	/*
 	let b;
@@ -41,9 +40,8 @@ function init(){
 	*/
 
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	App.loop.start();
+	return true;
 }
-
 
 //#############################################################################
 </script><body></body></html>
