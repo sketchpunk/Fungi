@@ -129,11 +129,14 @@ function Components( com ){
 	return null;
 }
 Components.list		= new Map();
+Components.get_ref 	= function( name ){ return Components.list.get( name ).object; }
 Components.exists 	= function( name ){ return Components.list.has( name ); }
 Components.dispose	= function( c ){ 
 	c.entityID = null;
 	c.recycled = true;
 }
+
+
 
 
 /*####################################################################################

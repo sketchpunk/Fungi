@@ -237,6 +237,28 @@ class Maths{
 
 		return t;
 	}
+
+	static newtons_method( x, f, fd=null ){
+		// without derivitive, use th following:
+		// x = x - f(x) / ( (f(x+i) - f(x-1)) / (2*i) )
+		// else
+		// x = x - f(x) / fd(x);
+		const precision = 0.001;
+		const inc 		= 0.001;
+		const inc_2_inv	= 1 / (2 * inc); // Just to remove Division and the extra mul
+		const lmt 		= 20;
+		
+		let i, px = x;
+		for( i=0; i < lmt; i++ ){
+			x = ( !fd )?
+				x - f(x) / (( f(x + inc) - f(x - inc) ) * inc_2_inv ) :
+				x - f(x) / fd(x);
+			//console.log( i, px, x );
+			if( Math.abs( px - x ) <= precision ) break;
+			px = x;
+		}
+		return x;
+	}
 }
 
 ////////////////////////////////////////////////////////////////////
