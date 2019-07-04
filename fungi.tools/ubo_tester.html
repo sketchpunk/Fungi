@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<style>
+			html,body{margin:0px; padding:0px; width:100%; height:100%;}
+			body{background-color:#404040;}
+			canvas{border:0px solid green;}
+			div{display:flex; width:100%; height:100%; align-items:center; justify-content:center;}
+			#lblFPS{position:absolute; top:0px; left:0px; width:40px; padding:5px 5px;
+				background:gray; color:white; font-weight:bold; text-align:center; font-family:arial; font-size:13px; }
+		</style>
+
+		<script type="module">
+			import gl		from "../fungi/core/gl.js";
+			import Ubo		from "../fungi/core/Ubo.js";
+			import Shader	from "../fungi/core/Shader.js";
+
+			window.addEventListener("load",function(){
+				//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+				if( !gl.init("FungiCanvas") ) return false;
+
+				let bind_point	= 0;
+				let ubo_name	= "ubo_test";
+
+				//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+				// BUILD UBO
+				let ubo = new Ubo( "ubo_test" );
+				
+				/*
+				Ubo .addItem( ubo, "var01", "float" )
+					.addItem( ubo, "var02", "vec3" )
+					.finalize( ubo, bind_point );
+				*/
+
+				/*UBOArmature 
+				Ubo .addItem( ubo, "bones", "mat2x4", 90 )
+					.addItem( ubo, "scale", "vec3", 90 )
+					.addItem( ubo, "boneCount", "int" )
+					.finalize( ubo, 0 );
+				*/
+
+				/*UBOGlobal */
+				Ubo .addItem( ubo, "projViewMatrix", "mat4" )
+					.addItem( ubo, "cameraPos", "vec3" )
+					.addItem( ubo, "globalTime", "float" )
+					.addItem( ubo, "screenSize", "vec2" )
+					.finalize( ubo, 0 );
+				
+
+				/*UBOModel 
+				Ubo .addItem( ubo, "modelMatrix", "mat4" )
+					.addItem( ubo, "normalMatrix", "mat3" )
+					.finalize( ubo, 0 );
+				*/
+
+				/*UBOLighting 
+				Ubo .addItem( ubo, "lightPosition", "vec3" )
+					.addItem( ubo, "lightDirection", "vec3" )
+					.addItem( ubo, "lightColor", "vec3" )
+					.finalize( ubo, 0 );
+				*/
+
+
+				//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+				Ubo.debugVisualize( ubo );
+
+				console.log("======================================UboLimits");
+				console.log("MAX_UNIFORM_BUFFER_BINDINGS : %d", gl.ctx.getParameter(gl.ctx.MAX_UNIFORM_BUFFER_BINDINGS) );
+				console.log("MAX_UNIFORM_BLOCK_SIZE : %d", gl.ctx.getParameter(gl.ctx.MAX_UNIFORM_BLOCK_SIZE) );
+				console.log("MAX_VERTEX_UNIFORM_BLOCKS : %d", gl.ctx.getParameter(gl.ctx.MAX_VERTEX_UNIFORM_BLOCKS) );
+				console.log("MAX_FRAGMENT_UNIFORM_BLOCKS : %d", gl.ctx.getParameter(gl.ctx.MAX_FRAGMENT_UNIFORM_BLOCKS) );
+				
+				//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+				// REQUEST INFORMATION ABOUT THE UBO FROM A SHADER
+				// IF THE UNIFORM OFFSETS DON'T MATCH OR THE BUFFER SIZE, THEN SOMETHING IS WRONG.
+				//shader_test( ubo, ubo_name, bind_point );
+				new Validator( ubo ).run_test();
+			});
+
+			// https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/Constants#Uniform_types
+			function gl_types( i ){
+				switch( i ){
+					case 0x8B50: return "FLOAT_VEC2";
+					case 0x8B51: return "FLOAT_VEC3";
+					case 0x8B52: return "FLOAT_VEC4";
+					case 0x8B53: return "INT_VEC2";
+					case 0x8B54: return "INT_VEC3";
+					case 0x8B55: return "INT_VEC4";
+					case 0x8B56: return "BOOL";
+					case 0x8B57: return "BOOL_VEC2";
+					case 0x8B58: return "BOOL_VEC3";
+					case 0x8B59: return "BOOL_VEC4";
+					case 0x8B5A: return "FLOAT_MAT2";
+					case 0x8B5B: return "FLOAT_MAT3";
+					case 0x8B5C: return "FLOAT_MAT4";
+					case 0x1400: return "BYTE";
+					case 0x1401: return "UNSIGNED_BYTE";
+					case 0x1402: return "SHORT";
+					case 0x1403: return "UNSIGNED_SHORT";
+					case 0x1404: return "INT";
+					case 0x1405: return "UNSIGNED_INT";
+					case 0x1406: return "FLOAT";
+				}
+				return "UNKNOWN";
+			}
+
+			// Validator is built to auto generate a shader, then try to print calculated and shader pulled
+			// information side by side to make it easier to tell if there is issues with the offsets and
+			// buffer sizes.
+			class Validator{
+				constructor( ubo ){
+					this.ubo_code	= "";
+					this.shader 	= this.build_shader( ubo );
+					this.ubo		= ubo;
+					
+					console.log( this.shader );
+				}
+
+				run_test(){
+					console.log("############################################\nVALIDATOR");
+					console.log("UBO Generated code : ", this.ubo_code );
+					let key, itm, idx = 0, prog = this.shader.program;
+
+					Shader.bind( prog );
+
+					let blox_idx 	= gl.ctx.getUniformBlockIndex( prog, "ubo_test" );
+					let buf_size	= gl.ctx.getActiveUniformBlockParameter( prog, blox_idx, gl.ctx.UNIFORM_BLOCK_DATA_SIZE );
+					let u_idx_list	= gl.ctx.getActiveUniformBlockParameter( prog, blox_idx, gl.ctx.UNIFORM_BLOCK_ACTIVE_UNIFORM_INDICES );
+					let u_types		= gl.ctx.getActiveUniforms( prog, u_idx_list, gl.ctx.UNIFORM_TYPE);
+					let u_sizes		= gl.ctx.getActiveUniforms( prog, u_idx_list, gl.ctx.UNIFORM_SIZE);
+					let u_offset	= gl.ctx.getActiveUniforms( prog, u_idx_list, gl.ctx.UNIFORM_OFFSET);
+
+					console.log("-- Calc Buf Size: %s >> Shader Buf Size: %s", this.ubo.bufferSize, buf_size );
+
+					for( [key,itm] of this.ubo.items ){
+						console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+						console.log("Item %d :", idx, key );
+						console.log("-- Calc Offset: %s >> Shader Offset: %s", itm.offset, u_offset[ idx ] );
+						console.log("-- Calc Type: %s >> Shader Type: %s", itm.type, gl_types( u_types[ idx ] ) );
+						idx++;
+					}
+					gl.ctx.useProgram( null );
+				}
+
+				build_shader( ubo ){
+					let key, itm,
+						u_txt = "uniform ubo_test{ ";
+
+					for( [key,itm] of ubo.items ){
+						u_txt += itm.type + " " + key;
+						if( itm.aryLen != 0 ) u_txt += "[" + itm.aryLen + "]";
+						u_txt += "; ";
+					}
+					u_txt += " }; ";
+
+					this.ubo_code = u_txt;
+
+					let sh = Shader.build( "sh_val", 
+						"#version 300 es\n layout(location=0) in vec4 a_position; " + u_txt + " void main(void){ gl_Position	= vec4( a_position.xyz, 1.0 ); }",
+						"#version 300 es\nprecision mediump float; out vec4 oFragColor; void main(void){ oFragColor = vec4(1.0, 0.0, 0.0, 1.0); }"
+					);
+			
+					Shader.bind( sh );
+					Shader.prepareUniformBlock( sh, "ubo_test" );
+					gl.ctx.useProgram( null );
+					return sh;
+				}
+			}
+
+
+			function shader_test( ubo, ubo_name, bind_point ){
+				// https://developer.mozilla.org/en-US/docs/Web/API/WebGL2RenderingContext#Uniform_buffer_objects
+				console.log("======================================SHADER INFO");
+				let sh = Shader.build( "sh_test", v_shader.innerText.trim(), f_shader.innerText.trim() );
+			
+				Shader.bind( sh );
+				Shader.prepareUniformBlock( sh, ubo_name );
+
+				let blox_idx	= gl.ctx.getUniformBlockIndex( sh.program, ubo_name );
+				
+				let u_idx_list	= gl.ctx.getActiveUniformBlockParameter(sh.program, blox_idx, gl.ctx.UNIFORM_BLOCK_ACTIVE_UNIFORM_INDICES);
+				let u_types		= gl.ctx.getActiveUniforms( sh.program, u_idx_list, gl.ctx.UNIFORM_TYPE);
+				let u_sizes		= gl.ctx.getActiveUniforms(  sh.program, u_idx_list, gl.ctx.UNIFORM_SIZE);
+				let u_offset	= gl.ctx.getActiveUniforms(  sh.program, u_idx_list, gl.ctx.UNIFORM_OFFSET);
+
+				console.log( "BlockIndex : %d", blox_idx );
+				console.log( "Buffer Size : %d",
+					gl.ctx.getActiveUniformBlockParameter(sh.program, blox_idx, gl.ctx.UNIFORM_BLOCK_DATA_SIZE));
+
+				console.log( "Block Name : %s",
+					gl.ctx.getActiveUniformBlockName( sh.program, blox_idx ) );
+
+				console.log( "Uniform Block Binding : ",
+					gl.ctx.getActiveUniformBlockParameter(sh.program, blox_idx, gl.ctx.UNIFORM_BLOCK_BINDING));
+
+				//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+				// DISPLAY INFORMATION ABOUT EACH UNIFORM IN THE UBO
+				// https://developer.mozilla.org/en-US/docs/Web/API/WebGL2RenderingContext/getActiveUniforms#Syntax
+				console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+				console.log( "Uniform Count : %d",
+					gl.ctx.getActiveUniformBlockParameter(sh.program, blox_idx, gl.ctx.UNIFORM_BLOCK_ACTIVE_UNIFORMS));
+
+				for( let i in u_idx_list ){
+					console.log("~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+					console.log("Uniform Index : ", i );
+					console.log("-- Uniform Type : ", u_types[ i ], gl_types( u_types[ i ] ) );
+					console.log("-- Uniform Offset : ", u_offset[ i ] );
+					console.log("-- Uniform Size : ", u_sizes[ i ] );
+				}
+
+				gl.ctx.useProgram( null );
+			}
+		</script>
+	</head>
+<body>
+	<div><canvas id="FungiCanvas"></canvas></div>
+
+<script id="v_shader" type="plain/text">
+	#version 300 es
+	layout(location=0) in vec4 a_position;
+
+	uniform ubo_test{ 
+		float var02;
+		vec3 var01; 
+	};
+
+	void main(void){
+		gl_Position	= vec4( a_position.xyz, 1.0 );
+	}
+</script>
+
+<script id="f_shader" type="plain/text">
+	#version 300 es
+	precision mediump float;
+	out vec4 oFragColor;
+	void main(void){ oFragColor = vec4(1.0, 0.0, 0.0, 1.0); }
+</script>
+
+</body>
+</html>
