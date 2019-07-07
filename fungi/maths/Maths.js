@@ -441,3 +441,41 @@ function closestPointS_2Segments(A0,A1,B0,B1){
 
 export default Maths;
 export { Vec3, Mat4, Quat };
+
+
+/*
+http://wiki.unity3d.com/index.php/Mathfx#C.23_-_Mathfx.cs
+// CLerp - Circular Lerp - is like lerp but handles the wraparound from 0 to 360.
+// This is useful when interpolating eulerAngles and the object
+// crosses the 0/360 boundary.  The standard Lerp function causes the object
+// to rotate in the wrong direction and looks stupid. Clerp fixes that.
+static function Clerp(start : float, end : float, value : float) : float {
+   var min = 0.0;
+   var max = 360.0;
+   var half = Mathf.Abs((max - min)/2.0);//half the distance between min and max
+   var retval = 0.0;
+   var diff = 0.0;
+ 
+   if((end - start) < -half){
+       diff = ((max - start)+end)*value;
+       retval =  start+diff;
+   }
+   else if((end - start) > half){
+       diff = -((max - end)+start)*value;
+       retval =  start+diff;
+   }
+   else retval =  start+(end-start)*value;
+ 
+   // Debug.Log("Start: "  + start + "   End: " + end + "  Value: " + value + "  Half: " + half + "  Diff: " + diff + "  Retval: " + retval);
+   return retval;
+}
+
+bounce easing
+static function Berp(start : float, end : float, value : float) : float
+{
+    value = Mathf.Clamp01(value);
+    value = (Mathf.Sin(value * Mathf.PI * (0.2 + 2.5 * value * value * value)) * Mathf.Pow(1 - value, 2.2) + value) * (1 + (1.2 * (1 - value)));
+    return start + (end - start) * value;
+}
+
+*/

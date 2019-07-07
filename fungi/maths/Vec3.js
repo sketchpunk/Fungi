@@ -68,10 +68,24 @@ class Vec3 extends Float32Array{
 			return this;
 		}
 
+		from_add( a, b ){
+			this[0] = a[0] + b[0];
+			this[1] = a[1] + b[1];
+			this[2] = a[2] + b[2];
+			return this;
+		}
+
 		from_sub( a, b ){
 			this[0] = a[0] - b[0];
 			this[1] = a[1] - b[1];
 			this[2] = a[2] - b[2];
+			return this;
+		}
+
+		from_scale( a, s ){
+			this[0] = a[0] * s;
+			this[1] = a[1] * s;
+			this[2] = a[2] * s;
 			return this;
 		}
 

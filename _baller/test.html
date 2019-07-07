@@ -30,10 +30,6 @@ import _NA					from "../fungi.misc/MeshLoader.js";
 
 //#############################################################################
 function onDraw(dt, ss){
-	//gBaller.bChair.Node.local.rot.rx( Maths.toRad(-30) * dt );
-	//gBaller.bChair.Node.isModified = true;
-	//gBaller.arm.isModified = true;
-
 	gBaller.update(dt);
 
 	App.ecs.sys_run();
@@ -57,6 +53,10 @@ function init(){
 class Baller{
 	constructor( e ){
 		this.vel	= new Vec3();
+		this.dir	= new Vec3();
+		this.pos 	= new Vec3();
+
+		this.acell	= 30;
 
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		this.entity = App.ecs.entity_find( "Baller" );
@@ -78,16 +78,32 @@ class Baller{
 
 	update( dt ){
 		this.kb_ctrl(dt);
+		this.movement( dt );
+	}
 
-		this.vel.scale( 0.85 );
-		this.n.local.pos.add( this.vel );
+	movement( dt ){
+		//const FRICTION = 0.91;
+		//this.vel.scale( FRICTION );
+
+		const tension = 60.0;
+		const damping = 7.0;
+
+		// a	= -tension * ( pos - to ) / mass;
+		// vel	+= ( a - damping * vel ) * dt;
+		let damp	= Vec3.scale( this.vel, damping ),
+			acell	= Vec3.sub( this.n.local.pos, this.pos ).scale( -tension ).sub( damp ).scale( dt );
+		this.vel.add( acell );
+		
+
+		let v		= Vec3.scale( this.vel, dt );
+		let len		= v.length();
+		let rot 	= Maths.PI_2 * ( len / this.ball_len );
+		let axis	= Vec3.cross( Vec3.UP, v ).normalize();
+		let q		= new Quat().setAxisAngle( axis, rot );
+
+		this.n.local.pos.add( v );
 		this.n.isModified = true;
 
-		let len		= this.vel.length();
-		let axis	= Vec3.cross( Vec3.UP, this.vel ).normalize();
-		let rot		= Maths.PI_2 * (len / this.ball_len);
-
-		let q = new Quat().setAxisAngle( axis, rot );
 		this.bBall.Node.local.rot.pmul( q );
 		this.bBall.Node.isModified = true;
 		this.arm.isModified = true;	
@@ -116,9 +132,11 @@ class Baller{
 			move.rotate( Maths.toRad( 45 * xDir * zDir ), "y" ).nearZero().normalize();
 		}
 
-		this.vel.add( move.scale( 1 * dt * dir ) );
-		return;
-
+		//this.vel.add( move.scale( this.acell * dt * dir ) );
+		//this.pos.from_add( this.n.local.pos, this.vel );
+		this.pos.from_add( this.n.local.pos, move.scale( 60 * dt * dir ) );
+		
+		/*
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		let rot_speed 	= -this.speed_ps * dt * dir;
 		let pos_speed 	= (-rot_speed / Maths.PI_2) * this.ball_len; // AngleNorm( rot / pi2 ) * CircleLen == Distance Traveled.
@@ -128,98 +146,18 @@ class Baller{
 		this.n.local.pos.add( move.scale( pos_speed ) );
 		this.n.isModified = true;
 
-		/* Rotate Ball */
+		// Rotate Ball
 		let rot = new Quat().setAxisAngle( rot_axis, rot_speed );		
 		this.bBall.Node.local.rot.pmul( rot );
 		this.bBall.Node.isModified = true;
 		this.arm.isModified = true;
+		*/
 	}
 }
 
 
 //#############################################################################
 
-/*
-function move(){
-				let t = eSphere.com.Transform;
-				let a = Maths.toRad(2);
-
-				t._rotation.mul( new Quat().setAxisAngle(Vec3.LEFT, a) );
-				t._position.z += a / (Math.PI * 2) * sphereLen;
-				t._isModified = true;
-			}
-
-			let sphereLen = Math.PI * 2 * 0.5; // C = Pi * 2R
-			const SPEED = Maths.toRad(5);
-			const SPEED_FAST = Maths.toRad(15);
-			const SPEED_STEP_INV = 1 / (Math.PI * 2) * sphereLen;
-
-			function move_control(){
-				let zDir = 0, xDir = 0;
-
-				if(Fungi.input.arrowDown)	zDir = -1;
-				if(Fungi.input.arrowUp)		zDir = 1;
-				if(Fungi.input.arrowLeft)	xDir = 1;
-				if(Fungi.input.arrowRight)	xDir = -1;
-
-				if( !zDir && !xDir ) return;
-
-				//..............................................
-				let dir 	= zDir,
-					pt 		= ePlayer.com.Transform,
-					pFwd	= new Vec3(Vec3.FORWARD), //Api.getLocalForward(ePlayer), We don't rotate parent, so forward doesn't change
-					speed 	= (!Fungi.input.spaceBar)? SPEED : SPEED_FAST;
-
-				if(zDir == 0 && xDir != 0){
-					//pFwd.rotate(Maths.toRad(90), "y").nearZero(); //Works, bot Left doesn't change
-					pFwd.copy(Vec3.LEFT);
-					dir = xDir;
-				}else if(zDir != 0 && xDir != 0){
-					pFwd.rotate(Maths.toRad(45*xDir*zDir), "y").nearZero().normalize(); //What 45 degree angle based on the two directions.
-				}
-
-				//..............................................
-				// Move the parent at the rate the sphere rotates.
-				pt._position.add( Vec3.scale(pFwd, speed * SPEED_STEP_INV * dir) );
-				pt._isModified = true;
-
-				//..............................................
-				// Whatever the forward direction is, rotate it by 90 degrees to get an X Axis rotation based on Z Forward
-				pFwd.rotate(Maths.PI_H, "y").normalize();
-				let st		= eSphere.com.Transform,
-					qChg	= new Quat().setAxisAngle(pFwd, speed * dir);
-
-				st._rotation.pmul( qChg ); // newRotation = rotationChange * oldRotation, doing it backwards works better then the other way.
-				st._isModified = true;
-			}
-
-
-			class FollowCamSystem extends System{
-				constructor(target = null){
-					super();
-					this.target	= target;
-					this.range 	= new Vec3();
-				}
-
-				update(ecs){
-					if(!this.target) return;
-
-					let ct = Fungi.camera.com.Transform,
-						tt = this.target.com.Transform;
-
-					//if camera position changed, reset distance range
-					if(ct._isModified) Vec3.sub(ct._position, tt._position, this.range);
-
-					//if target has changed, move camera along with it.
-					if(tt._isModified){
-						Vec3.add(tt._position, this.range, ct._position);
-						ct._isModified = true;
-					}
-				}
-
-				static init(t = null){ Fungi.ecs.addSystem(new FollowCamSystem( t ), 99); }
-			}
- */
 
 //#############################################################################
 </script><body></body></html>

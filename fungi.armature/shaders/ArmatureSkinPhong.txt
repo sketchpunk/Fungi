@@ -12,7 +12,7 @@
 	]},
 
 	{ "name":"LowPolyPhong_grayBlend",	"uniforms":[
-		{ "name":"uBaseColor", "value": "A0A0A099" }
+		{ "name":"uBaseColor", "value": "A0A0A0cc" }
 	], "options":{ "blend":true }}
 ]<\materials> "useBlending":false
 	

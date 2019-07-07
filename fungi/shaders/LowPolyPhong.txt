@@ -24,8 +24,8 @@
 	]},
 
 	{ "name":"LowPolyPhong_grayBlend",	"uniforms":[
-		{ "name":"u_basecolor", "type":"rgba", "value": "A0A0A099" }
-	], "options":{ "blend":true }},
+		{ "name":"u_basecolor", "type":"rgba", "value": "A0A0A0FF" }
+	], "options":{ "blend":false }},
 
 
 	{ "name":"LowPolyPhong_litegray",	"uniforms":[
