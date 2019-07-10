@@ -35,7 +35,7 @@ function init(){
 	gPnt.DynamicVerts.raw_pnt( 0, 0.1, 0, 0 );
 	gPnt.Node.setPos( 2, 0, 0 );
 
-	test_raw();
+	//test_raw();
 	//test_basic_dt();
 	//test_critically_damp();
 	//test_exponentiation_damp();
@@ -44,6 +44,8 @@ function init(){
 	//test_springy2();
 	//test_jiggy();
 	//test_custom_spring();
+	//test_implicit_euler();
+	test_semi_implicit_euler();
 
 	return true;
 }
@@ -254,7 +256,6 @@ function test_jiggly(){
 	};
 }
 
-
 //#########################################################
 // https://gamedev.stackexchange.com/questions/105728/how-to-program-a-fully-controllable-spring-damped-motion
 // https://codepen.io/sketchpunk/details/WqJOMM
@@ -337,205 +338,106 @@ function newtons_method( x, f, fd=null ){
 	return x;
 }
 
+//#########################################################
+
+// http://box2d.org/files/GDC2011/GDC2011_Catto_Erin_Soft_Constraints.pdf
+// http://allenchou.net/2015/04/game-math-precise-control-over-numeric-springing/
+function test_implicit_euler(){
+	let vel 		= 0,
+		pos 		= 2,	
+		to 			= 0,
+		osc_ps 		= Math.PI * 2 * 1, //oscillations per second (angular frequency)
+		damp 		= 0.1, // Decrease by 90%
+		damp_time	= 0.5, // Time in Seconds
+		damp_ratio	= Math.log( damp ) / ( -osc_ps * damp_time ); // Value between 0 and 1, 1=Critical Damp.
+		/*
+			How much damping, done in what amount of time. ( damp 0.1 every 0.5 seconds )
+			While oscillate 1 time every second.
+		*/
+	gClosure = ( dt ) => {
+ 		let f		= 1.0 + 2.0 * dt * damp_ratio * osc_ps,
+  			dt_osc	= dt * osc_ps * osc_ps,
+    		dt2_osc	= dt * dt_osc,
+  			det_inv	= 1.0 / (f + dt2_osc),
+  			det_pos	= f * pos + dt * vel + dt2_osc * to,
+  			det_vel	= vel + dt_osc * (to - pos);
+
+  		pos = det_pos * det_inv;
+  		vel = det_vel * det_inv;
+		gPnt.Node.setPos( pos, null, null );
+	};
+}
+
+
+//#########################################################
+
+// http://box2d.org/files/GDC2011/GDC2011_Catto_Erin_Soft_Constraints.pdf
+// http://allenchou.net/2015/04/game-math-more-on-numeric-springing/
+function test_semi_implicit_euler(){
+	let vel 		= 0,
+		pos 		= 2,	
+		to 			= 0,
+		osc_ps 		= Math.PI * 2 * 1, //oscillations per second (angular frequency)
+		//damp 		= 0.1, // Decrease by 90%
+		damp_time	= 0.5, // Time in Seconds
+		//damp_ratio	= Math.log( damp ) / ( -osc_ps * damp_time ); // Value between 0 and 1, 1=Critical Damp.
+		damp_ratio	= -Math.log(0.5) / ( osc_ps * damp_time ); // Half Life
+		/*
+			How much damping, done in what amount of time. ( damp 0.5 every 0.5 seconds )
+			While oscillate 1 time every second.
+
+			With Half life, Half second in, the magnitude of the wave is 50% of its initial
+			, When its one second in, its at 25% of its initial state.
+			So for every half second, the wave height gets cut in half.
+		*/
+
+	gClosure = ( dt ) => {
+  		vel += -2.0 * dt * damp_ratio * osc_ps * vel + dt * osc_ps * osc_ps * (to - pos);
+  		pos += dt * vel;
+
+		gPnt.Node.setPos( pos, null, null );
+	};
+}
+
+
 
 //#############################################################################
 
-/* NOTES
-FRAME RATE DAMPING 
+/*NOTES
+https://www.khanacademy.org/science/ap-physics-1/simple-harmonic-motion-ap/spring-mass-systems-ap/v/period-dependance-for-mass-on-spring
+
+Force = Mass * Accel :: f = ma
+Accel = Force / Mass :: a = f/m
+
+Displacement 	= Current - Target
+Force 			= -SpringConstant * Displacement	:: f = -kx
+					- SpringConstant == Stiffness, Tension
+    				- optional : Force += Gravity
+
+Accel 		= (-SpringConstant * Displacement - Damper * Velocity ) / Mass  :: a = (-km - dv) / m
+Accel 		= Force * deltaTime // Acceleration per second, but for a frame, needs fraction of a second.
+Velocity	+= Accel
+Position	+= Velocity * DeltaTime
+Period		= 2 * Pi * sqrt( Mass / SpringConstant ) 	:: t = 2PI * sqrt( m / k )
+*/
+
+//#############################################################################
+
+/*
+[[ SPRINGS ]]
+http://www.ryanjuckett.com/programming/damped-springs/
+https://gafferongames.com/post/spring_physics/
+https://gafferongames.com/post/physics_in_3d/
+https://wiki.unity3d.com/index.php/JiggleBone
+https://www.khanacademy.org/science/ap-physics-1/simple-harmonic-motion-ap/spring-mass-systems-ap/v/period-dependance-for-mass-on-spring
+
+https://gamedev.stackexchange.com/questions/105728/how-to-program-a-fully-controllable-spring-damped-motion
+https://codepen.io/sketchpunk/details/WqJOMM
+
+[[ DAMPING ]]
+http://lolengine.net/blog/2015/05/03/damping-with-delta-time
 http://www.rorydriscoll.com/2016/03/07/frame-rate-independent-damping-using-lerp/
 http://mathproofs.blogspot.com/2013/07/critically-damped-spring-smoothing.html
 */
-
-class Damp{
-	//http://www.rorydriscoll.com/2016/03/07/frame-rate-independent-damping-using-lerp/
-	// Damping from A to B.
-	// Smoothing rate dictates the proportion of source remaining after one second
-	static lerp_pow( a, b, damp, dt ){
-		let ti	= damp ** dt,
-			t	= 1 - ti;
-		return a * ti + b * t;
-	}
-
-	// should create about the same results as lerp_pow
-	static lerp_exp( a, b, damp, dt ){
-		let ti 	= Math.exp( -damp * dt ),
-			t 	= 1 - ti;
-		return a * ti + b * t;
-	}
-
-	//http://www.rorydriscoll.com/2016/03/07/frame-rate-independent-damping-using-lerp/
-	// Damp a value toward zero
-	static to_zero( val, damp, dt ){ return val * damp**dt ; }
-
-	// http://lolengine.net/blog/2015/05/03/damping-with-delta-time
-	// Lock damping to a specific framerate.
-	// This can be optimized with making (1 - d / fr) as a constant.
-	static frame_rate( damp, dt, fr ){
-		return ( 1 - damp / fr ) ** ( fr * delta_time );
-	}
-
-	static lerp_fr( a, b, damp, dt, fr ){
-		let ti	= this.frame_rate( damp, dt, fr ),
-			t 	= 1 - ti;
-		return a * ti + b * t;
-	}
-}
-
-
-	//https://www.khanacademy.org/science/ap-physics-1/simple-harmonic-motion-ap/spring-mass-systems-ap/v/period-dependance-for-mass-on-spring
-	// Force = Mass * Accel :: f = ma
-	// Accel = Force / Mass :: a = f/m
-	// Displacement = Current - Target
-	// Force = -SpringConstant * Displacement	:: f = -kx
-	//    SpringConstant == Stiffness
-	//    optional : Force += Gravity
-	// Accel = (-SpringConstant * Displacement - Damper * Velocity ) / Mass  :: a = (-km - dv) / m
-	// Accel = Force * deltaTime // Acceleration per second, but for a frame, needs fraction of a second.
-	// Velocity += Accel
-	// Position += Velocity * DeltaTime
-	// Period = 2 * Pi * sqrt( Mass / SpringConstant ) 	:: t = 2PI * sqrt( m / k )
-
-	//----------------------
-	// https://gamedev.stackexchange.com/questions/105728/how-to-program-a-fully-controllable-spring-damped-motion
-	// Sniffness = ( DecareTime^2 * Friction^2 + 4 * pi^2 * CycleNum ^2) / (4 * DecayTime^2)
-	// Friction = csc( pi * CycleNum ) * ( Stiffness - ( 2*pi*CycleNum * e^(-(decayTime*Friction) / 2) * pull ) / ( DecayTime * Stopped ) )
-	// CycleNum = 4 :: How many times to cross zero line
-	// DecayTune = 5 :: how many seconds to reach zero or minimum value
-	// Stopped = 0.01 :: Ending T
-	// Pull = 1  :: starting T.
-
-	// Velocity -= dt * ( StiffNess * displacement + friction * velocity );
-	// pos += dt * velocity
-	//----------------------
-
-
-	// displacement = current - target;
-	// spring_force = (stiffness * displacement - damper * velocity ) / mass
-	// velocity += spring_force * deltaTime;	// Acceleration
-	// current += velocity * deltaTime
-
-	//JiggyBone
-	// x = target - current (normally current - target)
-	// f = kx (Only works without -k because X is in reverse)
-	// f += g
-	// a = f / m
-	// v += ad
-	// pos += v + f;
-
-	/* Jiggle Bone, Works fairly Well
-	Vec3.add( this.transform.position, this.restPos, this.targPos );
-	let x 		= Vec3.sub( this.targPos, this.prevPos ),
-		f 		= Vec3.scale(x, this.stiffness),
-		a 		= Vec3.scale(f, 1 / this.mass).scale( this.damping );
-
-	this.velocity.add( a );
-	this.currPos.add( this.velocity ).add( f );
-	*/
-
-/*
-http://www.ryanjuckett.com/programming/damped-springs/
-*/
-class Spring{
-	constructor( t=0.2, d=0 ){
-		this.vel		= 0;
-		this.tension	= t; // stiffness
-		this.damping	= d;
-	}
-
-	raw( from, to ){
-		// Apply Spring force and dampening to create acceleration for the velocity
-		// f = -kx				:: spring_force = -stiffness * displacement
-		//							:: f = -stiffness * (len - rest_len)
-		// a = (f - dv) / m		:: acceleration = (spring_force - damping * velocity) / mass   (a = f/m)
-		// v += a
-
-		let mass	= 1;
-		let f		= -this.tension * ( from - to );
-		let a		= (f - this.damping * this.vel) / mass;
-		this.vel 	+= a;
-		return from + this.vel;
-
-		//var springForce=spring.k*((block.y-my.orig.y)-spring.len);
-		//var damperForce=spring.damp*(block.v);
-		//var a=(springForce+damperForce)/block.mass;
-		
-		//let accel = -this.stiffness * ( this.at - this.to );
-		//this.vel = ( this.vel + accel * dt ) * Math.pow( 1 - this.damping / frameRate, frameRate * dt ); 
-		//this.at = this.at + this.vel * dt;
-
-		//var frameRate=1/30;
-		//block.v+=a*frameRate;
-	}
-}
-
-
-class SpringFloat{
-	constructor( stiff=0.1, damp=0.3 ){
-		this.to			= 0;
-		this.at			= 0;
-
-		this.vel 		= 0;
-		this.stiffness	= stiff;	//tension
-		this.damping 	= damp;		
-		this.rate 		= 10 / 16.67; // 60 FPS
-
-		//this.damping 	= Math.pow( 1-damp, 10 / 16 );
-	}
-
-	set( to, at=null ){
-		this.to = to;
-		if( at != null ) this.at = at;
-		return this;
-	}
-
-	dif(){ return this.at - this.to; }
-
-	setAt( v ){ this.at = v; return this; }
-
-	update( dt ){
-		//let accel 	= ( -this.stiffness * ( this.at - this.to ) ) + (-this.damping * this.vel);
-		//this.vel	+= accel * this.rate;
-		//this.at		+= this.vel * this.rate;
-	
-		this.stiffness	= 0.1;	//tension
-		this.damping 	= 0.35;
-		
-		//GOOD, very springy and fast
-		//let accel = -this.stiffness * ( this.at - this.to );
-		//this.vel = ( this.vel + accel * this.rate ) * Math.pow( 1 - this.damping, this.rate ); 
-		//this.at = this.at + this.vel * this.rate;
-
-		dt *= 40;
-
-		//let accel = -this.stiffness * ( this.at - this.to );
-		//this.vel = ( this.vel + accel * dt ) * Math.pow( 1 - this.damping, dt ); 
-		//this.at = this.at + this.vel * dt;
-
-		//http://lolengine.net/blog/2015/05/03/damping-with-delta-time
-		let frameRate = 60;
-		let accel = -this.stiffness * ( this.at - this.to );
-		this.vel = ( this.vel + accel * dt ) * Math.pow( 1 - this.damping / frameRate, frameRate * dt ); 
-		this.at = this.at + this.vel * dt;
-
-		//GOOD, Slow accell and decell.
-		//let accel = -this.stiffness * ( this.at - this.to ); // Accell = Force / Mass, but not using mass.
-    	//this.vel += ( accel - this.damping * this.vel ) * dt;
-    	//this.at = this.at + this.vel * dt;
-
-
-		//if( Math.abs( this.at - this.to ) < 0.0001 ) console.log( "done" );
-		//
-		//test for Velocity and Distance to be sure we're done.
-		//if( Math.abs( this.vel ) < 0.00005 ){
-			//console.log( "done" );
-			//this.at = this.to;
-		//}
-
-		//console.log( this.at, this.to );
-		//console.log("accel", accel, "velocity", this.vel, "dif", ( this.at - this.to ), -this.stiffness * ( this.at - this.to )   );
-
-		return this.at;
-	}
-}
 
 </script><body></body></html>
