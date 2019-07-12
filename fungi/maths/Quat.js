@@ -1,12 +1,12 @@
 import Vec3 from "./Vec3.js";
 
-// http://in2gpu.com/2016/03/14/opengl-fps-camera-quaternion/
+// http://in2gpu.com/2016/03/14/opengl-fps-camera-Quat/
 // https://github.com/toji/gl-matrix/blob/master/src/gl-matrix/quat.js
 
-class Quaternion extends Float32Array{
+class Quat extends Float32Array{
 	constructor(q = null){
 		super(4);
-		if(q != null && q instanceof Quaternion){
+		if(q != null && q instanceof Quat){
 			this[0] = q[0];
 			this[1] = q[1];
 			this[2] = q[2];
@@ -28,9 +28,9 @@ class Quaternion extends Float32Array{
 		get z(){ return this[2]; }	set z(val){ this[2] = val; }
 		get w(){ return this[3]; }	set w(val){ this[3] = val; }
 
-		rx(rad){ Quaternion.rotateX(this, rad); return this; }
-		ry(rad){ Quaternion.rotateY(this, rad); return this; }
-		rz(rad){ Quaternion.rotateZ(this, rad); return this; }
+		rx(rad){ Quat.rotateX(this, rad); return this; }
+		ry(rad){ Quat.rotateY(this, rad); return this; }
+		rz(rad){ Quat.rotateZ(this, rad); return this; }
 		
 		setAxisAngle( axis, angle ){ //AXIS MUST BE NORMALIZED.
 			var halfAngle = angle * .5;
@@ -45,7 +45,7 @@ class Quaternion extends Float32Array{
 		}
 
 		getAxisAngle(){
-			if(this[3] > 1) this.normalize();
+			if(this[3] > 1) this.norm();
 
 			let angle 	= 2 * Math.acos(this[3]),
 				s		= Math.sqrt(1 - this[3] * this[3]);
@@ -56,7 +56,7 @@ class Quaternion extends Float32Array{
 		}
 
 		getAxis(out = null){
-			if(this[3] > 1) this.normalize();
+			if(this[3] > 1) this.norm();
 			
 			let s = Math.sqrt(1 - this[3] * this[3]);
 
@@ -82,7 +82,7 @@ class Quaternion extends Float32Array{
 			return this;
 		}
 
-		clone(){ return new Quaternion(this); }
+		clone(){ return new Quat(this); }
 
 		from_mul( a, b ){
 			var ax = a[0], ay = a[1], az = a[2], aw = a[3],
@@ -138,24 +138,62 @@ class Quaternion extends Float32Array{
 			return this;
 		}
 
-		from_polar_rad( x, y ){
-			var c1 = Math.cos(x*0.5),
-				c2 = Math.cos(y*0.5),
-				s1 = Math.sin(x*0.5),
-				s2 = Math.sin(y*0.5);
+		from_polar( lon, lat, up=null ){
+			lat = Math.max( Math.min( lat, 89.999999 ), -89.999999 ); // Clamp lat, going to 90+ makes things spring around.
 
-			this[0] = s1 * c2;
-			this[1] = c1 * s2;
-			this[2] = -s1 * s2;
-			this[3] = c1 * c2;
+			let phi 	= ( 90 - lat ) * 0.01745329251, // PI / 180
+				theta 	= lon * 0.01745329251,
+				phi_s	= Math.sin( phi ),
+				v		= [
+					-( phi_s * Math.sin( theta ) ),
+					Math.cos( phi ),
+					phi_s * Math.cos( theta )
+				];
+
+			return Quat.look( v, up || Vec3.UP, this );
+		}
+
+		from_look( dir, up ){ return Quat.look( dir, up, this ); }
+
+
+		from_euler( x, y, z ){ //order="YXZ", Values in Degrees, will be converted to Radians by function
+			var xx = x * 0.01745329251 * 0.5,
+				yy = y * 0.01745329251 * 0.5,
+				zz = z * 0.01745329251 * 0.5,
+				c1 = Math.cos( xx ),
+				c2 = Math.cos( yy ),
+				c3 = Math.cos( zz ),
+				s1 = Math.sin( xx ),
+				s2 = Math.sin( yy ),
+				s3 = Math.sin( zz );
+			this[0] = s1 * c2 * c3 + c1 * s2 * s3;
+			this[1] = c1 * s2 * c3 - s1 * c2 * s3;
+			this[2] = c1 * c2 * s3 - s1 * s2 * c3;
+			this[3] = c1 * c2 * c3 + s1 * s2 * s3;
+			this.norm();
 			return this;
 		}
 
+		from_euler_xy( x, y ){ //order="YXZ", Values in Degrees, will be converted to Radians by function
+			var xx = x * 0.01745329251 * 0.5,
+				yy = y * 0.01745329251 * 0.5,
+				c1 = Math.cos( xx ),
+				c2 = Math.cos( yy ),
+				s1 = Math.sin( xx ),
+				s2 = Math.sin( yy );
+			this[0] = s1 * c2 ;
+			this[1] = c1 * s2 ;
+			this[2] = -s1 * s2;
+			this[3] = c1 * c2;
+			this.norm();
+			return this;
+		}
+			
 
 	////////////////////////////////////////////////////////////////////
 	// INSTANCE OPERATIONS
 	////////////////////////////////////////////////////////////////////
-		normalize(out = null){
+		norm(out = null){
 			var len =  this[0]*this[0] + this[1]*this[1] + this[2]*this[2] + this[3]*this[3];
 			out = out || this;
 
@@ -170,8 +208,8 @@ class Quaternion extends Float32Array{
 			return out;
 		}
 
-		mul( q, out=null ){ return Quaternion.mul( this, q, out || this ); }	// THIS * Q
-		pmul( q, out=null ){ return Quaternion.mul( q, this, out || this ); }	// Q * THIS
+		mul( q, out=null ){ return Quat.mul( this, q, out || this ); }	// THIS * Q
+		pmul( q, out=null ){ return Quat.mul( q, this, out || this ); }	// Q * THIS
 
 		//AXIS MUST BE NORMALIZED.
 		//mult(this, setAxisAngle(axis, angle) )
@@ -241,18 +279,20 @@ class Quaternion extends Float32Array{
 
 		//Ported to JS from C# example at https://pastebin.com/ubATCxJY
 		//Note, if Dir and Up are equal, a roll happends. Need to find a way to fix this.
-		static lookRotation( vDir, vUp, out = null ){
+		static look( vDir, vUp, out = null ){
 			var zAxis	= new Vec3(vDir),	//Forward
 				up		= new Vec3(vUp),
 				xAxis	= new Vec3(),		//Right
 				yAxis	= new Vec3();
 
-			zAxis.normalize();
 			Vec3.cross(up,zAxis,xAxis);
-			xAxis.normalize();
 			Vec3.cross(zAxis,xAxis,yAxis); //new up
 
-			//fromAxis - Mat3 to Quaternion
+			xAxis.norm();
+			yAxis.norm();
+			zAxis.norm();
+
+			//fromAxis - Mat3 to Quat
 			var m00 = xAxis.x, m01 = xAxis.y, m02 = xAxis.z,
 				m10 = yAxis.x, m11 = yAxis.y, m12 = yAxis.z,
 				m20 = zAxis.x, m21 = zAxis.y, m22 = zAxis.z,
@@ -289,7 +329,7 @@ class Quaternion extends Float32Array{
 				w = (m01 - m10) * s;
 			}
 
-			out = out || new Quaternion();
+			out = out || new Quat();
 			out[0] = x;
 			out[1] = y;
 			out[2] = z;
@@ -299,16 +339,16 @@ class Quaternion extends Float32Array{
 
 		//Using unit vectors, Shortest rotation from Direction A to Direction B
 		//http://glmatrix.net/docs/quat.js.html#line548
-		//http://physicsforgames.blogspot.com/2010/03/quaternion-tricks.html
+		//http://physicsforgames.blogspot.com/2010/03/Quat-tricks.html
 		static rotationTo( a, b, out = null ){
 			let dot = Vec3.dot(a, b);
-			out = out || new Quaternion();
+			out = out || new Quat();
 
 		    if (dot < -0.999999) {
 		      let tmp = Vec3.cross(Vec3.LEFT, a);
 		      //if(Vec3.len(tmp) < 0.000001) Vec3.cross(Vec3.UP, a, tmp);
 		      if(tmp.length() < 0.000001) Vec3.cross(Vec3.UP, a, tmp);
-		      out.setAxisAngle( tmp.normalize(), Math.PI);
+		      out.setAxisAngle( tmp.norm(), Math.PI);
 		    }else if(dot > 0.999999){
 		      out[0] = 0;
 		      out[1] = 0;
@@ -320,7 +360,7 @@ class Quaternion extends Float32Array{
 		      out[1] = v[1];
 		      out[2] = v[2];
 		      out[3] = 1 + dot;
-		      out.normalize();
+		      out.norm();
 		    }
 		    return out;
 		}
@@ -329,7 +369,7 @@ class Quaternion extends Float32Array{
 			let halfAngle	= angle * .5,
 				s			= Math.sin(halfAngle);
 
-			out = out || new Quaternion();
+			out = out || new Quat();
 			out[0] = axis[0] * s;
 			out[1] = axis[1] * s;
 			out[2] = axis[2] * s;
@@ -375,7 +415,7 @@ class Quaternion extends Float32Array{
 				w = (m01 - m10) * s;
 			}
 
-			out = out || new Quaternion();
+			out = out || new Quat();
 			out[0] = x;
 			out[1] = y;
 			out[2] = z;
@@ -386,7 +426,7 @@ class Quaternion extends Float32Array{
 		// https://github.com/toji/gl-matrix/blob/master/src/gl-matrix/quat.js#L305
 		static fromMat3(m, out){
 			// Algorithm in Ken Shoemake's article in 1987 SIGGRAPH course notes
-			// article "Quaternion Calculus and Fast Animation".
+			// article "Quat Calculus and Fast Animation".
 			let fRoot, fTrace = m[0] + m[4] + m[8];
 
 			if( fTrace > 0.0 ){
@@ -420,9 +460,9 @@ class Quaternion extends Float32Array{
 		}
 
 		// https://github.com/toji/gl-matrix/blob/master/src/mat4.js
-		// Algorithm taken from http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/index.htm
+		// Algorithm taken from http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuat/index.htm
 		static fromMat4(mat, out){
-			out = out || new Quaternion();
+			out = out || new Quat();
 
 			let trace = mat[0] + mat[5] + mat[10];
 			let S = 0;
@@ -456,7 +496,7 @@ class Quaternion extends Float32Array{
 			return out;
 		}
 
-		//https://github.com/mrdoob/three.js/blob/dev/src/math/Quaternion.js
+		//https://github.com/mrdoob/three.js/blob/dev/src/math/Quat.js
 		static fromEuler( out, x, y, z, order="YXZ" ){			
 			var c1 = Math.cos(x*0.5), //Math.cos(x/2)
 				c2 = Math.cos(y*0.5), //Math.cos(y/2),
@@ -465,7 +505,7 @@ class Quaternion extends Float32Array{
 				s2 = Math.sin(y*0.5), //Math.sin(y/2)
 				s3 = Math.sin(z*0.5); //Math.sin(z/2)
 
-			out = out || new Quaternion();
+			out = out || new Quat();
 			switch(order){
 				case 'XYZ':			
 					out[0] = s1 * c2 * c3 + c1 * s2 * s3;
@@ -508,8 +548,8 @@ class Quaternion extends Float32Array{
 			return out;
 		}
 
-		//http://bediyap.com/programming/convert-quaternion-to-euler-rotations/
-		//http://schteppe.github.io/cannon.js/docs/files/src_math_Quaternion.js.html
+		//http://bediyap.com/programming/convert-Quat-to-euler-rotations/
+		//http://schteppe.github.io/cannon.js/docs/files/src_math_Quat.js.html
 		static toEuler( q, out ){ //order="YZX"
 			var x		= q[0],
 				y		= q[1],
@@ -559,7 +599,7 @@ class Quaternion extends Float32Array{
 			var ax = a[0], ay = a[1], az = a[2], aw = a[3],
 				bx = b[0], by = b[1], bz = b[2], bw = b[3];
 
-			out = out || new Quaternion();
+			out = out || new Quat();
 			out[0] = ax * bw + aw * bx + ay * bz - az * by;
 			out[1] = ay * bw + aw * by + az * bx - ax * bz;
 			out[2] = az * bw + aw * bz + ax * by - ay * bx;
@@ -572,7 +612,7 @@ class Quaternion extends Float32Array{
 		}
 
 		static conjugate( q, out ){
-			out = out || new Quaternion();
+			out = out || new Quat();
   			out[0] = -q[0];
   			out[1] = -q[1];
   			out[2] = -q[2];
@@ -581,13 +621,13 @@ class Quaternion extends Float32Array{
 		}
 
 		static rotateVec3( qa, va, out = null ){
-			//https://gamedev.stackexchange.com/questions/28395/rotating-vector3-by-a-quaternion
+			//https://gamedev.stackexchange.com/questions/28395/rotating-vector3-by-a-Quat
 			//vprime = 2.0f * dot(u, v) * u
 			//			+ (s*s - dot(u, u)) * v
 			//			+ 2.0f * s * cross(u, v);
-			var q = [qa[0],qa[1],qa[2]],		//Save the vector part of the Quaternion
+			var q = [qa[0],qa[1],qa[2]],		//Save the vector part of the Quat
 				v = [va[0],va[1],va[2]],		//Make a copy of the vector, going to chg its value
-				s = qa[3],						//Save Quaternion Scalar (W)
+				s = qa[3],						//Save Quat Scalar (W)
 				d = Vec3.dot(q,v),	// U DOT V
 				dq = Vec3.dot(q,q),	// U DOT U
 				cqv = Vec3.cross(q,v,[0,0,0]);	// Cross Product for Q,V
@@ -629,7 +669,7 @@ class Quaternion extends Float32Array{
 
 		//https://github.com/toji/gl-matrix/blob/master/src/gl-matrix/quat.js
 		static invert(a,out){
-			out		= out || new Quaternion();
+			out		= out || new Quat();
 			let a0	= a[0],
 				a1	= a[1],
 				a2	= a[2],
@@ -652,7 +692,7 @@ class Quaternion extends Float32Array{
 				ay = a[1],
 				az = a[2],
 				aw = a[3];
-			out		= out || new Quaternion();
+			out		= out || new Quat();
 			out[0]	= ax + t * (b[0] - ax);
 			out[1]	= ay + t * (b[1] - ay);
 			out[2]	= az + t * (b[2] - az);
@@ -662,7 +702,7 @@ class Quaternion extends Float32Array{
 
 		static lerp2(a, b, t, out){
 			var tm1 = 1 - t;
-			out		= out || new Quaternion();
+			out		= out || new Quat();
 			out[0]	= a[0] * tm1 + b[0] * t;
 			out[1]	= a[1] * tm1 + b[1] * t;
 			out[2]	= a[2] * tm1 + b[2] * t;
@@ -672,7 +712,7 @@ class Quaternion extends Float32Array{
 
 		static slerp(a, b, t, out=null) {
 			// benchmarks:
-			//    http://jsperf.com/quaternion-slerp-implementations
+			//    http://jsperf.com/Quat-slerp-implementations
 			let ax = a[0], ay = a[1], az = a[2], aw = a[3],
 				bx = b[0], by = b[1], bz = b[2], bw = b[3],
 				omega, cosom, sinom, scale0, scale1;
@@ -696,14 +736,14 @@ class Quaternion extends Float32Array{
 				scale0 = Math.sin((1.0 - t) * omega) / sinom;
 				scale1 = Math.sin(t * omega) / sinom;
 			}else{
-				// "from" and "to" quaternions are very close
+				// "from" and "to" Quats are very close
 				//  ... so we can do a linear interpolation
 				scale0 = 1.0 - t;
 				scale1 = t;
 			}
 
 			// calculate final values
-			out = out || new Quaternion();
+			out = out || new Quat();
 			out[0] = scale0 * ax + scale1 * bx;
 			out[1] = scale0 * ay + scale1 * by;
 			out[2] = scale0 * az + scale1 * bz;
@@ -766,11 +806,11 @@ class Quaternion extends Float32Array{
 ////////////////////////////////////////////////////////////////////
 // CONSTANTS
 ////////////////////////////////////////////////////////////////////
-Quaternion.ZERO = new Quaternion();
+Quat.ZERO = new Quat();
 
 
 //#############################################################################
-export default Quaternion;
+export default Quat;
 
 
 /*
@@ -787,11 +827,11 @@ function decompSwingTwist( q, qSwing, qTwist ){
 }
 */
 
-//https://github.com/libgdx/libgdx/blob/master/gdx/src/com/badlogic/gdx/math/Quaternion.java
-//http://physicsforgames.blogspot.com/2010/03/quaternion-tricks.html
-//http://physicsforgames.blogspot.com/2010/02/quaternions.html
+//https://github.com/libgdx/libgdx/blob/master/gdx/src/com/badlogic/gdx/math/Quat.java
+//http://physicsforgames.blogspot.com/2010/03/Quat-tricks.html
+//http://physicsforgames.blogspot.com/2010/02/Quats.html
 /*
-Here is a function that will give you the rotation quaternion that will rotate some initial vector into some final vector
+Here is a function that will give you the rotation Quat that will rotate some initial vector into some final vector
 Quat getRotationQuat(const Vector& from, const Vector& to)
 {
      Quat result;
@@ -827,9 +867,9 @@ Vector rotateVector(const Vector& v, const Quat& q)
 
 /*
 
-	//https://github.com/Unity-Technologies/UnityCsReference/blob/master/Runtime/Export/Quaternion.cs
+	//https://github.com/Unity-Technologies/UnityCsReference/blob/master/Runtime/Export/Quat.cs
         // Rotates the point /point/ with /rotation/.
-        public static Vector3 operator*(Quaternion rotation, Vector3 point)
+        public static Vector3 operator*(Quat rotation, Vector3 point)
         {
             float x = rotation.x * 2F;
             float y = rotation.y * 2F;

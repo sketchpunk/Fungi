@@ -256,7 +256,7 @@ class CameraInputSystem extends System{
 				look	= Vec3.sub( pos, this.targetPos );
 
 			App.camera.Node.local.pos.copy( pos );
-			Quat.lookRotation( look, Vec3.UP, App.camera.Node.local.rot );
+			Quat.look( look, Vec3.UP, App.camera.Node.local.rot );
 			App.camera.Node.isModified = true;
 
 			//BETTER SOLUTION, FIX LAter.
@@ -276,7 +276,7 @@ class CameraInputSystem extends System{
 				look	= Vec3.sub( pos, this.targetPos );
 
 			App.camera.Node.local.pos.copy( pos );
-			Quat.lookRotation( look, Vec3.UP, App.camera.Node.local.rot );
+			Quat.look( look, Vec3.UP, App.camera.Node.local.rot );
 			App.camera.Node.isModified = true;
 		}
 

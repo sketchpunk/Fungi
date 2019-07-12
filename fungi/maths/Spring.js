@@ -1,10 +1,11 @@
 export default class{
+	//############################################################################
 	static accel_vec3( dt, tension, damp, pos_tar, pos_cur_o, vel_o ){
 		// a = -tension * ( pos - to ) / mass;
 		// vel += ( a - damping * vel ) * dt;
-		vel_o[0] += (-tension * ( pos_cur_o[0] - pos_tar[0] ) - damping * vel_o[0]) * dt;
-		vel_o[1] += (-tension * ( pos_cur_o[1] - pos_tar[1] ) - damping * vel_o[1]) * dt;
-		vel_o[2] += (-tension * ( pos_cur_o[2] - pos_tar[2] ) - damping * vel_o[2]) * dt;
+		vel_o[0] += (-tension * ( pos_cur_o[0] - pos_tar[0] ) - damp * vel_o[0]) * dt;
+		vel_o[1] += (-tension * ( pos_cur_o[1] - pos_tar[1] ) - damp * vel_o[1]) * dt;
+		vel_o[2] += (-tension * ( pos_cur_o[2] - pos_tar[2] ) - damp * vel_o[2]) * dt;
 
 		pos_cur_o[0] += vel_o[ 0 ] * dt;
 		pos_cur_o[1] += vel_o[ 1 ] * dt;
@@ -16,10 +17,10 @@ export default class{
 	static accel_quat( dt, tension, damp, rot_tar, rot_cur_o, vel_o ){
 		// a = -tension * ( pos - to ) / mass;
 		// vel += ( a - damping * vel ) * dt;
-		vel_o[0] += (-tension * ( rot_cur_o[0] - rot_tar[0] ) - damping * vel_o[0]) * dt;
-		vel_o[1] += (-tension * ( rot_cur_o[1] - rot_tar[1] ) - damping * vel_o[1]) * dt;
-		vel_o[2] += (-tension * ( rot_cur_o[2] - rot_tar[2] ) - damping * vel_o[2]) * dt;
-		vel_o[3] += (-tension * ( rot_cur_o[3] - rot_tar[3] ) - damping * vel_o[3]) * dt;
+		vel_o[0] += (-tension * ( rot_cur_o[0] - rot_tar[0] ) - damp * vel_o[0]) * dt;
+		vel_o[1] += (-tension * ( rot_cur_o[1] - rot_tar[1] ) - damp * vel_o[1]) * dt;
+		vel_o[2] += (-tension * ( rot_cur_o[2] - rot_tar[2] ) - damp * vel_o[2]) * dt;
+		vel_o[3] += (-tension * ( rot_cur_o[3] - rot_tar[3] ) - damp * vel_o[3]) * dt;
 
 		rot_cur_o[0] += vel_o[ 0 ] * dt;
 		rot_cur_o[1] += vel_o[ 1 ] * dt;
@@ -30,6 +31,7 @@ export default class{
 		// ( Quat.dot( rot_cur, rot_tar ) >= 0.9999  && vel_o.lenSqr() < 0.00001 ) How to tell when done.
 	}
 
+	//############################################################################
 	static springy_vec3( dt, fr, dt_scale, tension, damp, pos_tar, pos_cur_o, vel_o ){
 		// dt *= scale;
 		// accel = -this.stiffness * ( at - to );
@@ -71,22 +73,62 @@ export default class{
 
 		return rot_cur_o.norm();
 	}
+
+	//############################################################################
+	// http://box2d.org/files/GDC2011/GDC2011_Catto_Erin_Soft_Constraints.pdf
+	// http://allenchou.net/2015/04/game-math-more-on-numeric-springing/
+	// Ocs_ps = PI * 2 * i (I should not be over 10)
+	// Damp_ratio = -Log(0.5) / ( osc_ps * damp_time ) :: Damp Time, in seconds to damp. So damp 0.5 for every 2 seconds.
+	// Damp_ratio is using half life, but can replace log(0.5) with any log value between 0 and 1.
+	static semi_implicit_euler_vec3( dt, osc_ps, damp_ratio, pos_tar, pos_cur_o, vel_o ){
+		//vel += -2.0 * dt * damp_ratio * osc_ps * vel + dt * osc_ps * osc_ps * (to - pos);
+	  	//pos += dt * vel;
+	  	
+	  	let a = -2.0 * dt * damp_ratio * osc_ps,
+	  		b = dt * osc_ps * osc_ps;
+	  	
+	  	vel_o[0] += a * vel_o[0] + b * ( pos_tar[0] - pos_cur_o[0] );
+	  	vel_o[1] += a * vel_o[1] + b * ( pos_tar[1] - pos_cur_o[1] );
+	  	vel_o[2] += a * vel_o[2] + b * ( pos_tar[2] - pos_cur_o[2] );
+
+	  	pos_cur_o[0] += dt * vel_o[0];
+	  	pos_cur_o[1] += dt * vel_o[1];
+	  	pos_cur_o[2] += dt * vel_o[2];
+
+	  	return pos_cur_o;
+	}
+
+	//############################################################################
+	// http://box2d.org/files/GDC2011/GDC2011_Catto_Erin_Soft_Constraints.pdf
+	// http://allenchou.net/2015/04/game-math-precise-control-over-numeric-springing/
+	// Ocs_ps = PI * 2 * i
+	// Damp_ratio = Log(damp) / ( -osc_ps * damp_time ) :: Damp Time, in seconds to damp. So damp 0.5 for every 2 seconds.
+	// Damp needs to be a value between 0 and 1, if 1, creates criticle clamping.
+	static implicit_euler_vec3( dt, osc_ps, damp_ratio, pos_tar, pos_cur_o, vel_o ){
+	 	/*
+	 	f		= 1.0 + 2.0 * dt * damp_ratio * osc_ps,
+	  	dt_osc	= dt * osc_ps * osc_ps,
+	    dt2_osc	= dt * dt_osc,
+	  	det_inv	= 1.0 / (f + dt2_osc),
+	  	det_pos	= f * pos + dt * vel + dt2_osc * to,
+	  	det_vel	= vel + dt_osc * (to - pos);
+	  	pos 	= det_pos * det_inv;
+	  	vel 	= det_vel * det_inv;
+	  	*/
+
+	  	let f		= 1.0 + 2.0 * dt * damp_ratio * osc_ps,	// TODO, F can be cached, anthing with DT can't.
+	  		dt_osc	= dt * osc_ps * osc_ps,					// TODO, Can prob cache ocs_ps squared.
+	   		dt2_osc	= dt * dt_osc,
+			det_inv	= 1.0 / (f + dt2_osc);
+
+	  	pos_cur_o[0] = ( f * pos_cur_o[0] + dt * vel_o[0] + dt2_osc * pos_tar[0] ) * det_inv;
+	  	pos_cur_o[1] = ( f * pos_cur_o[1] + dt * vel_o[1] + dt2_osc * pos_tar[1] ) * det_inv;
+	  	pos_cur_o[2] = ( f * pos_cur_o[2] + dt * vel_o[2] + dt2_osc * pos_tar[2] ) * det_inv;
+
+	  	vel_o[0] = ( vel_o[0] + dt_osc * (pos_tar[0] - pos_cur_o[0]) ) * det_inv;
+	  	vel_o[1] = ( vel_o[1] + dt_osc * (pos_tar[1] - pos_cur_o[1]) ) * det_inv;
+	  	vel_o[2] = ( vel_o[2] + dt_osc * (pos_tar[2] - pos_cur_o[2]) ) * det_inv;
+
+	  	return pos_cur_o;
+	}
 };
-
-
-from_polar( lon, lat, up=null ){
-	lat = Math.max( Math.min( lat, 89.999999 ), -89.999999 ); // Clamp lat, going to 90+ makes things spring around.
-
-	let phi 	= ( 90 - lat ) * 0.01745329251, // PI / 180
-		theta 	= ( lon + 180 ) * 0.01745329251,
-		phi_s	= Math.sin( phi ),
-		v		= [
-			-( phi_s * Math.sin( theta ) ),
-			Math.cos( phi ),
-			phi_s * Math.cos( theta )
-		];
-
-	return Quat.look( v, up || Vec3.UP, this );
-}
-
-//pub const PI_H_MIN	:f32 = 1.57079630934166; 	// 89.999999

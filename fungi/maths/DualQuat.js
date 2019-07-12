@@ -30,7 +30,7 @@ class DualQuat extends Float32Array{
 			var nq = null;
 			if(q != undefined && q != null){
 				nq = [0,0,0,1];
-				q.normalize(nq);
+				q.norm(nq);
 			}
 
 			v = v || null;

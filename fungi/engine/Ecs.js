@@ -137,8 +137,6 @@ Components.dispose	= function( c ){
 }
 
 
-
-
 /*####################################################################################
 	Entities
 	Basicly just a container for a list of Components

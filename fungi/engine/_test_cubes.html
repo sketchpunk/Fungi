@@ -7,6 +7,7 @@ import FacedCube	from "../primitives/FacedCube.js";
 	.launch()
 	.download( dl=>dl.addGrp( "shader", "../shaders/VecWColor.txt" ) )
 	.load_scene( true, true )
+	.set_camera( -20, 20, 6, 0, 0, 0 )
 	.add_task( init )
 	.render_loop( onDraw )
 	.build().catch( (e)=>console.error("error",e) );
@@ -23,10 +24,6 @@ function onDraw( dt, ss ){
 
 //#############################################################################
 function init(){
-	App.camera.Node
-		.setPos( 0, 1.5, 4 )
-		.setRotAxis( [1,0,0], -15 * Math.PI / 180 );
-
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// Clone Material and Change the colors
 	let mat = Material.clone( "VecWColor", "Alt_VecWColor" );

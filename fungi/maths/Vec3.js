@@ -31,7 +31,7 @@ class Vec3 extends Float32Array{
 		
 		copy(v){ this[0] = v[0]; this[1] = v[1]; this[2] = v[2]; return this; }
 
-		setLength(len){ return this.normalize().scale(len); }
+		setLength(len){ return this.norm().scale(len); }
 
 		length(v){
 			//Only get the magnitude of this vector
@@ -210,7 +210,7 @@ class Vec3 extends Float32Array{
 			return out;
 		}
 
-		normalize(out){
+		norm(out){
 			var mag = Math.sqrt( this[0]*this[0] + this[1]*this[1] + this[2]*this[2] );
 			if(mag == 0) return this;
 
@@ -396,8 +396,8 @@ class Vec3 extends Float32Array{
 			return Math.acos( Math.max( -1, Math.min( 1, theta ) ) ); // clamp ( t, -1, 1 )
 		}
 
+		static len( a, b ){ return Math.sqrt( (a[0]-b[0]) ** 2 + (a[1]-b[1]) ** 2 + (a[2]-b[2]) ** 2 ); }
 		static len_sqr( a, b ){ return (a[0]-b[0]) ** 2 + (a[1]-b[1]) ** 2 + (a[2]-b[2]) ** 2; }
-
 
 		static from_polar( lon, lat, out ) {
 			let phi 	= ( 90 - lat ) * 0.01745329251, //deg 2 rad
