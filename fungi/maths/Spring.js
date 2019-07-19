@@ -1,3 +1,12 @@
+/*
+// Check when the spring is done.
+let dot = Quat.dot(cq, target);
+if( dot >= 0.9999  && this._velLenSqr() < 0.000001 ){
+	cq.copy( target );
+	return;
+}
+*/
+
 export default class{
 	//############################################################################
 	static accel_vec3( dt, tension, damp, pos_tar, pos_cur_o, vel_o ){
@@ -82,20 +91,39 @@ export default class{
 	// Damp_ratio is using half life, but can replace log(0.5) with any log value between 0 and 1.
 	static semi_implicit_euler_vec3( dt, osc_ps, damp_ratio, pos_tar, pos_cur_o, vel_o ){
 		//vel += -2.0 * dt * damp_ratio * osc_ps * vel + dt * osc_ps * osc_ps * (to - pos);
-	  	//pos += dt * vel;
-	  	
-	  	let a = -2.0 * dt * damp_ratio * osc_ps,
-	  		b = dt * osc_ps * osc_ps;
-	  	
-	  	vel_o[0] += a * vel_o[0] + b * ( pos_tar[0] - pos_cur_o[0] );
-	  	vel_o[1] += a * vel_o[1] + b * ( pos_tar[1] - pos_cur_o[1] );
-	  	vel_o[2] += a * vel_o[2] + b * ( pos_tar[2] - pos_cur_o[2] );
+		//pos += dt * vel;
 
-	  	pos_cur_o[0] += dt * vel_o[0];
-	  	pos_cur_o[1] += dt * vel_o[1];
-	  	pos_cur_o[2] += dt * vel_o[2];
+		let a = -2.0 * dt * damp_ratio * osc_ps,
+			b = dt * osc_ps * osc_ps;
 
-	  	return pos_cur_o;
+		vel_o[0] += a * vel_o[0] + b * ( pos_tar[0] - pos_cur_o[0] );
+		vel_o[1] += a * vel_o[1] + b * ( pos_tar[1] - pos_cur_o[1] );
+		vel_o[2] += a * vel_o[2] + b * ( pos_tar[2] - pos_cur_o[2] );
+
+		pos_cur_o[0] += dt * vel_o[0];
+		pos_cur_o[1] += dt * vel_o[1];
+		pos_cur_o[2] += dt * vel_o[2];
+
+		return pos_cur_o;
+	}
+
+	static semi_implicit_euler_quat( dt, osc_ps, damp_ratio, rot_tar, rot_cur_o, vel_o ){
+		//vel += -2.0 * dt * damp_ratio * osc_ps * vel + dt * osc_ps * osc_ps * (to - pos);
+		//pos += dt * vel;
+		let a = -2.0 * dt * damp_ratio * osc_ps,
+			b = dt * osc_ps * osc_ps;
+
+		vel_o[0] += a * vel_o[0] + b * ( rot_tar[0] - rot_cur_o[0] );
+		vel_o[1] += a * vel_o[1] + b * ( rot_tar[1] - rot_cur_o[1] );
+		vel_o[2] += a * vel_o[2] + b * ( rot_tar[2] - rot_cur_o[2] );
+		vel_o[3] += a * vel_o[3] + b * ( rot_tar[3] - rot_cur_o[3] );
+
+		rot_cur_o[0] += dt * vel_o[0];
+		rot_cur_o[1] += dt * vel_o[1];
+		rot_cur_o[2] += dt * vel_o[2];
+		rot_cur_o[3] += dt * vel_o[3];
+
+		return rot_cur_o.norm();
 	}
 
 	//############################################################################
@@ -105,30 +133,47 @@ export default class{
 	// Damp_ratio = Log(damp) / ( -osc_ps * damp_time ) :: Damp Time, in seconds to damp. So damp 0.5 for every 2 seconds.
 	// Damp needs to be a value between 0 and 1, if 1, creates criticle clamping.
 	static implicit_euler_vec3( dt, osc_ps, damp_ratio, pos_tar, pos_cur_o, vel_o ){
-	 	/*
-	 	f		= 1.0 + 2.0 * dt * damp_ratio * osc_ps,
-	  	dt_osc	= dt * osc_ps * osc_ps,
-	    dt2_osc	= dt * dt_osc,
-	  	det_inv	= 1.0 / (f + dt2_osc),
-	  	det_pos	= f * pos + dt * vel + dt2_osc * to,
-	  	det_vel	= vel + dt_osc * (to - pos);
-	  	pos 	= det_pos * det_inv;
-	  	vel 	= det_vel * det_inv;
-	  	*/
+		/*
+		f		= 1.0 + 2.0 * dt * damp_ratio * osc_ps,
+		dt_osc	= dt * osc_ps * osc_ps,
+		dt2_osc	= dt * dt_osc,
+		det_inv	= 1.0 / (f + dt2_osc),
+		det_pos	= f * pos + dt * vel + dt2_osc * to,
+		det_vel	= vel + dt_osc * (to - pos);
+		pos 	= det_pos * det_inv;
+		vel 	= det_vel * det_inv;
+		*/
 
-	  	let f		= 1.0 + 2.0 * dt * damp_ratio * osc_ps,	// TODO, F can be cached, anthing with DT can't.
-	  		dt_osc	= dt * osc_ps * osc_ps,					// TODO, Can prob cache ocs_ps squared.
-	   		dt2_osc	= dt * dt_osc,
+		let f		= 1.0 + 2.0 * dt * damp_ratio * osc_ps,	// TODO, F can be cached, anthing with DT can't.
+			dt_osc	= dt * osc_ps * osc_ps,					// TODO, Can prob cache ocs_ps squared.
+	 		dt2_osc	= dt * dt_osc,
 			det_inv	= 1.0 / (f + dt2_osc);
 
-	  	pos_cur_o[0] = ( f * pos_cur_o[0] + dt * vel_o[0] + dt2_osc * pos_tar[0] ) * det_inv;
-	  	pos_cur_o[1] = ( f * pos_cur_o[1] + dt * vel_o[1] + dt2_osc * pos_tar[1] ) * det_inv;
-	  	pos_cur_o[2] = ( f * pos_cur_o[2] + dt * vel_o[2] + dt2_osc * pos_tar[2] ) * det_inv;
+		pos_cur_o[0] = ( f * pos_cur_o[0] + dt * vel_o[0] + dt2_osc * pos_tar[0] ) * det_inv;
+		pos_cur_o[1] = ( f * pos_cur_o[1] + dt * vel_o[1] + dt2_osc * pos_tar[1] ) * det_inv;
+		pos_cur_o[2] = ( f * pos_cur_o[2] + dt * vel_o[2] + dt2_osc * pos_tar[2] ) * det_inv;
 
-	  	vel_o[0] = ( vel_o[0] + dt_osc * (pos_tar[0] - pos_cur_o[0]) ) * det_inv;
-	  	vel_o[1] = ( vel_o[1] + dt_osc * (pos_tar[1] - pos_cur_o[1]) ) * det_inv;
-	  	vel_o[2] = ( vel_o[2] + dt_osc * (pos_tar[2] - pos_cur_o[2]) ) * det_inv;
+		vel_o[0] = ( vel_o[0] + dt_osc * (pos_tar[0] - pos_cur_o[0]) ) * det_inv;
+		vel_o[1] = ( vel_o[1] + dt_osc * (pos_tar[1] - pos_cur_o[1]) ) * det_inv;
+		vel_o[2] = ( vel_o[2] + dt_osc * (pos_tar[2] - pos_cur_o[2]) ) * det_inv;
 
-	  	return pos_cur_o;
+		return pos_cur_o;
+	}
+
+	static implicit_euler_quat( dt, osc_ps, damp_ratio, rot_tar, rot_cur_o, vel_o ){
+		let f		= 1.0 + 2.0 * dt * damp_ratio * osc_ps,	// TODO, F can be cached, anthing with DT can't.
+			dt_osc	= dt * osc_ps * osc_ps,					// TODO, Can prob cache ocs_ps squared.
+	 		dt2_osc	= dt * dt_osc,
+			det_inv	= 1.0 / (f + dt2_osc);
+
+		rot_cur_o[0] = ( f * rot_cur_o[0] + dt * vel_o[0] + dt2_osc * rot_tar[0] ) * det_inv;
+		rot_cur_o[1] = ( f * rot_cur_o[1] + dt * vel_o[1] + dt2_osc * rot_tar[1] ) * det_inv;
+		rot_cur_o[2] = ( f * rot_cur_o[2] + dt * vel_o[2] + dt2_osc * rot_tar[2] ) * det_inv;
+
+		vel_o[0] = ( vel_o[0] + dt_osc * (rot_tar[0] - rot_cur_o[0]) ) * det_inv;
+		vel_o[1] = ( vel_o[1] + dt_osc * (rot_tar[1] - rot_cur_o[1]) ) * det_inv;
+		vel_o[2] = ( vel_o[2] + dt_osc * (rot_tar[2] - rot_cur_o[2]) ) * det_inv;
+
+		return rot_cur_o.norm();
 	}
 };

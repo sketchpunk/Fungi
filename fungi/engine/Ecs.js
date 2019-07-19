@@ -287,6 +287,8 @@ class Ecs{
 			return null;
 		}
 
+		entity_by_id( id ){ return this.entities[ id ]; }
+
 
 	//////////////////////////////////////////////////////
 	// SYSTEMS

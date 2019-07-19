@@ -188,7 +188,21 @@ class Quat extends Float32Array{
 			this.norm();
 			return this;
 		}
-			
+
+		random(){ // http://planning.cs.uiuc.edu/node198.html  uniform random quaternion
+			let u1 = Math.random(),
+				u2 = Math.random(),
+				u3 = Math.random(),
+				r1 = Math.sqrt( 1-u1 ),
+				r2 = Math.sqrt( u1 );
+
+			this[0] = r1 * Math.sin( Maths.PI_2 * u2 );
+			this[1] = r1 * Math.cos( Maths.PI_2 * u2 );
+			this[2] = r2 * Math.sin( Maths.PI_2 * u3 );
+			this[3] = r2 * Math.cos( Maths.PI_2 * u3 );
+			return this;
+		}
+
 
 	////////////////////////////////////////////////////////////////////
 	// INSTANCE OPERATIONS
@@ -863,6 +877,64 @@ Vector rotateVector(const Vector& v, const Quat& q)
 
      return result;
 }
+
+
+https://physicsforgames.blogspot.com/2010/02/quaternions.html
+Quat QuatIntegrate(const Quat& q, const Vector& omega, float deltaT)
+{
+     Quat deltaQ;
+     Vector theta = VecScale(omega, deltaT * 0.5f);
+     float thetaMagSq = VecMagnitudeSq(theta);
+     float s;
+     if(thetaMagSq * thetaMagSq / 24.0f < MACHINE_SMALL_FLOAT)
+     {
+          deltaQ.w = 1.0f - thetaMagSq / 2.0f;
+          s = 1.0f - thetaMagSq / 6.0f;
+     }
+     else
+     {
+          float thetaMag = sqrt(thetaMagSq);
+          deltaQ.w = cos(thetaMag);
+          s = sin(thetaMag) / thetaMag;
+     }
+     deltaQ.x = theta.x * s;
+     deltaQ.y = theta.y * s;
+     deltaQ.z = theta.z * s;
+     return QuatMultiply(deltaQ, q);
+}
+
+
+Here is a blending function that uses NLerp
+
+
+Quat QuatBlend(const Quat& i, const Quat& f, float blend)
+{
+     Quat result;
+     float dot = i.w*f.w + i.x*f.x + i.y*f.y + i.z*f.z;
+     float blendI = 1.0f - blend;
+     if(dot < 0.0f)
+     {
+          Quat tmpF;
+          tmpF.w = -f.w;
+          tmpF.x = -f.x;
+          tmpF.y = -f.y;
+          tmpF.z = -f.z;
+          result.w = blendI*i.w + blend*tmpF.w;
+          result.x = blendI*i.x + blend*tmpF.x;
+          result.y = blendI*i.y + blend*tmpF.y;
+          result.z = blendI*i.z + blend*tmpF.z;
+     }
+     else
+     {
+          result.w = blendI*i.w + blend*f.w;
+          result.x = blendI*i.x + blend*f.x;
+          result.y = blendI*i.y + blend*f.y;
+          result.z = blendI*i.z + blend*f.z;
+     }
+     result = QuatNormalize(result);
+     return result;
+}
+
 */
 
 /*

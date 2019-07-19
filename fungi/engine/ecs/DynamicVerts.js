@@ -1,3 +1,4 @@
+import App				from "../App.js";
 import Vao				from "../../core/Vao.js";
 import DynamicBuffer	from "../../core/DynamicBuffer.js";
 import { Entity, Components, System }	from "../Ecs.js";
@@ -30,6 +31,9 @@ class DynamicVerts{
 
 			return e;
 		}
+
+		static entity_pnt( eName ){ return DynamicVerts.$( App.$Draw( eName ), eName+"_vao", "VecWColor", 0 ); }
+		static entity_line( eName ){ return DynamicVerts.$( App.$Draw( eName ), eName+"_vao", "VecWColor", 1 ); }
 
 
 	////////////////////////////////////////////////////////////////////

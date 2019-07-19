@@ -3,7 +3,7 @@
  * @version 1.0.0
  * @author Pedro S. <sketchpunk@gmail.com>
  */
-
+import App			from "../App.js";
 import { Components, System }	from "../Ecs.js";
 import Transform	from "../../maths/Transform.js";
 import Mat4			from "../../maths/Mat4.js";
@@ -189,6 +189,30 @@ class Node{
 			return Node;
 		}
 
+		add_child( ce, updateLevels = true ){
+			let pe = App.ecs.entity_by_id( this.entityID );
+
+			if( this.children.indexOf( ce ) != -1){
+				console.log("%s is already a child of %s", ce.info.name, pe.info.name );
+				return Node;
+			}
+
+			//...............................................
+			//if child already has a parent, remove itself
+			let cn = ce.Node;
+			if( cn.parent != null ) Node.removeChild( cn.parent, ce );
+
+			//...............................................
+			cn.parent	= pe;				// Set parent on the child
+			cn.level	= this.level + 1;	// Set the level value for the child
+			this.children.push( ce );		// Add child to parent's children list
+
+			//...............................................
+			//if child has its own children, update their level values
+			if( updateLevels && cn.children.length > 0 ) updateChildLevel( cn );
+			return this;
+		}
+
 		/**
 		 * Remove the Parent-Child relationship between two entities.
 		 * @param {Entity} pe - Parent Entity
@@ -322,6 +346,65 @@ class Node{
 
 			return out;
 		}
+
+		get_world_rot( out = null, incChild=true ){
+			out = out || new Quat();
+
+			if( !this.parent ) return out.copy( this.local.rot );
+
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			// Get the heirarchy nodes
+			let n 		= this,
+				tree 	= [ ];
+
+			if( incChild ) tree.push( n ); // Incase we do not what to add the requested entity to the world transform.
+
+			while( n.parent != null ){
+				tree.push( n.parent.Node );
+				n = n.parent.Node;
+			}
+
+			// Nothing
+			if( tree.length == 0 ) return out.reset();
+
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			let i = tree.length - 1;
+			out.copy( tree[ i ].local.rot );						// Copy in the Root Parent
+			
+			for( i--; i > -1; i-- ) out.mul( tree[ i ].local.rot );	// Add Up All Transforms from root to child.
+
+			return out;
+		}
+
+		get_world_transform( out = null, incChild=true ){
+			out = out || new Transform();
+
+			if( !this.parent ) return ( incChild )? out.copy( this.local ) : out.reset();
+
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			// Get the heirarchy nodes
+			let n 		= this,
+				tree 	= [ ];
+
+			if( incChild ) tree.push( n ); // Incase we do not what to add the requested entity to the world transform.
+
+			while( n.parent != null ){
+				tree.push( n.parent.Node );
+				n = n.parent.Node;
+			}
+
+			// Nothing
+			if( tree.length == 0 ) return out.reset();
+
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			let i = tree.length - 1;
+			out.copy( tree[ i ].local );						// Copy in the Root Parent
+			
+			for( i--; i > -1; i-- ) out.add( tree[ i ].local );	// Add Up All Transforms from root to child.
+
+			return out;
+		}
+
 
 		static updateWorldTransform( e, incMatrix=true ){
 			let n = e.Node;

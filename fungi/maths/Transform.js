@@ -67,6 +67,12 @@ class Transform{
 			return this;
 		}
 
+		add_pos( cp ){
+			//POSITION - parent.position + ( parent.rotation * ( parent.scale * child.position ) )
+			this.pos.add( Vec3.mul( this.scl, cp ).transform_quat( this.rot ) );
+			return this;
+		}
+
 		clear(){
 			this.pos.set( 0, 0, 0 );
 			this.scl.set( 1, 1, 1 );

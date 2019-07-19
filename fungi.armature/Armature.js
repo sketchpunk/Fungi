@@ -102,6 +102,20 @@ class Armature{
 			return null;
 		}
 
+		add_bone( name, len = 1, pe = null, order = null ){
+			let e = App.ecs.entity( name, [ "Node", "Bone" ] ); 	// Make it easier to create new bones
+			e.Bone.length	= len;
+			e.Bone.order	= ( order == null )? this.bones.length : order;
+
+			if( pe ){
+				pe.Node.add_child( e );
+				e.Node.local.pos.y = pe.Bone.length; // Move start of bone to the end of the parent's
+			}
+
+			this.bones.push( e );
+			return e;
+		}
+
 		get_bone( bName ){ return this.bones[ this.names[ bName ] ]; }
 
 
