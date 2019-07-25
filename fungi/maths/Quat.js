@@ -11,6 +11,11 @@ class Quat extends Float32Array{
 			this[1] = q[1];
 			this[2] = q[2];
 			this[3] = q[3];
+		}else if( arguments.length == 4 ){
+			this[0] = arguments[0];
+			this[1] = arguments[1];
+			this[2] = arguments[2];
+			this[3] = arguments[3];
 		}else{
 			this[0] = this[1] = this[2] = 0;
 			this[3] = 1;
@@ -187,6 +192,32 @@ class Quat extends Float32Array{
 			this[3] = c1 * c2;
 			this.norm();
 			return this;
+		}
+
+		//Using unit vectors, Shortest rotation from Direction A to Direction B
+		//http://glmatrix.net/docs/quat.js.html#line548
+		//http://physicsforgames.blogspot.com/2010/03/Quat-tricks.html
+		from_unit_vecs( a, b ){
+			let dot = Vec3.dot( a, b );
+
+		    if(dot < -0.999999){
+		      let tmp = Vec3.cross( Vec3.LEFT, a );
+		      if( tmp.length() < 0.000001 ) Vec3.cross( Vec3.UP, a, tmp );
+		      this.setAxisAngle( tmp.norm(), Math.PI );
+		    }else if(dot > 0.999999){
+		      this[0] = 0;
+		      this[1] = 0;
+		      this[2] = 0;
+		      this[3] = 1;
+		    }else{
+		      let v = Vec3.cross(a, b);
+		      this[0] = v[0];
+		      this[1] = v[1];
+		      this[2] = v[2];
+		      this[3] = 1 + dot;
+		      this.norm();
+		    }
+		    return this;
 		}
 
 		random(){ // http://planning.cs.uiuc.edu/node198.html  uniform random quaternion

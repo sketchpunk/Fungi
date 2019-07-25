@@ -67,9 +67,10 @@ class Transform{
 			return this;
 		}
 
-		add_pos( cp ){
+		add_pos( cp, ignore_scl = false ){
 			//POSITION - parent.position + ( parent.rotation * ( parent.scale * child.position ) )
-			this.pos.add( Vec3.mul( this.scl, cp ).transform_quat( this.rot ) );
+			if( ignore_scl )	this.pos.add( Vec3.transformQuat( cp, this.rot ) );
+			else 				this.pos.add( Vec3.mul( this.scl, cp ).transform_quat( this.rot ) );
 			return this;
 		}
 
@@ -130,7 +131,6 @@ class Transform{
 			inv.scl.y = ( t.scl.y != 0 )? 1 / t.scl.y : 0;
 			inv.scl.z = ( t.scl.z != 0 )? 1 / t.scl.z : 0;
 
-
 			// Invert Position : rotInv * ( invScl * invPos )
 			t.pos.invert( inv.pos ).mul( inv.scl );
 			Vec3.transformQuat( inv.pos, inv.rot, inv.pos );
@@ -140,3 +140,13 @@ class Transform{
 }
 
 export default Transform;
+
+/*
+	World Space Position to Local Space.
+	
+	V	.copy( gBWorld.eye_lid_upper_mid_l.pos ) // World Space Postion
+	 	.add( [0, -0.05 * t, 0 ] )	//Change it
+		.sub( gBWorld.eye_l.pos )	// Subtract from Parent's WS Position
+		.div( gBWorld.eye_l.scl )	// Div by Parent's WS Scale
+		.transform_quat( gBWorld.eye_l.rot_inv );	// Rotate by Parent's WS Inverse Rotation
+*/

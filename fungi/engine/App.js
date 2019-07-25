@@ -130,8 +130,8 @@ class AppBuilder{
 			return this;
 		}
 
-		launch(){
-			Page.init( 0 );
+		launch( layout=0 ){
+			Page.init( layout );
 
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			// Create a Task to Wait for Page to Load

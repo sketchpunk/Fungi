@@ -392,8 +392,14 @@ class Vec3 extends Float32Array{
 		}
 
 		static angle( v0, v1 ){
-			let theta = this.dot( v0, v1 ) / ( Math.sqrt( v0.lengthSqr() * v1.lengthSqr() ) );
-			return Math.acos( Math.max( -1, Math.min( 1, theta ) ) ); // clamp ( t, -1, 1 )
+			//acos(dot(a,b)/(len(a)*len(b))) 
+			//let theta = this.dot( v0, v1 ) / ( Math.sqrt( v0.lengthSqr() * v1.lengthSqr() ) );
+			//return Math.acos( Math.max( -1, Math.min( 1, theta ) ) ); // clamp ( t, -1, 1 )
+
+			// atan2(len(cross(a,b)),dot(a,b))   Other in unstable near zero
+			let d = this.dot( v0, v1 );
+			let c = Vec3.cross( v0, v1 );
+			return Math.atan2( c.length(), d ); 
 		}
 
 		static len( a, b ){ return Math.sqrt( (a[0]-b[0]) ** 2 + (a[1]-b[1]) ** 2 + (a[2]-b[2]) ** 2 ); }

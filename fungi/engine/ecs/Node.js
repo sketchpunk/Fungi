@@ -376,29 +376,31 @@ class Node{
 			return out;
 		}
 
-		get_world_transform( out = null, incChild=true ){
+		get_world_transform( out = null, inc_child=true, init_tran=null ){
 			out = out || new Transform();
 
-			if( !this.parent ) return ( incChild )? out.copy( this.local ) : out.reset();
+			if( init_tran ) out.copy( init_tran );
+			else 			out.clear();
+
+			if( !this.parent ){
+				return ( inc_child )? out.add( this.local ) : out;
+			}
 
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			// Get the heirarchy nodes
 			let n 		= this,
 				tree 	= [ ];
 
-			if( incChild ) tree.push( n ); // Incase we do not what to add the requested entity to the world transform.
+			if( inc_child ) tree.push( n ); // Incase we do not what to add the requested entity to the world transform.
 
 			while( n.parent != null ){
 				tree.push( n.parent.Node );
 				n = n.parent.Node;
 			}
 
-			// Nothing
-			if( tree.length == 0 ) return out.reset();
-
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			let i = tree.length - 1;
-			out.copy( tree[ i ].local );						// Copy in the Root Parent
+			out.add( tree[ i ].local );						// Copy in the Root Parent
 			
 			for( i--; i > -1; i-- ) out.add( tree[ i ].local );	// Add Up All Transforms from root to child.
 

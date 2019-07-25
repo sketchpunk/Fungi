@@ -9,7 +9,11 @@
 <materials>[
 	{ "name":"ArmatureSkinPhong",	"uniforms":[
 		{ "name":"uBaseColor", "value": "ff7f7fff" }
-	]},
+	], "options":{ "cullFace": true }},
+
+	{ "name":"ArmatureSkinPhongGray",	"uniforms":[
+		{ "name":"uBaseColor", "value": "A0A0A0cc" }
+	], "options":{ "cullFace": false }},
 
 	{ "name":"LowPolyPhong_grayBlend",	"uniforms":[
 		{ "name":"uBaseColor", "value": "A0A0A0cc" }

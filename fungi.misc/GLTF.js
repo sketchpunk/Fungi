@@ -329,12 +329,13 @@ class Gltf{
 //###############################################################################
 
 // Hacking the prototype is to be frawned apo, but it makes a better API usage.
-Downloader.prototype.addGLTF = function( name, file, matName, meshNames, skinName=null, loadSkin=true ){
+Downloader.prototype.addGLTF = function( name, file, matName, meshNames, skinName=null, loadSkin=true, loadPrev=true ){
 	this._queue.push( { name, matName, 
 		handler		: "gltf", 
 		meshNames,
 		skinName,
 		loadSkin,
+		loadPrev,
 		files 	: [
 			{ url: file + ".gltf", type:"json" },
 			{ url: file + ".bin", type:"arraybuffer" }
@@ -362,7 +363,7 @@ HandlerTypes.gltf = class{
 				this.loadBones( e, bones );
 
 				//console.log( JSON.stringify( Armature.serialize( e.Armature, false ) ) );
-				ArmaturePreview.$( e, "ArmaturePreview", 2 );
+				if( i.loadPrev )  ArmaturePreview.$( e, "ArmaturePreview", 2 );
 			}
 		}
 		return true;

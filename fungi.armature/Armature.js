@@ -8,6 +8,7 @@ import { Entity, Components, System } from "../fungi/engine/Ecs.js";
 /** Single Bone data struct */
 class Bone{
 	constructor( len=1 ){
+		this.arm_e_ref		= null;
 		this.order			= 0;				// Bone Order, Used to identify bone to vertices in shaders
 		this.length			= len;				// Length of the Bone (Going UP)
 		this.bind 			= new Transform();	// Default Local Transform For Bone, Allows to reset bones back to initial state.
@@ -104,8 +105,9 @@ class Armature{
 
 		add_bone( name, len = 1, pe = null, order = null ){
 			let e = App.ecs.entity( name, [ "Node", "Bone" ] ); 	// Make it easier to create new bones
-			e.Bone.length	= len;
-			e.Bone.order	= ( order == null )? this.bones.length : order;
+			e.Bone.length		= len;
+			e.Bone.order		= ( order == null )? this.bones.length : order;
+			e.Bone.arm_e_ref	= App.ecs.entity_by_id( this.entityID );
 
 			if( pe ){
 				pe.Node.add_child( e );

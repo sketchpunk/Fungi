@@ -5,15 +5,15 @@ const NAME = "FaceCube";
 
 function FacedCube(name = NAME, matName = "VecWColor"){
 	let e = App.$Draw( name );
-	e.Draw.add( FacedCube.vao( "FacedCube" ), matName );
+	e.Draw.add( FacedCube.vao(), matName );
 	return e;
 }
 
-FacedCube.vao = function(){
+FacedCube.vao = function( ww=1, hh=1, dd=1 ){
 	if( App.cache.hasVAO( NAME ) ) return App.cache.getVAO( NAME );
 
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	let width = 1, height = 1, depth = 1, x = 0, y = 0, z = 0;
+	let width = ww, height = hh, depth = dd, x = 0, y = 0, z = 0;
 	let w = width*0.5, h = height*0.5, d = depth*0.5;
 	let x0 = x-w, x1 = x+w, y0 = y-h, y1 = y+h, z0 = z-d, z1 = z+d;
 
@@ -75,6 +75,10 @@ FacedCube.vao = function(){
 
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	return Vao.buildStandard( NAME, 4, aVert, aNorm, aUV, aIndex );
+}
+
+FacedCube.add_draw = function( e, matName="VecWColor" ){
+	e.Draw.add( FacedCube.vao(), matName );
 }
 
 export default FacedCube;
