@@ -10,6 +10,8 @@ import FacedCube				from "./fungi/primitives/FacedCube.js";
 import Armature					from "./fungi.armature/Armature.js";
 import ArmaturePreview			from "./fungi.armature/ArmaturePreview.js";
 
+import Jiggly, { JigglySystem }	from "./fungi.armature/Jiggly.js";
+
 //#############################################################################
 (function(){new AppBuilder()
 	.launch()
@@ -36,16 +38,19 @@ window.addEventListener("keyup", function(e){
 let gCube, gMover, gSpring, gArm, gRun = false, gPause = false;
 
 function onDraw(dt, ss){
-	/**/
+	/* */
 	if(!gPause){
 		if( gRun ) gMover( dt );
-		gSpring( dt );
+		//gSpring( dt );
 	}
+	
 
 	App.ecs.sys_run();
 }
 
 function init(){
+	JigglySystem.init( App.ecs );
+
 	//........................
 	let e 		= Armature.$( App.$Draw( "Arm", FacedCube.vao(0.5,0.5,0.5), "VecWColor" ) ),
 		b0 		= e.Armature.add_bone( "b0", 0.6 );
@@ -55,21 +60,25 @@ function init(){
 	Armature.finalize( e );
 	ArmaturePreview.$( e, "ArmaturePreview", 2 );
 
+	Jiggly.$( b0, 0.3, 0.9, 0.5 );
+	
+
 	let cube = App.$Draw( "TestCube", FacedCube.vao(), "VecWColor" );
 	cube.Node.setScl( 0.5 );
 
 	b0.Node.add_child( cube );
+	
 
 	//........................
-	gMover = Motion.sin( e, 1.0, [2,0,0] );
-	//gMover = Motion.circle( e, 1.0, 1 );
+	//gMover = Motion.sin( e, 1.0, [2,0,0] );
+	gMover = Motion.circle( e, 1.0, 1 );
 	//gMover = Motion.rnd_radius( e, 0.1, 2 );
 	//gMover = Motion.axis_sin_rot( e, 2, Vec3.FORWARD, 45 );
 	//gMover = Motion.noise_pos( e, 3, [-2,0,-2], [2,0,2], 0.3 );
 	//gMover = Motion.noise_rot( e, 5, [-45, -45, -45], [45, 45, 45], 0.25 );
 
 	gArm 	= e;
-	gSpring	= SpringPoint();
+	//gSpring	= SpringPoint();
 
 	//gSpring( 0.001 );
 	
@@ -123,17 +132,9 @@ function SpringPoint(){
 		let q 		= Quat.axisAngle( ray_c, rad );
 		*/
 
-		/*
 		let q = Quat.rotationTo( ray_a, ray_b );
+		
 		q.mul( wc.rot ).pmul( wp.rot.invert() )
-		*/
-
-		let v_lft 	= Vec3.cross( ray_b, vel ).norm();
-		let v_fwd 	= Vec3.cross( v_lft, ray_b ).norm();
-		let q 		= Quat.fromAxis( v_lft, ray_b, v_fwd );
-		q.pmul( wp.rot.invert() );
-
-
 		bone.Node.setRot( q );
 		gArm.Armature.isModified = true;
 

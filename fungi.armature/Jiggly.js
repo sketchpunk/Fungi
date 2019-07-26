@@ -92,10 +92,17 @@ class JigglySystem extends System{
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			ray_a.from_sub( t_pos, wp.pos ).norm();			// Ray from Bone Head to Tail's Resting Position
 			ray_b.from_sub( j.follow_pos, wp.pos ).norm();	// Ray from Bone Head to Following Position.
-			
+
 			q	.from_unit_vecs( ray_a, ray_b )				// Rot angle of the 2 rays, axis on they're cross product.
 				.mul( wp.rot )								// Apply Rot to WS Bind Transform
 				.pmul( rot_inv );							// Mul Parent WS Rot to convert to Bone Local Space Rot.
+			
+			/*
+			let v_lft 	= Vec3.cross( ray_b, j.follow_vel ).norm();
+			let v_fwd 	= Vec3.cross( v_lft, ray_b ).norm();
+			q	.from_axis( v_lft, ray_b, v_fwd )
+				.pmul( rot_inv );
+			*/
 
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			eb.Node.setRot( q );							// Set Rotation, set is Modified

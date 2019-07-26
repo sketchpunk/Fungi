@@ -11,6 +11,8 @@ import { Solver, IKTarget }	from "../fungi.ik/Solver.js";
 
 import _NA					from "../fungi.misc/MeshLoader.js";
 
+import Jiggly, { JigglySystem }	from "../fungi.armature/Jiggly.js";
+
 //#############################################################################
 
 (function(){new AppBuilder().launch()
@@ -39,10 +41,12 @@ function onDraw(dt, ss){
 let gBaller;
 
 function init(){
+	JigglySystem.init( App.ecs );
+
 	gBaller = new Baller();
 
-	App.ecs.sys_active( "CameraInputSystem", false );
-	FollowBallerCamera.init( App.camera, gBaller.entity, App.ecs );
+	//App.ecs.sys_active( "CameraInputSystem", false );
+	//FollowBallerCamera.init( App.camera, gBaller.entity, App.ecs );
 
 	//let b = gBaller.arm.get_bone("root");
 	//gBaller.entity.Node.local.rot.pmul( Quat.axisAngle([0,0,1], Maths.toRad(45)));
@@ -62,6 +66,9 @@ class Baller{
 		this.bGun	= this.arm.get_bone("gun");
 		this.bBall	= this.arm.get_bone("ball");
 		this.bChair = this.arm.get_bone("chair");
+
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		Jiggly.$( this.bChair, 0.55, 0.1, 1.9 );
 
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		this.move_vel		= new Vec3();
@@ -237,6 +244,6 @@ class FollowBallerCamera{
 	arrow keys = move baller :: i,j,k,l = move plunger
 </div>
 <div style="position:fixed; bottom:5px; left:5px; color:black; font-size:11px; z-index:1000; font-family:arial; font-weight:bold">
-	Fornite Baller VR - 0.0.0.2 ALPHA - <a href="https://github.com/sketchpunk/fungi">Source at Github</a>
+	Fornite Baller VR - 0.0.0.3 ALPHA - <a href="https://github.com/sketchpunk/fungi">Source at Github</a>
 </div>
 </body></html>

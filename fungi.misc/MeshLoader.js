@@ -124,11 +124,13 @@ function load_bones( e, info ){
 
 	for( i=0; i < bLen; i++ ){
 		b	= json[i];
-		ab 	= Armature.addBone( arm, b.name, b.len, null, b.idx );
+		//ab 	= Armature.addBone( arm, b.name, b.len, null, b.idx );
+		ab 	= arm.add_bone( b.name, b.len, null, b.idx );
 
 		// Can not have levels updated automaticly, Callstack limits get hit
 		// Instead, using the Level from bones to manually set it.
-		if( b.p_idx != null ) App.node.addChild( arm.bones[ b.p_idx ], ab, false );
+		//if( b.p_idx != null ) App.node.addChild( arm.bones[ b.p_idx ], ab, false );
+		if( b.p_idx != null ) arm.bones[ b.p_idx ].Node.add_child( ab, false );
 
 		// Manual set node level, Must do it after addChild, else it will get overwritten.
 		ab.Node.level = b.lvl; 
