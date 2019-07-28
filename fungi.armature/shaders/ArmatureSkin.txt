@@ -131,7 +131,7 @@
 		vec3 pos = dqBoneTransform_4(a_position.xyz, Arm.bones, a_boneIndex, a_boneWeight, Arm.scale);
 		
 
-		gl_Position = projViewMatrix * modelMatrix *  vec4(pos, 1.0); //
+		gl_Position = projViewMatrix * vec4(pos, 1.0); // modelMatrix * 
 		//gl_Position = projViewMatrix * modelMatrix * vec4(a_position.xyz, 1.0);
 	}
 <\vertex>

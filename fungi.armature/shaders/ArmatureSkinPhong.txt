@@ -109,7 +109,7 @@
 
 	void main(void){
 		vec3 pos	= dqBoneTransform_4(a_position.xyz, Arm.bones, a_boneIndex, a_boneWeight, Arm.scale);
-		vec4 wpos	= modelMatrix * vec4( pos, 1.0 );
+		vec4 wpos	= vec4( pos, 1.0 ); //modelMatrix *
 
 		v_worldPos	= wpos.xyz;
 		v_cameraPos	= cameraPos;

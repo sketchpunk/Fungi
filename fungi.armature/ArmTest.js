@@ -31,7 +31,7 @@ export default class ArmTest{
 			b 		= null;
 
 		for( let i=0; i < bCnt; i++ ){
-			b = Armature.addBone( arm, "b" + i, bLen, b );
+			b = arm.add_bone( "b" + i, bLen, b );
 		}
 
 		e.Armature.isActive = false;			// Disable Skinning on Entity

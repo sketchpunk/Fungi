@@ -109,9 +109,12 @@ class Armature{
 			e.Bone.order		= ( order == null )? this.bones.length : order;
 			e.Bone.arm_e_ref	= App.ecs.entity_by_id( this.entityID );
 
+			//If not parent bone, parent to the mesh entity.
+			if( !pe ) pe = e.Bone.arm_e_ref;
+
 			if( pe ){
 				pe.Node.add_child( e );
-				e.Node.local.pos.y = pe.Bone.length; // Move start of bone to the end of the parent's
+				if(pe.Bone) e.Node.local.pos.y = pe.Bone.length; // Move start of bone to the end of the parent's
 			}
 
 			this.bones.push( e );

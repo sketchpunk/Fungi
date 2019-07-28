@@ -61,9 +61,9 @@ function init(){
 
 	let e 		= Armature.$( App.$Draw( "Arm" ) ),			// Add Armature Com to new Draw Entity
 		arm		= e.Armature,								// Get Armature Com Reference
-		b0 		= Armature.addBone( arm, "b0", 0.4, null ),	// Define Bone Hierarchy
-		b1 		= Armature.addBone( arm, "b1", 0.4, b0 ),
-		b2 		= Armature.addBone( arm, "b2", 0.4, b1 );
+		b0 		= arm.add_bone( "b0", 0.4, null ),	// Define Bone Hierarchy
+		b1 		= arm.add_bone( "b1", 0.4, b0 ),
+		b2 		= arm.add_bone( "b2", 0.4, b1 );
 	Armature.finalize( e );									// Set Bind Pose
 	ArmaturePreview.$( e, "ArmaturePreview" );				// Generate Preview Bone Meshes
 	buildShape( e );										// Generate and add Rigged Mesh to Draw

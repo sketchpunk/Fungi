@@ -47,7 +47,7 @@
 		pos = vecQuatRotation(a_boneRotation, pos * a_boneScale) + a_bonePosition;
 
 		//......................................
-		vec4 wpos	= modelMatrix * vec4( pos, 1.0 );
+		vec4 wpos	= vec4( pos, 1.0 ); //modelMatrix *
 		v_worldPos	= wpos.xyz;
 		gl_Position	= projViewMatrix * wpos;
 
