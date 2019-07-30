@@ -41,6 +41,25 @@ class Transform{
 	//////////////////////////////////////////////////////////////////////
 	// METHODS
 	//////////////////////////////////////////////////////////////////////
+		from_add( tp, tc ){
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			//POSITION - parent.position + ( parent.rotation * ( parent.scale * child.position ) )
+			let v = new Vec3().from_mul( tp.scl, tc.pos ); // parent.scale * child.position;
+			Vec3.transformQuat( v, tp.rot, v );
+			this.pos.from_add( tp.pos, v ); // Vec3.add( tp.pos, v, this.pos );
+
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			// SCALE - parent.scale * child.scale
+			this.scl.from_mul( tp.scl, tc.scl ); //Vec3.mul( tp.scl, tc.scl, this.scl );
+
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			// ROTATION - parent.rotation * child.rotation
+			this.rot.from_mul( tp.rot, tc.rot ); //Quat.mul( tp.rot, tc.rot, this.rot );
+
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			return this;
+		}
+
 		add( cr, cp, cs = null ){
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			//If just passing in Tranform Object

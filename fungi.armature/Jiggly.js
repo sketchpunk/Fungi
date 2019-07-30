@@ -18,6 +18,17 @@ class Jiggly{
 		return e;
 	}
 
+	static $raw( e, damp_ratio=0.5, osc_scale=0.5 ){
+		if( e instanceof Entity && !e.Jiggly ) Entity.com_fromName( e, "Jiggly" );
+		
+		e.Jiggly.set_osc_scale( osc_scale );
+		e.Jiggly.damp_ratio = damp_ratio;
+		e.Jiggly.bone_tail.set( 0, e.Bone.length, 0 );
+		e.Jiggly.reset_follow_pos();
+		return e;
+	}
+
+
 	constructor(){
 		//this.active		= true;
 
@@ -35,10 +46,10 @@ class Jiggly{
 		let eb = App.ecs.entity_by_id( this.entityID ),
 			wp = new Transform();
 
-		eb.Bone.arm_e_ref.Node.get_world_transform( wp, true );	// Get the Root Entity's World Transform
+		//eb.Bone.arm_e_ref.Node.get_world_transform( wp, true );	// Get the Root Entity's World Transform
 
 		eb.Node
-			.get_world_transform( wp, false, wp )				// Add the Bone's World Transform
+			.get_world_transform( wp, false )				// Add the Bone's World Transform
 			.add( eb.Bone.bind );
 
 		wp.transformVec( this.bone_tail, this.follow_pos );
@@ -48,7 +59,10 @@ class Jiggly{
 
 
 //#########################################################################
-function fSort_bone_lvl( a, b ){ return (a.Node.level == b.Node.level)? 0 : (a.Node.level < b.Node.level)? -1 : 1; }
+function fSort_bone_lvl( a, b ){ 
+	a = App.ecs.entity_by_id( a.entityID );
+	b = App.ecs.entity_by_id( b.entityID );
+	return (a.Node.level == b.Node.level)? 0 : (a.Node.level < b.Node.level)? -1 : 1; }
 
 class JigglySystem extends System{
 	static init( ecs, priority = 700 ){ ecs.sys_add( new JigglySystem(), priority ); }
@@ -65,7 +79,7 @@ class JigglySystem extends System{
 			eb, 						// Entity Bone
 			ea;							// Entity Armature
 
-		//App.debug.reset();
+		App.debug.reset();
 
 		for( j of ary ){
 			eb	= App.ecs.entity_by_id( j.entityID );
@@ -74,20 +88,19 @@ class JigglySystem extends System{
 			//TODO, Checks if Jiggly should be active (ArmNode.isMod || Arm.isMod) maybe will work.
 
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			ea.Node.get_world_transform( wp, true );		// get WS Tran of Armature Entity
-			eb.Node.get_world_transform( wp, false, wp );	// Append The Bone's Parent WS Transform.
+			eb.Node.get_world_transform( wp, false );		// Get Bone's Parent WS Transform.
 			
 			wp.rot.invert( rot_inv );						// Invert Parent WS Rotation
 
 			wp.add( eb.Bone.bind );							// Add Bone Bind Transform, For Complete Bone's WS Transform.
 			wp.transformVec( j.bone_tail, t_pos );			// Use Transform to get WS Position of the bone's Tail.
 
-			//App.debug.point( t_pos, 6 );
+			App.debug.point( t_pos, 6 );
 
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			// Apply Spring Movement
 			Spring.semi_implicit_euler_vec3( App.deltaTime, j.osc_ps, j.damp_ratio, t_pos, j.follow_pos, j.follow_vel );
-			//App.debug.point( j.follow_pos, 2 );
+			App.debug.point( j.follow_pos, 2 );
 
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			ray_a.from_sub( t_pos, wp.pos ).norm();			// Ray from Bone Head to Tail's Resting Position

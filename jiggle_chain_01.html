@@ -1,0 +1,289 @@
+<!DOCTYPE html><html><head><title></title></head><script type="module">
+import App, { AppBuilder }		from "./fungi/engine/App.js";
+import Maths, { Vec3, Quat }	from "./fungi/maths/Maths.js";
+import Spring					from "./fungi/maths/Spring.js";
+import Transform				from "./fungi/maths/Transform.js";
+
+import Motion					from "./fungi.test/Motion.js";
+import FacedCube				from "./fungi/primitives/FacedCube.js";
+
+import Armature					from "./fungi.armature/Armature.js";
+import ArmaturePreview			from "./fungi.armature/ArmaturePreview.js";
+
+import Jiggly, { JigglySystem }	from "./fungi.armature/Jiggly.js";
+
+//#############################################################################
+(function(){new AppBuilder()
+	.launch()
+	.load_armature()
+	.download( dl=>dl.addGrp( "shader", 
+		"./fungi/shaders/VecWColor.txt", 
+		"./fungi.armature/shaders/ArmaturePreview.txt" ) )
+	.load_scene( true, true )
+	.add_task( init )
+	.render_loop( onDraw )
+	.set_camera( 0, 25, 4.0, 0, 0, 0 )
+	.build().catch( e=>console.error("error",e) );
+})();
+
+
+//#############################################################################
+window.addEventListener("keyup", function(e){
+	switch( e.keyCode ){
+		case 32: gRun	= !gRun; break;		// Space
+		case 66: gPause	= !gPause; break;	// b
+
+		// 1 to 6
+		case 49: gMover = gM_Sin; break;
+		case 50: gMover = gM_Circle; break;
+		case 51: gMover = gM_RndRadius; break;
+		case 52: gMover = gM_Axis; break;
+		case 53: gMover = gM_NoiseP; break;
+		case 54: gMover = gM_NoiseR; break;
+	}
+});
+
+
+//#############################################################################
+let gCube, gMover, gSpring, gArm, gRun = false, gPause = false;
+let gM_Sin, gM_Circle, gM_RndRadius, gM_Axis, gM_NoiseP, gM_NoiseR;
+let isDebug = true;
+
+function onDraw(dt, ss){
+	/**/
+	if(!gPause){
+		if( gRun )		gMover( dt );
+		if( gSpring )	gSpring( dt );
+	}
+
+	App.ecs.sys_run();
+}
+
+function init(){
+	//........................
+	let e 		= Armature.$( App.$Draw( "Arm", FacedCube.vao(0.5,0.5,0.5), "VecWColor" ) ),
+		b0 		= e.Armature.add_bone( "b0", 0.3 ),
+		b1 		= e.Armature.add_bone( "b1", 0.3, b0 ),
+		b2 		= e.Armature.add_bone( "b2", 0.3, b1 ),
+		b3 		= e.Armature.add_bone( "b3", 0.3, b2 );
+
+	b0.Node.local.pos.y = 0.28;
+
+	Armature.finalize( e );
+	ArmaturePreview.$( e, "ArmaturePreview", 2 );
+
+	//........................
+	//let cube = App.$Draw( "TestCube", FacedCube.vao(), "VecWColor" );
+	//cube.Node.setScl( 0.2 ).setPos( 0, 0.3, 0 );
+	//b3.Node.add_child( cube );
+
+	//........................
+	gM_Sin			= Motion.sin( e, 1.0, [2,0,0] );
+	gM_Circle		= Motion.circle( e, 1.0, 1 );
+	gM_RndRadius	= Motion.rnd_radius( e, 0.1, 2 );
+	gM_Axis			= Motion.axis_sin_rot( e, 2, Vec3.FORWARD, 45 );
+	gM_NoiseP		= Motion.noise_pos( e, 3, [-2,0,-2], [2,0,2], 0.3 );
+	gM_NoiseR		= Motion.noise_rot( e, 5, [-45, -45, -45], [45, 45, 45], 0.25 );
+	gMover			= gM_Sin;
+
+	//........................
+	gArm 	= e;
+	/**/
+	gSpring	= SpringChain();
+	gSpring( 0.001 );
+	
+
+	/*
+	let damp = 0.5;
+	let damp_t = 0.5;
+	let osc_s = 1.0;
+	let damp_ratio = 0.3;
+	JigglySystem.init( App.ecs );
+	
+	//Jiggly.$( b0, damp, damp_t, osc_s );
+	//Jiggly.$( b1, damp, damp_t, osc_s );
+	//Jiggly.$( b2, damp, damp_t, osc_s );
+	//Jiggly.$( b3, damp, damp_t, osc_s );
+
+	Jiggly.$raw( b0, 0.4, 0.6 );
+	Jiggly.$raw( b1, 0.6, 0.8 );
+	Jiggly.$raw( b2, 0.8, 1.0 );
+	Jiggly.$raw( b3, 0.9, 1.2 );
+	*/
+	
+
+	//........................
+	return true;
+}
+
+//#############################################################################
+function SpringPoint(){
+	let bone 		= gArm.Armature.bones[0];
+	let bone_tail	= new Vec3( 0, bone.Bone.length, 0 );
+
+	let vel 		= new Vec3();
+	let pos 		= new Vec3();
+	let osc_ps 		= Maths.PI_2 * 0.5;
+	let damp 		= 0.3;
+	let damp_time	= 0.9;
+	let damp_ratio	= Math.log( damp ) / ( -osc_ps * damp_time );
+
+	let wp 			= new Transform();
+	let wc 			= new Transform();
+	//let bhead 		= new Vec3();
+	//let btail 		= new Vec3();
+
+	// Get Starting Position for the spring position.
+	wp.copy( gArm.Node.local )
+		.add( bone.Node.local )
+		.add_pos( bone_tail );
+	pos.copy( wp.pos );
+
+	return ( dt ) => {
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		wp.copy( gArm.Node.local );
+		wc.copy( gArm.Node.local ).add( bone.Bone.bind );
+
+		let tpos = wc.transformVec( bone_tail, new Vec3() ); // Tail
+
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		// Apply Spring Movement
+		Spring.semi_implicit_euler_vec3( dt, osc_ps, damp_ratio, tpos, pos, vel );
+
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		// Need to get the Two Rays from the Origin of the Bone Head's Position
+		let ray_a	= new Vec3().from_sub( tpos, wc.pos ).norm();
+		let ray_b	= new Vec3().from_sub( pos, wc.pos ).norm();
+
+		// Get the Axis and Angle of Rotation.
+		/*
+		let ray_c	= Vec3.cross( ray_a, ray_b ).norm();
+		let rad		= Vec3.angle( ray_a, ray_b );
+		let q 		= Quat.axisAngle( ray_c, rad );
+		*/
+
+		/**/
+		let q = Quat.rotationTo( ray_a, ray_b );
+		q.mul( wc.rot ).pmul( wp.rot.invert() )
+
+		/*
+		let v_lft 	= Vec3.cross( ray_b, vel ).norm();
+		let v_fwd 	= Vec3.cross( v_lft, ray_b ).norm();
+		let q 		= Quat.fromAxis( v_lft, ray_b, v_fwd );
+		q.pmul( wp.rot.invert() );
+		*/
+
+		bone.Node.setRot( q );
+		gArm.Armature.isModified = true;
+
+		//console.log( Vec3.dot( ray_a, ray_b ) );
+		//console.log( Vec3.dot( ray_a, ray_b ) );
+
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		/**/
+		App.debug.reset()
+			.point( wc.pos, 6 )
+			.point( tpos, 2 )
+			.point( pos, 0 )
+			;
+	}
+}
+
+function SpringChain( damp_v=0.4, damp_inc=0.2, osc_v = 0.6, osc_inc=0.2 ){
+	let arm			= gArm.Armature;
+	let bary 		= arm.bones;
+	let chain_len	= bary.length;
+	let chain		= new Array( chain_len );
+
+	let bone_tail	= new Vec3( 0, 0, 0 );
+	let tpos 		= new Vec3();
+	let wp			= new Transform();
+	let wc			= new Transform();
+	let rot_inv		= new Quat();
+	let rot 		= new Quat();
+
+	let ray_a		= new Vec3();
+	let ray_b		= new Vec3();
+
+	let itm;
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	bary[0].Node.get_world_transform( wp, false );
+	for( let i=0; i < chain_len; i++ ){
+		bone_tail.set( 0, bary[i].Bone.length, 0 );
+
+		wp	.add( bary[i].Bone.bind )
+			.transformVec( bone_tail, tpos );
+
+		chain[i] = {
+			follow_vel	: new Vec3(),
+			follow_pos	: tpos.clone(),
+			damp_ratio	: damp_v,
+			osc_ps		: Maths.PI_2 * osc_v,
+		};
+
+		damp_v	+= damp_inc;
+		osc_v	+= osc_inc;
+	}
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	return ( dt ) => {
+		bary[0].Node.get_world_transform( wp, false );
+		if( isDebug ) App.debug.reset();
+
+		for(let i=0; i < chain_len; i++ ){
+			itm = chain[i];
+
+			wp.rot.invert( rot_inv );
+			wc.from_add( wp, bary[i].Bone.bind );
+			
+			//App.debug.point( wp.pos, 0 );
+			bone_tail.set( 0, bary[i].Bone.length, 0 )
+			wc.transformVec( bone_tail, tpos );
+
+			if( isDebug ) App.debug.point( tpos, 2 );
+
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			Spring.semi_implicit_euler_vec3( dt, itm.osc_ps, itm.damp_ratio, tpos, itm.follow_pos, itm.follow_vel );
+
+			if( isDebug ) App.debug.point( itm.follow_pos, 6 );
+
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			ray_a.from_sub( tpos, wc.pos ).norm();
+			ray_b.from_sub( itm.follow_pos, wc.pos ).norm();
+
+			rot .from_unit_vecs( ray_a, ray_b )
+				.mul( wc.rot )
+				.pmul( rot_inv );
+
+			wp.add( rot, bary[i].Bone.bind.pos, bary[i].Bone.bind.scl ); // Next WS Parent
+
+			bary[i].Node.setRot( rot );
+		}
+
+		arm.isModified = true;
+	};
+}
+
+/*
+http://digitalopus.ca/site/pd-controllers/
+https://stackoverflow.com/questions/24197182/efficient-quaternion-angular-velocity
+https://gafferongames.com/post/physics_in_3d/
+https://gafferongames.com/post/spring_physics/
+https://burakkanber.com/blog/physics-in-javascript-car-suspension-part-1-spring-mass-damper/
+	great exampleS
+https://stackoverflow.com/questions/44688112/spring-physics-applied-to-quaternions-using-python
+https://forum.unity.com/threads/technique-to-apply-bouncy-breasts-and-hair-physics.62473/
+https://twitter.com/minionsart/status/986374665399685121
+https://github.com/cheece/JiggleArmature/blob/master/JiggleArmature.py
+http://wiki.unity3d.com/index.php/JiggleBone
+https://www.khanacademy.org/partner-content/pixar/simulation/hair-simulation-code/v/sim7-fix
+	Has Multi Mass Spring Configuration.
+https://github.com/skevy/wobble/blob/develop/src/index.ts#L261
+https://hackernoon.com/the-spring-factory-4c3d988e7129
+	spring with stiffness and underdamping but in a time based way like easing
+
+https://medium.com/unity3danimation/torsional-springs-4c700b9ede32
+http://www.euclideanspace.com/physics/kinematics/angularvelocity/
+*/
+</script><body></body></html>
