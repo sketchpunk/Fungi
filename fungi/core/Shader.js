@@ -36,7 +36,7 @@ class Shader{
 			return shader;
 		}
 
-		static build( name, vShaderSrc, fShaderSrc, tFeedbackVar = null, tFeedbackInterleaved = true ){
+		static build( name, vShaderSrc, fShaderSrc, tFeedbackVar = null, tFeedbackInterleaved = false ){
 			// Compile the shader Code
 			let prog = gl.createShader( vShaderSrc, fShaderSrc, false, tFeedbackVar, tFeedbackInterleaved );
 			if( !prog ) return null;
@@ -184,6 +184,7 @@ class Shader{
 		//hasUniform(uName){ return this.uniforms.has( uName ); }
 
 		bind(){ gl.ctx.useProgram( this.program ); return this; }
+		unbind(){ gl.ctx.useProgram( null ); return this; }
 		
 		resetTextureSlot(){ this.texSlot = 0; return this; }
 		

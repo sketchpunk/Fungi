@@ -3,15 +3,17 @@
 	"ubo":[ "UBOGlobal", "UBOModel" ],
 	"options": { "modelMatrix":true },
 	"uniforms":[
-		{ "name":"u_color", "type":"vec4" }
+		{ "name":"u_color", "type":"rgba" }
 	]
 }<\shader>
 	
 <materials>[
-	{ "name":"BaseColorRed",	"uniforms":[{ "name":"u_color", "type":"rgba", "value":"ff0000ff" }] },
-	{ "name":"BaseColorGreen",	"uniforms":[{ "name":"u_color", "type":"rgba", "value":"00ff00ff" }] },
-	{ "name":"BaseColorGray",	"uniforms":[{ "name":"u_color", "type":"rgba", "value":"a0a0a0aa" }], "options": { "blend":true, "sampleAlphaCoverage":false } },
-	{ "name":"BaseColorBlack",	"uniforms":[{ "name":"u_color", "type":"rgba", "value":"000000ff" }] }
+	{ "name":"BaseColorRed",	"uniforms":[{ "name":"u_color", "value":"ff0000ff" }] },
+	{ "name":"BaseColorGreen",	"uniforms":[{ "name":"u_color", "value":"00ff00ff" }] },
+	{ "name":"BaseColorGray",	"uniforms":[{ "name":"u_color", "value":"a0a0a0aa" }], "options": { "blend":true, "sampleAlphaCoverage":false } },
+	{ "name":"BaseColorDGray",	"uniforms":[{ "name":"u_color", "value":"808080ff" }] },
+	{ "name":"BaseColorDDGray",	"uniforms":[{ "name":"u_color", "value":"404040ff" }] },
+	{ "name":"BaseColorBlack",	"uniforms":[{ "name":"u_color", "value":"000000ff" }] }
 ]<\materials>
 	
 <vertex>
@@ -23,6 +25,7 @@
 		vec3	cameraPos;
 		float	globalTime;
 		vec2	screenSize;
+		float	deltaTime;
 	};
 
 	uniform UBOModel{
@@ -31,6 +34,7 @@
 	};
 
 	void main(void){
+		gl_PointSize = 8.0;
 		gl_Position = projViewMatrix * modelMatrix * vec4( a_position, 1.0 );
 	}
 <\vertex>

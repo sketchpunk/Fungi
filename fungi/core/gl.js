@@ -159,14 +159,14 @@ class gl{
 	////////////////////////////////////////////////////////
 
 		// Compile Vertex/Fragment Shaders then Link them as a Program
-		static createShader( vShaderSrc, fShaderSrc, doValidate = true, transFeedbackVars = null, transFeedbackInterleaved = true ){
+		static createShader( vShaderSrc, fShaderSrc, doValidate = true, transFeedbackVars = null, transFeedbackInterleaved = false ){
 			let vShader		= gl.compileShader(vShaderSrc, gl.ctx.VERTEX_SHADER);
 			if(!vShader)	return null;
 
 			let fShader		= gl.compileShader(fShaderSrc, gl.ctx.FRAGMENT_SHADER);
 			if(!fShader){	ctx.deleteShader(vShader); return null; }
 
-			return gl.createShaderProgram(vShader, fShader, doValidate, transFeedbackVars, transFeedbackInterleaved);
+			return gl.createShaderProgram( vShader, fShader, doValidate, transFeedbackVars, transFeedbackInterleaved );
 		}
 
 		//Create a shader by passing in its code and what type
@@ -186,7 +186,7 @@ class gl{
 		}
 
 		//Link two compiled shaders to create a program for rendering.
-		static createShaderProgram(vShader, fShader, doValidate = true, transFeedbackVars = null, transFeedbackInterleaved = true){
+		static createShaderProgram(vShader, fShader, doValidate = true, transFeedbackVars = null, transFeedbackInterleaved = false ){
 			//Link shaders together
 			let prog = gl.ctx.createProgram();
 			gl.ctx.attachShader(prog, vShader);

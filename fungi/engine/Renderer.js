@@ -48,6 +48,7 @@ class Renderer{
 				.setItem("projViewMatrix",	App.camera.Camera.pvMatrix )
 				.setItem("cameraPos",		App.camera.Node.world.pos )
 				.setItem("globalTime",		App.sinceStart )
+				.setItem("deltaTime",		App.deltaTime )
 				.update();
 		}
 

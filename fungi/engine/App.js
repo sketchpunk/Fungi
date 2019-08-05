@@ -253,7 +253,8 @@ async function init_gl(){
 		"projViewMatrix",	"mat4",
 		"cameraPos",		"vec3",
 		"globalTime",		"float",
-		"screenSize",		"vec2"
+		"screenSize",		"vec2",
+		"deltaTime",		"float",
 	])	.setItem( "screenSize", [ gl.width, gl.height ] );
 
 	//............................

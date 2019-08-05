@@ -37,6 +37,7 @@
 		vec3	cameraPos;
 		float	globalTime;
 		vec2	screenSize;
+		float	deltaTime;
 	};
 
 	uniform UBOModel{
