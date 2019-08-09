@@ -1,5 +1,5 @@
 import gl from "./gl.js";
-import Shader from "./shader.js";
+import Shader from "./Shader.js";
 
 const BUF_V_NAME	= "vertices";
 const BUF_N_NAME	= "normal";
@@ -127,6 +127,21 @@ class Vao{
 		if( idx_id ) vao.add_indices( idx_id );
 
 		return vao.set( elm_cnt ).unbind_all();
+	}
+
+	static standard_by_data( uName, vert_ary, comp_len=3, idx_ary = null ){
+		let vao = new Vao( uName ).bind();
+
+		vao.add_vertices( Buf.new_array( vert_ary, true, false ), comp_len );
+		
+		if( idx_ary ){
+			vao.add_indices( Buf.new_element( idx_ary, true, false ) );
+			vao.elmCount = idx_ary.length;
+		}else{
+			vao.elmCount = vert_ary.length / comp_len;
+		}
+
+		return vao.unbind_all();
 	}
 }
 

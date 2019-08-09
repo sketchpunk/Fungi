@@ -151,8 +151,10 @@ class AppBuilder{
 
 		load_module( mPath ){ this._mod_list.push( mPath ); return this; }
 
-		load_scene( useFloor=true, useDebug=false ){
+		load_scene( useFloor=true, useDebug=false, is_dark=false ){
 			this.add( async()=>{
+				if( is_dark ) gl.setClearColor("#3a3a3a");
+
 				//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 				// CAMERA
 				App.camera = App.ecs.entity( "MainCamera", [ "Node", "Camera" ] );		

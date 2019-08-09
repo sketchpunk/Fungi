@@ -2,7 +2,7 @@
 	"name"		: "LowPolyPhong",
 	"ubo"		: [ "UBOGlobal", "UBOModel", "UBOLighting" ],
 	"uniforms":[
-		{ "name":"u_basecolor", "type":"vec4" }
+		{ "name":"u_basecolor", "type":"rgba" }
 	]
 }<\shader>
 	

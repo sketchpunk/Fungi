@@ -1,12 +1,12 @@
 import Maths, { Vec3, Quat }	from "../fungi/maths/Maths.js";
 
 class Motion{
-	static sin( e, speed, v_max ){
+	static sin( e, speed, v_max, offset=Vec3.ZERO ){
 		let t = 0;
 
 		return ( dt )=>{
 			let s = Math.sin( (t += speed * dt) );
-			Vec3.scale( v_max, s, e.Node.local.pos );
+			Vec3.scale( v_max, s, e.Node.local.pos ).add( offset );
 			e.Node.isModified = true;
 		}
 	}
@@ -98,7 +98,24 @@ class Motion{
 			e.Node.isModified = true;
 		}
 	}
+
+	static lerp_pos( e, apos, bpos, time ){
+		let tt = 0;
+
+		return ( dt )=>{
+			tt	+= dt;
+			e.Node.local.pos.from_lerp( 
+				sine_InOut( (tt % time) / time ), 
+				apos, 
+				bpos
+			);
+			e.Node.isModified = true;
+		}
+	}
+
 }
+
+function sine_InOut(k){ return 0.5 * (1 - Math.cos(Math.PI * k)); }
 
 //https://www.michaelbromley.co.uk/blog/simple-1d-noise-in-javascript/
 function SimpleNoise1D( amplitude=1, scale=1 ){ // 1, 0.3
