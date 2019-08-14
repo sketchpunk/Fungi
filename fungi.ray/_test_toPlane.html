@@ -8,6 +8,7 @@ import Ray 			from "./Ray.js";
 	.launch()
 	.download( dl=>dl.addGrp( "shader", "../fungi/shaders/VecWColor.txt" ) )
 	.load_scene( true, true )
+	.set_camera( -20, 20, 3, 0, 1, 0 )
 	.add_task( init )
 	.render_loop( onDraw )
 	.build().catch( (e)=>console.error("error",e) );
@@ -23,8 +24,6 @@ let plane_pos	= new Vec3( 0, 1, -1 );
 let plane_norm	= new Vec3( 0, 0, 1 );
 
 function init(){
-	App.cameraCtrl.setOrbit( -20, 20, 6 );
-
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	gl.ctx.canvas.addEventListener( "mouseup", onRightClick );
 
@@ -53,4 +52,11 @@ function onRightClick( e ){
 	if(t != null) App.debug.point( gRay.getPos( t ), 0 );
 	//console.log( t );
 }
-</script><body></body></html>
+</script><body>
+<div style="position:fixed; top:5px; left:5px; color:black; font-size:12px; z-index:1000; font-family:arial; font-weight:bold">
+	Right Click to create a ray, Use left click to rotate around to see it.
+</div>
+<div style="position:fixed; bottom:5px; left:5px; color:black; font-size:12px; z-index:1000; font-family:arial; font-weight:bold">
+	<a href="https://github.com/sketchpunk/fungi">Fungi on Github</a>
+</div>
+</body></html>

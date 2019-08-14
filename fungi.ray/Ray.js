@@ -20,13 +20,18 @@ class Ray{
 			this.origin.copy( aPos );					// Save Origin of the Ray
 			this.end.copy( bPos );						// Save End Position of the ray
 			this.end.sub( this.origin, this.vecLen );	// Vector Length of the ray :: end - origin = vLen
-			this.vecLen.normalize( this.dir );			// Unit Direction Vector of ray
+			this.vecLen.norm( this.dir );				// Unit Direction Vector of ray
 			return this;
 		}
 
 		getPos(t,out){
 			out = out || new Vec3();
 			return Vec3.lerp(this.origin, this.end, t, out); //out.copy(this.vecLen).scale(t).add(this.origin);
+		}
+
+		get_by_len( len, out ){
+			out = out || new Vec3();
+			return Vec3.scale( this.dir, len, out ).add( this.origin );
 		}
 
 		prepareAABB(){
@@ -167,7 +172,7 @@ class Ray{
 			//lengths then cross apply in counter-clockwise order
 			var L0 = Vec3.sub( v0, v1 ),
 				L1 = Vec3.sub( v2, v1 );
-			Vec3.cross( L1, L0, planeNorm ).normalize();
+			Vec3.cross( L1, L0, planeNorm ).norm();
 
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			//Determine if the ray intersects the same plane of the quad.
@@ -202,7 +207,7 @@ class Ray{
 			//lengths then cross apply in counter-clockwise order
 			var L0 = Vec3.sub( v0, v1 ),
 				L1 = Vec3.sub( v2, v1 );
-			Vec3.cross( L1, L0, planeNorm ).normalize();
+			Vec3.cross( L1, L0, planeNorm ).norm();
 
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			//Determine if the ray intersects the same plane of the quad.
@@ -264,9 +269,9 @@ class Ray{
 		}
 
 
-		static inOBB(ray, box, out){
-			var bbRayDelta	= Vec3.sub(box.target.position, ray.origin),	//Distance between Ray start and Box Position
-				wMat		= box.target.worldMatrix,	//Alias to the world matrix object
+		static inOBB( ray, box, tran, out ){
+			var bbRayDelta	= Vec3.sub( tran.pos, ray.origin ),	//Distance between Ray start and Box Position
+				//wMat		= box.target.worldMatrix,	//Alias to the world matrix object
 				axis 		= new Vec3(),				//Current Axis being tested.
 				tMin 		= 0,
 				tMax 		= 1000000,
@@ -275,7 +280,13 @@ class Ray{
 				
 			for(var i=0; i < 3; i++){
 				p = i*4;
-				axis.set(wMat[p],wMat[p+1],wMat[p+2]); //Get Right(0,1,2), Up(4,5,6) and Forward(8,9,10) direction from Matrix
+
+				//axis.set(wMat[p],wMat[p+1],wMat[p+2]); //Get Right(0,1,2), Up(4,5,6) and Forward(8,9,10) direction from Matrix
+				switch( i ){
+					case 0: axis.from_quat( tran.rot, Vec3.LEFT ); break;
+					case 1: axis.from_quat( tran.rot, Vec3.UP );  break;
+					case 2: axis.from_quat( tran.rot, Vec3.FORWARD ); break;
+				}
 
 				nomLen		= Vec3.dot(axis, bbRayDelta); 	//Get the length of Axis and distance to ray position
 				denomLen	= Vec3.dot(ray.vecLen, axis);	//Get Length of ray and axis
@@ -372,7 +383,7 @@ class Ray{
 		}
 
 
-		static inCapsule(ray, cap, out){
+		static inCapsule(ray, cap, tran, out){
 			//...........................................
 			//Get Capsule's line segment and move it to world splace
 			var A = cap.vecStart.clone(),	//Start of Capsule Line
@@ -380,17 +391,19 @@ class Ray{
 
 			//if doing Axis Aligned, no need to apply rotations
 			//TODO : Should also include scale.
-			Quat.rotateVec3(cap._rotation,A).add(cap._position); //Apply Rotation first Then Translation
-			Quat.rotateVec3(cap._rotation,B).add(cap._position); 
+			//Quat.rotateVec3(cap._rotation,A).add(cap._position); //Apply Rotation first Then Translation
+			//Quat.rotateVec3(cap._rotation,B).add(cap._position); 
+			tran.transformVec( A );
+			tran.transformVec( B );
 
 			//...........................................
 			//Start calculating lengths and cross products
-			var AB		= Vec3.sub(B, A),			//Vector Length of Capsule Segment
-				AO		= Vec3.sub(ray.origin, A), 	//Vector length between start of ray and capsule line
-				AOxAB	= Vec3.cross(AO, AB),		//Perpendicular Vector between Cap Line & delta of Ray Origin & Capsule Line Start
-				VxAB 	= Vec3.cross(ray.dir, AB),	//Perpendicular Vector between Ray Dir & caplsule line
-				ab2		= AB.lengthSqr(), 			//Length Squared of Capsule Line
-				a		= VxAB.lengthSqr(),			//Length Squared of Perp Vec Length of Perp Vec of Ray&Cap
+			var AB		= Vec3.sub(B, A),			// Vector Length of Capsule Segment
+				AO		= Vec3.sub(ray.origin, A), 	// Vector length between start of ray and capsule line
+				AOxAB	= Vec3.cross(AO, AB),		// Perpendicular Vector between Cap Line & delta of Ray Origin & Capsule Line Start
+				VxAB 	= Vec3.cross(ray.dir, AB),	// Perpendicular Vector between Ray Dir & caplsule line
+				ab2		= AB.lengthSqr(), 			// Length Squared of Capsule Line
+				a		= VxAB.lengthSqr(),			// Length Squared of Perp Vec Length of Perp Vec of Ray&Cap
 				b		= 2 * Vec3.dot(VxAB,AOxAB),
 				c		= AOxAB.lengthSqr() - (cap.radiusSqr * ab2),
 				d		= b * b - 4 * a * c;
@@ -403,7 +416,7 @@ class Ray{
 			var t = (-b - Math.sqrt(d)) / (2 * a);
 			if(t < 0){
 				var pos = (A.lengthSqr(ray.origin) < B.lengthSqr(ray.origin))? A : B;
-				return Ray.rayInSphere(ray, pos, cap.radius, out);
+				return Ray.rayInSphere( ray, pos, cap.radius, out );
 			}
 
 			//...........................................
@@ -421,6 +434,75 @@ class Ray{
 			return false;
 		}
 
+		// https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/moller-trumbore-ray-triangle-intersection
+		static inTri( ray, v0, v1, v2, out, cull_face=true ){
+			let v0v1 	= Vec3.sub( v1, v0 ),
+				v0v2 	= Vec3.sub( v2, v0 ),
+				pvec 	= Vec3.cross( ray.dir, v0v2 ),
+				det		= Vec3.dot( v0v1, pvec );
+
+			if( cull_face && det < 0.000001 ) return false;
+
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			let idet 	= 1 / det,
+				tvec 	= Vec3.sub( ray.origin, v0 ),
+				u 		= Vec3.dot( tvec, pvec ) * idet;
+
+			if( u < 0 || u > 1 ) return false;
+
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			let qvec 	= Vec3.cross( tvec, v0v1 ),
+				v 		= Vec3.dot( ray.dir, qvec ) * idet;
+
+			if( v < 0 || u+v > 1 ) return false;
+
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			out = out || new Vec3();
+			let len = Vec3.dot( v0v2, qvec ) * idet;
+			
+			ray.get_by_len( len, out );
+			return true;
+		}
+
+		// Closure version which is more memory efficent, better to use when dealing with large number of
+		// triangles. No need to recreate vector objects for each call.
+		static ray_tri_closure( cull_face=true ){
+			let v0v1 = new Vec3(),
+				v0v2 = new Vec3(),
+				pvec = new Vec3(),
+				tvec = new Vec3(),
+				qvec = new Vec3(),
+				v, u, det, idet, len;
+
+			return ( ray, v0, v1, v2, out )=>{
+				v0v1.from_sub( v1, v0 );
+				v0v2.from_sub( v2, v0 );
+				pvec.from_cross( ray.dir, v0v2 );
+				det = Vec3.dot( v0v1, pvec );
+
+				if( cull_face && det < 0.000001 ) return false;
+
+				//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+				idet = 1 / det,
+				tvec.from_sub( ray.origin, v0 ),
+				u = Vec3.dot( tvec, pvec ) * idet;
+
+				if( u < 0 || u > 1 ) return false;
+
+				//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+				qvec.from_cross( tvec, v0v1 ),
+				v = Vec3.dot( ray.dir, qvec ) * idet;
+
+				if( v < 0 || u+v > 1 ) return false;
+
+				//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+				out = out || new Vec3();
+				len = Vec3.dot( v0v2, qvec ) * idet;
+
+				ray.get_by_len( len, out );
+				return true;
+			}
+		}
 
 	////////////////////////////////////////////////////////
 	// MISC

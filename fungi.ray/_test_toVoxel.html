@@ -1,0 +1,258 @@
+<!DOCTYPE html><html><head><title>Fungi</title></head><script type="module">
+import App,{ gl, AppBuilder }	from "../fungi/engine/App.js";
+import { Vec3 }		from "../fungi/maths/Maths.js";
+import Transform	from "../fungi/maths/Transform.js";
+import Ray 			from "./Ray.js";
+
+import BoundingBox	from "./BoundingBox.js";
+
+//#############################################################################
+(function(){new AppBuilder()
+	.launch()
+	.download( dl=>dl.addGrp( "shader", "../fungi/shaders/VecWColor.txt" ) )
+	.load_scene( true, true )
+	.set_camera( -20, 20, 3, 0, 0, 0 )
+	.add_task( init )
+	.render_loop( onDraw )
+	.build().catch( (e)=>console.error("error",e) );
+})();
+
+
+//#############################################################################
+function onDraw( dt, ss ){ App.ecs.sys_run(); }
+
+
+//#############################################################################
+let gShape, gChunk, gTran = new Transform();
+
+function init(){
+	gl.ctx.canvas.addEventListener( "mouseup", onRightClick );
+
+	gShape = new BoundingBox( [0,0,0], [1,1,1] );
+	gChunk = new VoxelChunk( 1, 1, 1, 0.2 );
+
+	App.debug.box( gShape.worldBounds[0], gShape.worldBounds[1] );
+
+	return true;
+}
+
+//#############################################################################
+
+let gRay = new Ray();
+function onRightClick( e ){
+	if( e.button != 2 ) return;
+	e.preventDefault(); e.stopPropagation();
+
+	App.debug.reset()
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	let pos = App.input.toCoord( e );
+	Ray.MouseSegment( pos[0], pos[1], gRay, true ); //Enable AABB optimization
+	App.debug.line( gRay.origin, gRay.end, 6 );
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	App.debug.box( gShape.worldBounds[0], gShape.worldBounds[1] );
+	toVoxelChunk( gRay, gChunk, gShape, gTran, 30 );
+}
+
+
+class VoxelChunk{
+	constructor( x=2, y=2, z=2, scale=0.2 ){
+		//Overall size of the Chunk
+		this.scale	= scale;
+		this.xLen	= x;
+		this.yLen	= y;
+		this.zLen	= z;
+
+		//Cache max coord values to save repeating the math
+		this.xMax	= (x != 0)? Math.floor( x / scale ) - 1 : 0;
+		this.yMax	= (y != 0)? Math.floor( y / scale ) - 1 : 0;
+		this.zMax	= (z != 0)? Math.floor( z / scale ) - 1 : 0;
+
+		this.xzLen 	= x * z;		// Cache value, since this is used to help calc index
+		this.xyzLen = x * y * z;	// Total amount of voxels
+	}
+
+	// Position Bounds of Voxel within Chunk.
+	getCellBound( x, y, z ){
+		if( x > this.xMax || y > this.yMax || z > this.zMax ) return null;
+
+		let xpos = x * this.scale,
+			ypos = y * this.scale,
+			zpos = z * this.scale;
+
+		return {
+			min:[ xpos, ypos, zpos ],
+			max:[ xpos + this.scale, ypos + this.scale, zpos + this.scale ]
+		};
+	}
+}
+
+
+function toVoxelChunk( ray, chunk, bbox, tran, tries=30 ){
+	//..................................................
+	//Determine if the voxel chunk has an intersection.
+	var tBox = {};
+	if(!Ray.inAABB( ray, bbox, tBox )){ console.log("Not in AABB"); return null; }
+
+	//..................................................
+	var // Entry point for chunk, Clean up vals near zero. If Min < 0, origin is in AABB
+		// Move inPos which is world space, to local space to work with the algorithum which only works in that space
+		inPos		= ray.getPos( Math.max(tBox.min, 0) ).nearZero(),
+		inPosLoc	= ray.getPos( Math.max(tBox.min, 0) ).nearZero().sub( tran.pos ),		
+		cellSize	= chunk.scale,
+
+		//--------- Calc Voxel Coord Integer(x,y,z), Clamp between 0 and Max
+		ix			= Math.max( Math.min( Math.floor( inPosLoc.x / cellSize ), chunk.xMax ), 0),
+		iy			= Math.max( Math.min( Math.floor( inPosLoc.y / cellSize ), chunk.yMax ), 0),
+		iz			= Math.max( Math.min( Math.floor( inPosLoc.z / cellSize ), chunk.zMax ), 0),
+
+		//--------- Simplify direction with -1,0,1
+		dir = new Vec3(-1,-1,-1),
+
+		//--------- Index value to exit loop -1,MaxCell
+		xOut = -1, yOut = -1, zOut = -1,
+
+		//--------- Position of the closest boundary line for each axis at the ray dir. Depends on direction.
+		xBound, yBound, zBound;
+
+
+	//--------- Original code used 9 shorthand ifs, changed it to use 3 regular ifs for optimization.
+	if(ray.dir.x >= 0){
+		dir.x	= (ray.dir.x == 0)? 0 : 1;
+		xBound	= (ix + 1) * cellSize;
+
+		if(ray.dir.x > 0) xOut = chunk.xMax+1;
+	}else xBound = ix * cellSize;
+
+
+	if(ray.dir.y >= 0){
+		dir.y	= (ray.dir.y == 0)? 0 : 1;
+		yBound	= (iy + 1) * cellSize;
+
+		if(ray.dir.y > 0) yOut = chunk.yMax+1;
+
+	}else yBound = iy * cellSize;
+
+
+	if(ray.dir.z >= 0){
+		dir.z	= (ray.dir.z == 0)? 0 : 1;
+		zBound	= (iz + 1) * cellSize;
+
+		if(ray.dir.z > 0) zOut = chunk.zMax+1;
+
+	}else zBound = iz * cellSize;
+
+
+		//--------- Time for axis //(xBound - inPos.x) / ray.dir.x,
+	var	xt			= (xBound - inPosLoc.x ) / ray.dir.x,
+		yt 			= (yBound - inPosLoc.y ) / ray.dir.y,
+		zt			= (zBound - inPosLoc.z ) / ray.dir.z,
+
+		//--------- Delta T for each axis as we traverse one voxel at a time
+		xDelta		= cellSize * dir.x / ray.dir.x,
+		yDelta		= cellSize * dir.y / ray.dir.y,
+		zDelta		= cellSize * dir.z / ray.dir.z,
+
+		//--------- 
+		nAxis 		= tBox.nAxis,			//Axis Vector Component 0:x, 1:y, 2:z
+		iAxis 		= [ix, iy, iz][nAxis],	//Preselect the initial axis voxel coord.
+		ii,									//Voxel Index of a specific axis
+		isHit		= false;				//Using Check Data, did we hit a voxel that exists.
+
+	//..................................................
+	var norm		= [ 0, 0, 0 ],
+		boundPos	= null;
+	norm[tBox.nAxis] = tBox.nDir * 0.1; //Set the starting voxel
+
+	//TODO VARIABLES FOR DEBUGGING, Can remove in final version
+	let tt, offsetPos = tran.pos;	// Help Move inPos to Local Space from World Space
+
+	for(var i=0; i < tries; i++){
+		//Do something with this voxel
+		//if( VoxelChunk.get(chunk, ix, iy, iz) != 0){ isHit = true; break; }
+
+		//-------------------------
+		// VISUAL DEBUGGING
+		var cellBound = chunk.getCellBound( ix, iy, iz );
+		if( cellBound != null ){
+			App.debug
+				.box( cellBound.min,  cellBound.max, 0 )	// Display Voxel
+				.point( inPos, 2 )							// Display Intersection Point for Voxel
+				.line( inPos, Vec3.add( inPos, norm ), 2 );	// Display Normal
+		}
+
+		//-------------------------
+		//Figure out the next voxel to move to based on which t axis value is the smallest first
+		if(xt < yt && xt < zt){	//--------- X AXIS
+			ii = ix + dir.x;
+			if(ii == xOut) break;	// When out of bounds of the voxel chunk.
+			
+			nAxis	= 0;			// Numeric Axis Index (x,y,z // 0,1,2)
+			iAxis	= ix;			// Save before modifing it.
+			ix		= ii;			// Move to next voxel
+			xt		+= xDelta;		// Move T so the next loop has a chance to move in a different axis
+
+		}else if (yt < zt){		//--------- Y AXIS
+			ii = iy + dir.y;				
+			if(ii == yOut) break;
+			
+			nAxis 	= 1;
+			iAxis 	= iy;
+			iy 		= ii;
+			yt 		+= yDelta;
+
+		}else{					//--------- Z AXIS
+			ii = iz + dir.z;
+			if(ii == zOut) break;
+			
+			nAxis	= 2;
+			iAxis	= iz;
+			iz		= ii;
+			zt		+= zDelta;
+		}
+
+
+		//-------------------------
+		//SETUP INTERSECTION POINT AND NORMAL FOR THE NEXT VOXEL.
+		//ONLY USED FOR VISUAL DEBUGGING
+		norm[0]		= 0;
+		norm[1]		= 0;
+		norm[2]		= 0;
+		norm[nAxis]	= -dir[nAxis] * 0.1;									// Update the specific axis
+
+		boundPos 	= (( dir[nAxis] > 0)? iAxis+1 : iAxis) * cellSize;		// Position of boundary in Local Space
+		boundPos 	+= offsetPos[nAxis]; 									// Move from Local Space to WorldSpace, to figure out T of Ray which is in World Space
+
+		tt			= ( boundPos - ray.origin[nAxis] ) / ray.vecLen[nAxis]; // Time when at boundary
+		inPos 		= ray.getPos( tt );										// Intersection point on voxel face
+	}
+
+	var norm = [ 0,0,0 ];
+	norm[nAxis] = -dir[nAxis];
+	return { hitNorm: norm, voxelCoord: [ix,iy,iz], isHit:isHit };
+	//..................................................
+	/*
+	console.log("FINAL",
+		"::Axis",nAxis,
+		"::Dir",-dir[nAxis],
+		"::Voxel",ix,iy,iz,
+	);
+
+	//Sample on how to get the intersection point where the voxel was hit.
+	var boundPos	= (( dir[nAxis] > 0)? iAxis+1 : iAxis) * cellSize,		// Position of boundary		
+		tt			= ( boundPos - ray.origin[nAxis] ) / ray.vecLen[nAxis],	// Time when at axis boundary
+		ip			= ray.getPos(tt);	// Intersection point on voxel face
+	console.log(ip, tt, boundPos);
+	*/
+}
+</script><body>
+	
+<div style="position:fixed; top:5px; left:5px; color:black; font-size:12px; z-index:1000; font-family:arial; font-weight:bold">
+	Right Click to create a ray, Use left click to rotate around to see it.
+</div>
+<div style="position:fixed; bottom:5px; left:5px; color:black; font-size:12px; z-index:1000; font-family:arial; font-weight:bold">
+	<a href="https://github.com/sketchpunk/fungi">Fungi on Github</a>
+</div>
+
+</body></html>

@@ -73,6 +73,8 @@ UVSphere.vertData = function(){
 import App from "../engine/App.js";
 import Vao from "../core/Vao2.js";
 
+
+//#####################################################################################
 class UVSphere{
 	static verts( y_len=18, x_len=25, radius = 0.5, close_loop=true ){
 		let y_rad	= Math.PI,				// Look Angles
@@ -112,8 +114,10 @@ class UVSphere{
 	static tri_strip_idx( y_len=18, x_len=25, close_loop=true ){
 		//...........................................
 		// Triangulate all the vertices for Triangle Strip
-		let vert_cnt = (close_loop)? ( x_len ) * ( y_len + 1 ) : ( x_len-1 ) * ( y_len + 1 ),
-			out = [],
+		let vert_cnt 	= (close_loop)? ( x_len ) * ( y_len + 1 ) : ( x_len-1 ) * ( y_len + 1 ),
+			idx_cnt		= ((y_len+1) * 2) * x_len + (x_len-1) * 2,	// Y = col, X is Rows, TODO fix to take into account no closed_loop
+			out 		= new Uint16Array( idx_cnt ), // out = [],
+			ii			= 0,
 			x, y; 
 
 		for(var i=0; i < vert_cnt; i++){
@@ -121,25 +125,24 @@ class UVSphere{
 			y = i % ( y_len + 1 );					// Current latitude
 
 			//Column index of row R and R+1
-			out.push( 
-				x * ( y_len + 1 ) + y, 
-				( x + 1 ) * ( y_len + 1 ) + y
-			);
+			//out.push( x * ( y_len + 1 ) + y,  ( x + 1 ) * ( y_len + 1 ) + y );
+			out[ii++] = x * ( y_len + 1 ) + y;
+			out[ii++] = ( x + 1 ) * ( y_len + 1 ) + y;
 
 			//Create Degenerate Triangle, Last AND first index of the R+1 (next row that becomes the top row )
-			if( y == y_len && i < vert_cnt-1 ) 
-				out.push( 
-					(x+1) * (y_len+1) + y, 
-					(x+1) * (y_len+1)
-				);
+			if( y == y_len && i < vert_cnt-1 ){
+				//out.push( (x+1) * (y_len+1) + y, (x+1) * (y_len+1) );
+				out[ii++] = (x+1) * (y_len+1) + y;
+				out[ii++] = (x+1) * (y_len+1);
+			}
 		}
 
 		return out;
 	}
 
-	static entity( name, mat, mode=5, y_len=18, x_len=25, radius = 0.5, close_loop=true ){
-		let verts 	= UVSphere.verts(  y_len, x_len, radius, close_loop ),
-			indices = UVSphere.tri_strip_idx(  y_len, x_len, close_loop ),
+	static entity( name, mat, mode=5, y_len=18, x_len=25, radius = 0.5 ){
+		let verts 	= UVSphere.verts(  y_len, x_len, radius ),
+			indices = UVSphere.tri_strip_idx(  y_len, x_len ),
 			vao		= Vao.standard_by_data( name, verts, 3, indices );
 
 		return App.$Draw( name, vao, mat, mode );
@@ -147,4 +150,5 @@ class UVSphere{
 }
 
 
+//#####################################################################################
 export default UVSphere;

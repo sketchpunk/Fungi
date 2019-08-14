@@ -1,0 +1,121 @@
+<!DOCTYPE html><html><head><title>Fungi</title></head><script type="module">
+import App,{ gl, AppBuilder }	from "../fungi/engine/App.js";
+import { Vec3 }		from "../fungi/maths/Maths.js";
+import Ray 			from "./Ray.js";
+
+import BoundingBox	from "./BoundingBox.js";
+
+//#############################################################################
+(function(){new AppBuilder()
+	.launch()
+	.download( dl=>dl.addGrp( "shader", "../fungi/shaders/VecWColor.txt", "../fungi/shaders/BaseColor.txt" ) )
+	.load_scene( true, true )
+	.set_camera( -20, 20, 2.5, 0, 1.0, 0 )
+	.add_task( init )
+	.render_loop( onDraw )
+	//.render_on_mouse( onDraw )
+	.build().catch( (e)=>console.error("error",e) );
+})();
+
+
+//#############################################################################
+function onDraw( dt, ss ){ App.ecs.sys_run(); }
+
+
+//#############################################################################
+let gShape;
+
+function init(){
+	gl.ctx.canvas.addEventListener( "mouseup", onRightClick );
+
+	gShape = BoundingSphere.entity( "bsphere", "BaseColorDGray" );
+	gShape.Node.setPos( 0, 1, 0 );
+
+	return true;
+}
+
+//#############################################################################
+
+let gRay = new Ray();
+function onRightClick( e ){
+	if( e.button != 2 ) return;
+	e.preventDefault(); e.stopPropagation();
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	let pos = App.input.toCoord( e );
+	Ray.MouseSegment( pos[0], pos[1], gRay );
+	App.debug.line( gRay.origin, gRay.end, 6 );
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	let info = {};
+
+	if( Ray.rayInSphere( gRay, gShape.Node.local.pos, 0.5, info ) ){
+		console.log(info);
+		App.debug
+			.point( gRay.get_by_len( info.min ), 0 )
+			.point( gRay.get_by_len( info.max ), 1 );
+	}
+}
+
+import Vao from "../fungi/core/Vao2.js";
+class BoundingSphere{
+	/*
+	constructor(name, matName){
+		this.drawMode	= gl.ctx.LINE_STRIP;		
+		this.vao		= this.gen(name);
+		this.radius		= 0.5;
+		this.radiusSqr	= this.radius * this.radius;
+	}
+	*/
+
+	static entity( name, mat, mode=2 ){
+		let verts 	= BoundingSphere.verts(),
+			vao		= Vao.standard_by_data( name, verts, 3 );
+		return App.$Draw( name, vao, mat, mode );
+	}
+
+	static verts(){
+		/*Rotate By Y
+		ry = y;
+		rx = z*sin + x*cos;
+		rz = z*cos - x*sin;
+		*/
+		var vSize		= 7,					// How many points from bottom to top.
+			hSize		= 3,					// How many times to rotate the circle
+			vInc		= Math.PI / (vSize-1),	// Increment bottom to top
+			hInc		= Math.PI / (hSize),	// Increment rotation for each circle created
+			vLoopLen	= vSize * 2 - 1,		// Loop size for creating a circle
+			half		= Math.PI * 0.5,		// Half of PI, will be origin when creating the circle
+			x,
+			y,
+			r,		// rads for circle rotation
+			i,		// loop var for circle making
+			rad,	// rads for making the cicle
+			sin,	// sin of the angle to rotate circle
+			cos;	// cos of the angle to rotate circle
+
+		var v = [];
+		for(var j=0; j < hSize; j++){
+			r	= hInc * j - half;
+			cos	= Math.cos(r);
+			sin	= Math.sin(r);
+
+			for(i=0; i < vLoopLen; i++){
+				rad	= vInc * i - half;
+				x 	= 0.5 * Math.cos(rad);
+				y 	= 0.5 * Math.sin(rad);
+				v.push( x*cos, y, x*sin ); //Since Z is 0, exclude it from Y rotation equation.
+			}
+		}
+		return v;
+	}
+}
+
+</script><body>
+<div style="position:fixed; top:5px; left:5px; color:black; font-size:12px; z-index:1000; font-family:arial; font-weight:bold">
+	Right Click to create a ray, Use left click to rotate around to see it.
+</div>
+<div style="position:fixed; bottom:5px; left:5px; color:black; font-size:12px; z-index:1000; font-family:arial; font-weight:bold">
+	<a href="https://github.com/sketchpunk/fungi">Fungi on Github</a>
+</div>
+</body></html>

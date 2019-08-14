@@ -1,0 +1,54 @@
+<!DOCTYPE html><html><head><title></title></head><script type="module">
+import App, { AppBuilder, gl } from "../fungi/engine/App.js";
+import Gizmo 	from "./Gizmo.js";
+import Ray		from "../fungi.ray/Ray.js";
+
+//#############################################################################
+(function(){new AppBuilder()
+	.launch()
+	.download( dl=>dl.addGrp( "shader", "../fungi/shaders/VecWColor.txt", ) )
+	.load_scene( true, true )
+	.set_camera( -20, 30, 4.0, 0, 0, 0 )
+	.add( Gizmo.setup_task( 1 ) )
+	.add( init )
+	//.render_loop( onDraw )
+	.render_on_mouse( onDraw )
+	.build().catch( e=>console.error("error",e) );
+})();
+
+
+//#############################################################################
+function onDraw( dt, ss ){ App.ecs.sys_run(); }
+
+//#############################################################################
+let gGizmo;
+
+async function init(){
+	gl.ctx.canvas.addEventListener( "mousedown", onRightClick );
+
+	gGizmo = Gizmo.$();
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	return true;
+}
+
+let gRay = new Ray();
+function onRightClick( e ){
+	if( e.button != 2 ) return;
+	e.preventDefault(); e.stopPropagation();
+
+	let pos = App.input.toCoord( e );
+
+	Ray.MouseSegment( pos[0], pos[1], gRay, true );
+
+	App.debug.line( gRay.origin, gRay.end, 6 );
+	//console.log( gRay );
+
+	let gizmo_hit = gGizmo.Gizmo.is_ray_hit( gRay );
+	//console.log( "Gizmo Hit Test", gizmo_hit );
+
+	if( gizmo_hit ) Gizmo.Sys.set_selected( gGizmo );
+}
+
+//#############################################################################
+</script><body></body></html>

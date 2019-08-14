@@ -26,7 +26,7 @@ class Gizmo{
 			eyeLen 	= vEye.length(),
 			scl 	= e.Node.local.scl;
 
-		vEye.normalize();
+		vEye.norm();
 		scl.set( 1, 1, 1 ).scale( eyeLen / GizmoSystem.CameraScale );
 
 		if( vEye.dot( Vec3.LEFT ) < MIN_ADJUST )	scl.x *= -1;
@@ -92,7 +92,7 @@ class GizmoSystem extends System{
 			if( App.camera.Node.isModified ){
 				let c, list = ecs.query_comp( "Gizmo" );
 
-				for( c of list ) Gizmo.cameraAdjust( ecs.entities[ c.entityID ] );
+				if( list ) for( c of list ) Gizmo.cameraAdjust( ecs.entities[ c.entityID ] );
 			}
 		}
 

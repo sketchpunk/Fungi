@@ -10,6 +10,7 @@ import BoundingBox	from "./BoundingBox.js";
 	.launch()
 	.download( dl=>dl.addGrp( "shader", "../fungi/shaders/VecWColor.txt" ) )
 	.load_scene( true, true )
+	.set_camera( -20, 20, 2, 0, 1, 0 )
 	.add_task( init )
 	.render_loop( onDraw )
 	.build().catch( (e)=>console.error("error",e) );
@@ -24,9 +25,6 @@ function onDraw( dt, ss ){ App.ecs.sys_run(); }
 let aabb = new BoundingBox( [0,0,0], [1,1,1] );
 
 function init(){
-	App.cameraCtrl.setOrbit( -20, 20, 6 );
-
-	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	gl.ctx.canvas.addEventListener( "mouseup", onRightClick );
 
 	aabb.setWorldPos( [ -1.0, 0.5, -0.5 ] );
@@ -57,4 +55,11 @@ function onRightClick( e ){
 			.point( gRay.getPos( info.max ), 1 );
 	}
 }
-</script><body></body></html>
+</script><body>
+	<div style="position:fixed; top:5px; left:5px; color:black; font-size:12px; z-index:1000; font-family:arial; font-weight:bold">
+	Right Click to create a ray, Use left click to rotate around to see it.
+</div>
+<div style="position:fixed; bottom:5px; left:5px; color:black; font-size:12px; z-index:1000; font-family:arial; font-weight:bold">
+	<a href="https://github.com/sketchpunk/fungi">Fungi on Github</a>
+</div>
+</body></html>

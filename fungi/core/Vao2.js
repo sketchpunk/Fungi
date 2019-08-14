@@ -19,6 +19,15 @@ class Buf{
 		return id;
 	}
 
+	static empty_array( byte_cnt, is_static=true, unbind=true ){
+		let id	= gl.ctx.createBuffer();
+		gl.ctx.bindBuffer( gl.ctx.ARRAY_BUFFER, id );
+		gl.ctx.bufferData( gl.ctx.ARRAY_BUFFER, byte_cnt, (is_static)? gl.ctx.STATIC_DRAW : gl.ctx.DYNAMIC_DRAW );
+
+		if( unbind ) gl.ctx.bindBuffer( gl.ctx.ARRAY_BUFFER, null );
+		return id;
+	}
+
 	static new_element( data, is_static=true, unbind=true ) {
 		let ary	= ( data instanceof Uint16Array )? data : new Uint16Array( data ),
 			id	= gl.ctx.createBuffer();
@@ -140,6 +149,15 @@ class Vao{
 		}else{
 			vao.elmCount = vert_ary.length / comp_len;
 		}
+
+		return vao.unbind_all();
+	}
+
+	static standard_empty( uName, vert_cnt, comp_len=3 ){
+		let vao 			= new Vao( uName ).bind(),
+			vert_byte_cnt 	= Float32Array.BYTES_PER_ELEMENT * comp_len * vert_cnt;
+
+		vao.add_vertices( Buf.empty_array( vert_byte_cnt, false, false ), comp_len );
 
 		return vao.unbind_all();
 	}

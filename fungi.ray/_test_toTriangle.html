@@ -1,0 +1,154 @@
+<!DOCTYPE html><html><head><title>Fungi</title></head><script type="module">
+import App,{ gl, AppBuilder }	from "../fungi/engine/App.js";
+import Maths, { Vec3 }			from "../fungi/maths/Maths.js";
+import Vao 						from "../fungi/core/Vao2.js";
+import Ray 						from "./Ray.js";
+
+//#############################################################################
+(function(){new AppBuilder()
+	.launch()
+	.download( dl=>dl.addGrp( "shader", "../fungi/shaders/VecWColor.txt", "../fungi/shaders/BaseColor.txt" ) )
+	.load_scene( true, true )
+	.set_camera( 0, 20, 5 )
+	.add_task( init )
+	.render_loop( onDraw )
+	//.render_on_mouse( onDraw )
+	.build().catch( (e)=>console.error("error",e) );
+})();
+
+
+//#############################################################################
+function onDraw( dt, ss ){ App.ecs.sys_run(); }
+
+
+//#############################################################################
+let gShape, gPoints, gRayTri;
+
+function init(){
+	gl.ctx.canvas.addEventListener( "mouseup", onRightClick );
+
+	let verts = [ 0, 2, 0,  -1, 0.2, 0,  1, 0.2, 0 ];
+	let vao		= Vao.standard_by_data( "Triangle", verts );
+
+	gShape 	= App.$Draw( "gShape", vao, "BaseColorGray", 4 ); // 0:Pnt, 2: Line Loop, 4:Tri
+	gShape.Draw.add( vao, "BaseColorDDGray", 2 );
+
+	gPoints = [
+		new Vec3( verts[0], verts[1], verts[2] ),
+		new Vec3( verts[3], verts[4], verts[5] ),
+		new Vec3( verts[6], verts[7], verts[8] ),
+	];
+
+	gRayTri = ray_tri_closure();
+
+	return true;
+}
+
+//#############################################################################
+
+let gRay = new Ray();
+function onRightClick( e ){
+	if( e.button != 2 ) return;
+	e.preventDefault(); e.stopPropagation();
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	let pos = App.input.toCoord( e );
+	Ray.MouseSegment( pos[0], pos[1], gRay, true );
+	App.debug.line( gRay.origin, gRay.end, 6 );
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	//inTri( gRay, gPoints[0], gPoints[1], gPoints[2] );
+	gRayTri( gRay, gPoints[0], gPoints[1], gPoints[2] );
+}
+
+
+//#############################################################################
+
+//https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/moller-trumbore-ray-triangle-intersection
+function inTri( ray, v0, v1, v2, cull_face=true ){
+	let v0v1 	= Vec3.sub( v1, v0 ),
+		v0v2 	= Vec3.sub( v2, v0 ),
+		pvec 	= Vec3.cross( ray.dir, v0v2 ),
+		det		= Vec3.dot( v0v1, pvec );
+
+	console.log( "det", det );
+	App.debug.line( v0, Vec3.add( v0, pvec ), 2 );
+
+	if( cull_face && det < 0.000001 ){
+		console.log( "BACKFACE" );
+		return false;
+	}
+
+	let idet 	= 1 / det,
+		tvec 	= Vec3.sub( ray.origin, v0 ),
+		u 		= Vec3.dot( tvec, pvec ) * idet;
+
+	if( u < 0 || u > 1 ) return false;
+
+	let qvec 	= Vec3.cross( tvec, v0v1 ),
+		v 		= Vec3.dot( ray.dir, qvec ) * idet;
+
+	if( v < 0 || u+v > 1 ) return false;
+
+	let t = Vec3.dot( v0v2, qvec ) * idet;
+
+	console.log( "t", t );
+	let p = ray.get_by_len( t );
+	App.debug.point( p, 0 );
+
+	return true;
+}
+
+
+function ray_tri_closure( cull_face=true ){
+	let v0v1 = new Vec3(),
+		v0v2 = new Vec3(),
+		pvec = new Vec3(),
+		tvec = new Vec3(),
+		qvec = new Vec3(),
+		v, u, det, idet, len;
+
+	return ( ray, v0, v1, v2, out )=>{
+		v0v1.from_sub( v1, v0 );
+		v0v2.from_sub( v2, v0 );
+		pvec.from_cross( ray.dir, v0v2 );
+		det = Vec3.dot( v0v1, pvec );
+
+		console.log( "det", det );
+		App.debug.line( v0, Vec3.add( v0, pvec ), 2 );
+
+		if( cull_face && det < 0.000001 ){ console.log( "BACKFACE" ); return false; }
+
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		idet = 1 / det,
+		tvec.from_sub( ray.origin, v0 ),
+		u = Vec3.dot( tvec, pvec ) * idet;
+
+		if( u < 0 || u > 1 ) return false;
+
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		qvec.from_cross( tvec, v0v1 ),
+		v = Vec3.dot( ray.dir, qvec ) * idet;
+
+		if( v < 0 || u+v > 1 ) return false;
+
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		out = out || new Vec3();
+
+		len = Vec3.dot( v0v2, qvec ) * idet;
+		console.log( "t", len );
+		ray.get_by_len( len, out );
+		App.debug.point( out, 0 );
+
+		return true;
+	}
+}
+
+</script><body>
+<div style="position:fixed; top:5px; left:5px; color:black; font-size:12px; z-index:1000; font-family:arial; font-weight:bold">
+	Right Click to create a ray, Use left click to rotate around to see it.
+</div>
+<div style="position:fixed; bottom:5px; left:5px; color:black; font-size:12px; z-index:1000; font-family:arial; font-weight:bold">
+	<a href="https://github.com/sketchpunk/fungi">Fungi on Github</a>
+</div>
+</body></html>

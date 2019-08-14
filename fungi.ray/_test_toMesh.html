@@ -1,0 +1,171 @@
+<!DOCTYPE html><html><head><title>Fungi</title></head><script type="module">
+import App,{ gl, AppBuilder }	from "../fungi/engine/App.js";
+import Vao 						from "../fungi/core/Vao2.js";
+import Maths, { Vec3 }			from "../fungi/maths/Maths.js";
+import Ray 						from "./Ray.js";
+
+//#############################################################################
+(function(){new AppBuilder()
+	.launch()
+	.download( dl=>dl.addGrp( "shader", "../fungi/shaders/VecWColor.txt", ) )
+	.load_scene( false, true )
+	.set_camera( 0, 20, 3, 0, 0, 0 )
+	.add_task( init )
+	.render_loop( onDraw )
+	//.render_on_mouse( onDraw )
+	.build().catch( (e)=>console.error("error",e) );
+})();
+
+
+//#############################################################################
+function onDraw( dt, ss ){ App.ecs.sys_run(); }
+
+
+//#############################################################################
+let gShape, gVerts, gIndices, gRayTri;
+
+function init(){
+	gl.ctx.canvas.addEventListener( "mouseup", onRightClick );
+
+	//gShape = FacedCube.entity();
+
+	let verts 	= FacedCube.verts( 1, 1, 1 ),
+		indices = FacedCube.indices(),
+		vao		= Vao.standard_by_data( name, verts, 4, indices );
+	
+	gShape		= App.$Draw( "Cube", vao, "VecWColor", 4 );
+	gVerts		= verts;
+	gIndices	= indices;
+	gRayTri		= Ray.ray_tri_closure();
+
+	return true;
+}
+
+//#############################################################################
+
+let gRay = new Ray();
+function onRightClick( e ){
+	if( e.button != 2 ) return;
+	e.preventDefault(); e.stopPropagation();
+
+	App.debug.reset();
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	let pos = App.input.toCoord( e );
+	Ray.MouseSegment( pos[0], pos[1], gRay, true );
+	App.debug.line( gRay.origin, gRay.end, 6 );
+
+	inMesh( gRay );
+}
+
+function inMesh( ray ){
+	let v0 = new Vec3(),
+		v1 = new Vec3(),
+		v2 = new Vec3(),
+		p  = new Vec3(),
+		i, i0, i1, i2;
+
+	for( i=0; i < gIndices.length; i+=3 ){
+		i0 = gIndices[ i+0 ] * 4; // 4 floats per vertex, forth one is used as color group.
+		i1 = gIndices[ i+1 ] * 4; 
+		i2 = gIndices[ i+2 ] * 4;
+
+		v0.set( gVerts[i0], gVerts[i0+1], gVerts[i0+2] );
+		v1.set( gVerts[i1], gVerts[i1+1], gVerts[i1+2] );
+		v2.set( gVerts[i2], gVerts[i2+1], gVerts[i2+2] );
+
+		if( gRayTri( gRay, v0, v1, v2, p ) ){
+			App.debug
+				.point( p, 6 )
+				.line( v0, v1, 6 )
+				.line( v1, v2, 6 )
+				.line( v2, v0, 6 );
+
+			break;
+		}
+	}
+}
+
+
+//#############################################################################
+class FacedCube{
+	static entity( name="Fungi_FacedCube", mat="VecWColor", ww=1, hh=1, dd=1, mode=4 ){
+		let verts 	= FacedCube.verts( ww, hh, dd ),
+			indices = FacedCube.indices(),
+			vao		= Vao.standard_by_data( name, verts, 4, indices );
+		return App.$Draw( name, vao, mat, mode );
+	}
+
+	static verts( ww=1, hh=1, dd=1 ){
+		let width = ww, height = hh, depth = dd, x = 0, y = 0, z = 0;
+		let w = width*0.5, h = height*0.5, d = depth*0.5;
+		let x0 = x-w, x1 = x+w, y0 = y-h, y1 = y+h, z0 = z-d, z1 = z+d;
+
+		//Starting bottom left corner, then working counter clockwise to create the front face.
+		//Backface is the first face but in reverse (3,2,1,0)
+		//keep each quad face built the same way to make index and uv easier to assign
+		return [
+			x0, y1, z1, 0,	//0 Front
+			x0, y0, z1, 0,	//1
+			x1, y0, z1, 0,	//2
+			x1, y1, z1, 0,	//3 
+
+			x1, y1, z0, 1,	//4 Back
+			x1, y0, z0, 1,	//5
+			x0, y0, z0, 1,	//6
+			x0, y1, z0, 1,	//7 
+
+			x1, y1, z1, 2,	//3 Right
+			x1, y0, z1, 2,	//2 
+			x1, y0, z0, 2,	//5
+			x1, y1, z0, 2,	//4
+
+			x0, y0, z1, 3,	//1 Bottom
+			x0, y0, z0, 3,	//6
+			x1, y0, z0, 3,	//5
+			x1, y0, z1, 3,	//2
+
+			x0, y1, z0, 4,	//7 Left
+			x0, y0, z0, 4,	//6
+			x0, y0, z1, 4,	//1
+			x0, y1, z1, 4,	//0
+
+			x0, y1, z0, 5,	//7 Top
+			x0, y1, z1, 5,	//0
+			x1, y1, z1, 5,	//3
+			x1, y1, z0, 5	//4
+		];
+	}
+
+	static indices(){
+		let ary = [];
+		for(var i=0; i < 24; i+=2) ary.push(i, i+1, (Math.floor(i/4)*4)+((i+2)%4));
+		return ary;
+	}
+
+	static uv(){
+		let ary = [];
+		for(var i=0; i < 6; i++) ary.push(0,0,	0,1,  1,1,  1,0);
+		return ary;
+	}
+
+	static norm(){
+		return [
+		 0, 0, 1,	 0, 0, 1,	 0, 0, 1,	 0, 0, 1,		//Front
+		 0, 0,-1,	 0, 0,-1,	 0, 0,-1,	 0, 0,-1,		//Back
+		-1, 0, 0,	-1, 0, 0,	-1, 0, 0,	-1, 0, 0,		//Left
+		 0,-1, 0,	 0,-1, 0,	 0,-1, 0,	 0,-1, 0,		//Bottom
+		 1, 0, 0,	 1, 0, 0,	 1, 0, 0,	 1, 0, 0,		//Right
+		 0, 1, 0,	 0, 1, 0,	 0, 1, 0,	 0, 1, 0		//Top
+		];
+	}
+}
+
+</script><body>
+<div style="position:fixed; top:5px; left:5px; color:black; font-size:12px; z-index:1000; font-family:arial; font-weight:bold">
+	Right Click to create a ray, Use left click to rotate around to see it.
+</div>
+<div style="position:fixed; bottom:5px; left:5px; color:black; font-size:12px; z-index:1000; font-family:arial; font-weight:bold">
+	<a href="https://github.com/sketchpunk/fungi">Fungi on Github</a>
+</div>
+</body></html>
