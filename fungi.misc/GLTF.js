@@ -160,17 +160,22 @@ class Gltf{
 		static getMesh( name, json, bin, specOnly = false ){
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			// Find Mesh to parse out.
-			let n = null, i;
-			for( i of json.nodes ) if( i.name === name && i.mesh != undefined ){ n = i; break; }
+			let i, n = null, mesh_idx = null;
+			for( i of json.nodes ) if( i.name === name && i.mesh != undefined ){ n = i; mesh_idx = n.mesh; break; }
 
+			//No node Found, Try looking in mesh array for the name.
 			if( !n ){
-				console.error("Node by the name", name, "not found in GLTF Node Array");
+				for(i=0; i < json.meshes.length; i++ ) if( json.meshes[i].name == name ){ mesh_idx = i; break; }
+			}
+
+			if( mesh_idx == null ){
+				console.error("Node or Mesh by the name", name, "not found in GLTF");
 				return null;
 			}
 
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			// Loop through all the primatives that make up a single mesh
-			let m 		= json.meshes[ n.mesh ],
+			let m 		= json.meshes[ mesh_idx ],
 				pLen 	= m.primitives.length,
 				ary		= new Array( pLen ),
 				itm,
@@ -189,9 +194,11 @@ class Gltf{
 
 				//.......................................
 				// Save Position, Rotation and Scale if Available.
-				if( n.translation ) itm.position	= n.translation.slice( 0 );
-				if( n.rotation )	itm.rotation	= n.rotation.slice( 0 );
-				if( n.scale )		itm.scale		= n.scale.slice( 0 );
+				if( n ){
+					if( n.translation ) itm.position	= n.translation.slice( 0 );
+					if( n.rotation )	itm.rotation	= n.rotation.slice( 0 );
+					if( n.scale )		itm.scale		= n.scale.slice( 0 );
+				}
 
 				//.......................................
 				// Parse out all the raw Geometry Data from the Bin file
@@ -217,6 +224,12 @@ class Gltf{
 		
 		//INFO : https://github.com/KhronosGroup/glTF-Tutorials/blob/master/gltfTutorial/gltfTutorial_020_Skins.md
 		static getSkin( name, json ){
+			if( !json.skins ){
+				console.error( "There is no skin in the GLTF file." );
+				return null;
+			}
+
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			let ji, skin = null;
 			for( ji of json.skins ) if( ji.name == name ){ skin = ji; break; }
 
@@ -293,6 +306,66 @@ class Gltf{
 
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			return bones;
+		}
+
+
+	////////////////////////////////////////////////////////
+	// Animation
+	////////////////////////////////////////////////////////
+		static getSkinAnimation( name, json, bin ){
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			// Validate there is animations and an anaimtion by a name exists in the json file.
+			if( json.animations === undefined || json.animations.length == 0 ){ console.error("There is no animations in gltf"); return null; }
+
+			let i, a = null;
+			for( i of json.animations ) if( i.name === name ){ a = i; break; }
+
+			if( !a ){ console.error("Animation by the name", name, "not found in GLTF"); return null; }
+
+
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~		
+			// Create Lookup table for Node to Joint. Each Joint will be updated with pos, rot or scl data.
+			let tbl		= {},
+				itms 	= json.skins[0].joints;
+			for( i=0; i < itms.length; i++ ) tbl[ itms[i] ] = { bone_idx: i };
+
+
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			//Process Channels and pull out the sampling data ( Rot, Pos, Scl & Time Stamp for Each );
+			let chi = 0, ch, s, n, prop, tData, dData ;
+
+			for( chi=0; chi < a.channels.length; chi++ ){
+				//.......................
+				// Must check that the channel points to a node that the animation is attached to.
+				ch = a.channels[ chi ];
+				if( ch.target.node == undefined ) continue;
+				n = ch.target.node;
+
+				if( !tbl[ n ] ){
+					console.log("Channel's target node is not joint of the first skin.");
+					continue;
+				}
+
+				//.......................
+				// User a smaller pproperty name then what GLTF uses.
+				switch( ch.target.path ){
+					case "translation"	: prop = "pos"; break;
+					case "rotation"		: prop = "rot"; break;
+					case "scale"		: prop = "scl"; break;
+					default: console.log( "unknown channel path", ch.path ); continue;
+				}
+
+				//.......................
+				// Parse out the Sampler Data from the Bin file.
+				s		= a.samplers[ ch.sampler ];
+				tData	= this.parseAccessor( s.input, json, bin );		// Get Time for all keyframes
+				dData	= this.parseAccessor( s.output, json, bin );	// Get Value that changes per keyframe
+
+				// Using the Node Index, Save it to the lookup table with the prop name.
+				tbl[ n ][ prop ] = { time: tData.data, data: dData.data, lerp:s.interpolation };
+			}
+
+			return tbl;
 		}
 }
 
