@@ -2,12 +2,17 @@
 import App, { AppBuilder, gl, Shader, Material, Components, Entity } from "./fungi/engine/App.js";
 import Vao, { Buf } from "./fungi/core/Vao2.js";
 
+
+/* Inspiration
+https://exp.v-os.ca/cartographer/
+*/
+
 //#############################################################################
 (function(){new AppBuilder()
 	.launch()
 	.download( dl=>dl.addGrp( "shader", "./fungi/shaders/VecWColor.txt", "./fungi/shaders/BaseColor.txt" ) )
-	.load_scene( false, false )
-	.set_camera( 0, 45, 16, 0, 0, 0 )
+	.load_scene( false, false, true )
+	.set_camera( 0, 45, 26, 0, 0, 0 )
 	.add_task( init )
 	.render_loop( onDraw )
 	//.render_on_mouse( onDraw )
@@ -25,35 +30,109 @@ window.addEventListener( "keydown", function(e){
 
 //#############################################################################
 function onDraw( dt, ss ){
-	
+	// Update offset only when needed.
 	if( UpdateOffset ){
 		 UpdateOffset = false;
 		 Terrain.TransformFeedback.shader.bind().setUniform( "u_offset", GridOffset ).unbind();
 	}
 
 	Terrain.TransformFeedback.execute();
+
 	App.ecs.sys_run();
 }
-// C:\Users\Pedro\Desktop\Personal\Git\WebGL2.0\git\lesson_052
-// C:\Users\Pedro\Desktop\Personal\Git\WebGL2.0\git\lesson_075_build_a_particle_system
 
 //#############################################################################
 function init(){
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// SHADER & MATERIALS
-	//let json	= Shader.parseInline( "inline_shader" ),
-	//	shader	= Shader.buildFromJson( json ); //Shader.build( json.shader.name, json.vertex, json.fragment );
+	let json	= Shader.parseInline( "inline_shader" ),
+		shader	= Shader.buildFromJson( json ); //Shader.build( json.shader.name, json.vertex, json.fragment );
 
-	//if( !shader ) return false;
-
-	//let mat		= Material.build( shader, json.materials[ 0 ] );
-	//let mat2	= DynamicShader.mk( shader_test );
-
-	setup();
+	if( !shader ) return false;
+	Material.build( shader, json.materials[ 0 ] );
 
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		setup();
 	return true;
 }
+
+//#############################################################################
+function setup(){
+	//.................................................................
+	// Create Shader to process the data in the transform feedback
+	let tf_names	= [ "target_pos", "follow_pos", "follow_vel" ];	// Out Variables in Transform Feedback
+	let f_src		= "#version 300 es\nprecision mediump float; out vec4 outColor; void main(void){ outColor = vec4(1.0); }";
+	let v_src		= document.getElementById("feedback").innerText;
+	let sh			= Shader.build( "TF_test", v_src, f_src, tf_names );
+
+	Shader.prepareUniformBlock( sh, "UBOGlobal" );
+	Shader.prepareUniform( sh, "u_offset", "vec2" );
+	sh.bind().setUniform( "u_offset", GridOffset ).unbind();
+
+	//.................................................................
+	let grid_size	= 20;
+	let grid_div 	= 40;
+
+	// Create Data
+	let verts		= Grid.points( grid_size, grid_div );
+	let index		= Grid.line_indices( grid_div );
+	let coords		= Grid.coords( grid_div );
+	let zeros		= new Float32Array( verts.length );
+
+	// Create some read only static buffers that will be shared in various Vaos.
+	let bCoords 	= Buf.new_array( coords );
+	let bIndex 		= Buf.new_element( index );
+
+	// Build Transformm Feedback Entity
+	let e = App.$Draw( "Grid" );
+	TransformFeedback.$( e, sh, (i)=>{
+		let target_pos	= Buf.new_array( verts, false, false ),	// Dynamic Buffer to Hold Target Position ( Resting Position )
+			follow_pos	= Buf.new_array( verts, false, false ),	// Vertex Position 
+			follow_vel	= Buf.new_array( zeros, false, true );	// Vertex Velocity
+
+		//..............................
+		// Build Transform Vao: this is used to Read Data from
+		i.vao_tf.bind()
+			.add_buf( "target_pos",	target_pos,	0 )
+			.add_buf( "follow_pos",	follow_pos,	1 )
+			.add_buf( "follow_vel",	follow_vel,	2 )
+			.add_buf( "coords", 	bCoords,	3, 2 )
+			.unbind_all()
+			.set( verts.length / 3 ); //TODO incase of prop, unbind buf only, unbind vao after tf
+		
+		//..............................
+		// Build Transform Feedback : This defines what buffers will be written to.
+		i.tf.bind()
+			.bind_buf( 0, target_pos )
+			.bind_buf( 1, follow_pos )
+			.bind_buf( 2, follow_vel )
+			.unbind();
+
+		//..............................
+		// This will draw the data as lines
+		i.vao_draw.bind()
+			.add_vertices( follow_pos )
+			.add_indices( bIndex )
+			.unbind_all()
+			.set( index.length );
+
+		//..............................
+		// This will draw the data as points
+		i.vao_draw2 = new Vao(); 
+		i.vao_draw2.bind()
+			.add_vertices( follow_pos )
+			.unbind_all()
+			.set( verts.length / 3 );
+	} );
+
+
+	e.Node.setPos( -10, 0, -10 );	// Center Grid
+	Terrain = e;
+}
+
+
+
+//#############################################################################
 
 let UpdateOffset 	= false;
 let GridOffset		= new Float32Array( [0,0] );
@@ -127,74 +206,10 @@ class Grid{
 	}
 }
 
-function setup(){
-	let tf_names	= [ "target_pos", "follow_pos", "follow_vel" ];
-	let f_src		= "#version 300 es\nprecision mediump float; out vec4 outColor; void main(void){ outColor = vec4(1.0); }";
-	let v_src		= document.getElementById("feedback").innerText;
-	let sh			= Shader.build( "TF_test", v_src, f_src, tf_names );
-
-	Shader.prepareUniformBlock( sh, "UBOGlobal" );
-	Shader.prepareUniform( sh, "u_offset", "vec2" );
-	sh.bind().setUniform( "u_offset", GridOffset ).unbind();
-
-	//.................................................................
-	let grid_size	= 10;
-	let grid_div 	= 10;
-	let verts		= Grid.points( grid_size, grid_div );
-	let index		= Grid.line_indices( grid_div );
-	let coords		= Grid.coords( grid_div );
-	let zeros		= new Float32Array( verts.length );
-
-	let bCoords 	= Buf.new_array( coords );
-	let bIndex 		= Buf.new_element( index );
 
 
-	let e = App.$Draw( "Grid" );
-	TransformFeedback.$( e, sh, (i)=>{
-		let target_pos	= Buf.new_array( verts, false, false ), 
-			follow_pos	= Buf.new_array( verts, false, false ), 
-			follow_vel	= Buf.new_array( zeros, false, true );
-
-		//..............................
-		// Build Transform Vao
-		i.vao_tf.bind()
-			.add_buf( "target_pos",	target_pos,	0 )
-			.add_buf( "follow_pos",	follow_pos,	1 )
-			.add_buf( "follow_vel",	follow_vel,	2 )
-			.add_buf( "coords", 	bCoords,	3, 2 )
-			.unbind_all()
-			.set( verts.length / 3 ); //TODO incase of prop, unbind buf only, unbind vao after tf
-		
-		//..............................
-		// Build Transform Feedback
-		i.tf.bind()
-			.bind_buf( 0, target_pos )
-			.bind_buf( 1, follow_pos )
-			.bind_buf( 2, follow_vel )
-			.unbind();
-
-		//..............................
-		i.vao_draw.bind()
-			.add_vertices( follow_pos )
-			.add_indices( bIndex )
-			.unbind_all()
-			.set( index.length );
-
-		//..............................
-		i.vao_draw2 = new Vao(); 
-		i.vao_draw2.bind()
-			.add_vertices( follow_pos )
-			.unbind_all()
-			.set( verts.length / 3 );
-	} );
-
-	e.Node.setPos( -5, 0, -5 );
-	Terrain = e;
-
-	//e.TransformFeedback.execute();	
-	//e.Draw.add( vao_pnt, "VecColor", 0 );
-}
-
+//#############################################################################
+// Simple ECS Component to Hold TF Data and how to execute it.
 class TransformFeedback{
 	static $( e, shader, func ){
 		if( e instanceof Entity && !e.TransformFeedback ) Entity.com_fromName( e, "TransformFeedback" );
@@ -202,8 +217,8 @@ class TransformFeedback{
 		e.TransformFeedback.build( func );
 		e.TransformFeedback.shader = shader;
 		e.TransformFeedback.entity = e;
-		e.Draw.add( null, "BaseColorDGray", 1 );
-		e.Draw.add( null, "BaseColorDDGray", 0 );
+		e.Draw.add( null, "VecColor", 1 );
+		e.Draw.add( null, "VecColor", 0 );
 
 		return e;
 	}
@@ -251,7 +266,8 @@ class TransformFeedback{
 	}
 } Components( TransformFeedback );
 
-
+//#############################################################################
+// Tiny TransformFeedback object, similar to the Vao object
 class Tffb{
 	constructor(){
 		this.id = gl.ctx.createTransformFeedback();
@@ -263,6 +279,13 @@ class Tffb{
 }
 
 </script><body>
+
+<div style="position:fixed; top:5px; left:5px; color:white; font-size:16px; z-index:1000; font-family:arial; font-weight:bold">
+	ARROW KEYS = move around the perlin noise algorithm :: MOUSE = Rotate :: SCROLL WHEEL = Zoom
+</div>
+<div style="position:fixed; bottom:5px; left:5px; color:white; font-size:14px; z-index:1000; font-family:arial; font-weight:bold">
+	Fungi - <a href="https://github.com/sketchpunk/fungi" style="color:lime; text-decoration:none;">Source at Github</a>
+</div>
 
 <script id="feedback" type="plain/text">#version 300 es
 	layout(location=0) in vec3 a_target_pos;	
@@ -315,6 +338,7 @@ class Tffb{
 	const float HEIGHT		= 5.0;
 	const float DAMP_RATIO	= 0.25;
 	const float OSC_PS		= 6.283185307179586 * 1.0;
+	const float FREQ 		= 0.040;
 
 	void main(void){
 		// semi_implicit_euler_vec3
@@ -322,7 +346,7 @@ class Tffb{
   		// pos += dt * vel;
 
   		target_pos		= a_target_pos;
-  		target_pos.y	= clamp( HEIGHT * snoise( a_coords * 0.1 + u_offset ), 0.0, HEIGHT );
+  		target_pos.y	= clamp( HEIGHT * snoise( a_coords * FREQ + u_offset ), 0.0, HEIGHT );
 
   		follow_vel 		= a_follow_vel + ( -2.0 * deltaTime * DAMP_RATIO * OSC_PS * a_follow_vel + deltaTime * OSC_PS * OSC_PS * (target_pos - a_follow_pos));
   		follow_pos 		= a_follow_pos + deltaTime * follow_vel;
@@ -335,27 +359,22 @@ class Tffb{
 	"name"		: "VecColor",
 	"ubo"		: [ "UBOGlobal", "UBOModel" ],
 	"uniforms"	: [
-		{ "name":"u_offset", "type":"vec2" },
-		{ "name":"u_vert_size", "type":"float" },
-		{ "name":"u_freq", "type":"float" },
-		{ "name":"u_height", "type":"float" }
+		{ "name":"u_colorAry", "type":"rgb" }
 	]
 }<\shader>
 
 <materials>[
 	{ "name":"VecColor",	
-		"options"	: { "depthTest":true, "blend":false },
-		"uniforms":[
-		{ "name":"u_offset", "value": [0,2] },
-		{ "name":"u_vert_size", "value": 21.0  },
-		{ "name":"u_freq", "value": 0.10  },
-		{ "name":"u_height", "value": 2.0  }
-	]}
+		"options"	: { "depthTest":true, "blend":true, "sampleAlphaCoverage":false },
+		"uniforms"	: [
+			{ "name" : "u_colorAry", "value" : ["1ca3ec","e7d1b5","4cba5f","208d4e","208d4e","ffffff","ffffff","ff7f7f","ff8c00","ffff00"] }
+		]
+	}
 ]<\materials>
-	
+
 <vertex>
 	#version 300 es
-	layout(location=0) in vec4 a_position;
+	layout(location=0) in vec3 a_position;
 
 	uniform UBOGlobal{
 		mat4	projViewMatrix;
@@ -370,17 +389,21 @@ class Tffb{
 		mat3	normalMatrix;
 	};
 
-	uniform vec2 	u_offset;
-	uniform float	u_vert_size;
-	uniform float 	u_freq;
-	uniform float 	u_height;
-
+	uniform vec3 u_colorAry[20];
 	out vec3 v_color;
 
+	const float HEIGHT = 5.0;
+	const float COL_LEN = 6.0;
+
 	void main(void){
-		v_color			= vec3( 0.0, 0.0, 0.0 );	
-		gl_PointSize 	= 8.0;
-		gl_Position 	= projViewMatrix * modelMatrix * vec4( pos, 1.0);
+		float t = clamp( a_position.y / HEIGHT, 0.0, 1.0 );
+		float p = t * COL_LEN;
+		int i = int( floor( p ) );
+		float tt = fract( p );
+		v_color			= mix( u_colorAry[ i ], u_colorAry[ i+1 ], tt );
+		 
+		gl_PointSize 	= 7.0;
+		gl_Position 	= projViewMatrix * modelMatrix * vec4(a_position.xyz, 1.0);
 	}
 <\vertex>
 
@@ -388,20 +411,20 @@ class Tffb{
 	#version 300 es
 	precision mediump float;
 
+	const vec2 UV_CENTER = vec2( 0.5 ); 
+
 	in vec3 v_color;
 	out vec4 oFragColor;
 
 	void main(void){ 
-		oFragColor = vec4(v_color, 1.0);
+		vec2 coord = gl_PointCoord - UV_CENTER;
+		//if( length(coord) > 0.5 ) discard;
+
+		oFragColor = vec4( v_color, smoothstep( 0.5, 0.45, length(coord) ) );
+		
+		//oFragColor = vec4(v_color, 1.0);
 	}
-<\fragment>
+<\fragment>	
 </script>
-
-
-<!--
-
-
-
--->
 
 </body></html>

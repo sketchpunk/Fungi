@@ -28,6 +28,30 @@ class Quat extends Float32Array{
 	////////////////////////////////////////////////////////////////////
 		reset(){ this[0] = this[1] = this[2] = 0; this[3] = 1; return this; }
 
+		set( x, y, z, w ){
+			this[0] = x;
+			this[1] = y;
+			this[2] = z;
+			this[3] = w;
+			return this;
+		}
+
+		from_buf( ary, i ){
+			this[0] = ary[i];
+			this[1] = ary[i+1];
+			this[2] = ary[i+2];
+			this[3] = ary[i+3];
+			return this;
+		}
+
+		to_buf( ary, i ){
+			ary[i] = this[0];
+			ary[i+1] = this[1];
+			ary[i+2] = this[2];
+			ary[i+3] = this[3];
+			return this;	
+		}
+
 		get x(){ return this[0]; }	set x(val){ this[0] = val; }
 		get y(){ return this[1]; }	set y(val){ this[1] = val; }
 		get z(){ return this[2]; }	set z(val){ this[2] = val; }

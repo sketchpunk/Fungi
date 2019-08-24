@@ -10,7 +10,11 @@ class Page{
 		Page.url	= `${l.protocol}//${l.hostname}:${l.port}/`;
 		Page.body	= document.getElementsByTagName("body")[0];
 
-		Page.addCSS( Page.url + "fungi/engine/lib/Page.css" ).layout( layoutMode );
+		//Include Fwd Slash
+		let mod_path = import.meta.url.substring( 0, import.meta.url.lastIndexOf("/") + 1 ); 
+		Page.addCSS( mod_path + "Page.css" ).layout( layoutMode );
+
+		//Page.addCSS( Page.url + "fungi/engine/lib/Page.css" ).layout( layoutMode );		
 		return Page;
 	}
 

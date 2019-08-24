@@ -57,8 +57,8 @@ class Buf{
 	}
 
 	static new_element_bin( data_view, b_start, b_len, is_static=true, unbind=true ) {
-		let ary	= ( data instanceof Uint16Array )? data : new Uint16Array( data ),
-			id	= gl.ctx.createBuffer();
+		let id	= gl.ctx.createBuffer();
+
 		gl.ctx.bindBuffer( gl.ctx.ELEMENT_ARRAY_BUFFER, id );
 		gl.ctx.bufferData( gl.ctx.ELEMENT_ARRAY_BUFFER, data_view, (is_static)? gl.ctx.STATIC_DRAW : gl.ctx.DYNAMIC_DRAW, b_start, b_len );
 
