@@ -29,9 +29,9 @@ class Axis{
 			this.z.copy( z );
 
 			if(doNormalize){
-				this.x.normalize();
-				this.y.normalize();
-				this.z.normalize();
+				this.x.norm();
+				this.y.norm();
+				this.z.norm();
 			}
 			return this;
 		}
@@ -91,9 +91,9 @@ class Axis{
 
 		//
 		fromDir( pFwd, pUp ){
-			this.z.copy( pFwd ).normalize();
-			Vec3.cross( pUp, this.z, this.x ).normalize();
-			Vec3.cross( this.z, this.x, this.y ).normalize();
+			this.z.copy( pFwd ).norm();
+			Vec3.cross( pUp, this.z, this.x ).norm();
+			Vec3.cross( this.z, this.x, this.y ).norm();
 			return this;
 		}
 

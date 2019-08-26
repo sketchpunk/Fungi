@@ -218,6 +218,25 @@ class Quat extends Float32Array{
 			return this;
 		}
 
+
+		from_invert( q ){
+			let a0	= q[0],
+				a1	= q[1],
+				a2	= q[2],
+				a3	= q[3],
+				dot	= a0*a0 + a1*a1 + a2*a2 + a3*a3;
+			
+			// Would be faster to return [0,0,0,0] immediately if dot == 0
+			if(dot == 0){ this[0] = this[1] = this[2] = this[3] = 0; return this; }
+
+			let invDot = 1.0 / dot; // let invDot = dot ? 1.0/dot : 0;
+			this[0]	= -a0 * invDot;
+			this[1]	= -a1 * invDot;
+			this[2]	= -a2 * invDot;
+			this[3]	=  a3 * invDot;
+			return this;
+		}
+
 		//Using unit vectors, Shortest rotation from Direction A to Direction B
 		//http://glmatrix.net/docs/quat.js.html#line548
 		//http://physicsforgames.blogspot.com/2010/03/Quat-tricks.html

@@ -12,7 +12,7 @@ class Pose{
 
 		// Create a Transform for each bone.
 		for( let i=0; i < bLen; i++ ){
-			this.bones[ i ] = { changeState:0, local : new Transform };
+			this.bones[ i ] = { changeState:0, local : new Transform() };
 			if( doInit ) this.bones[ i ].local.copy( arm.bones[ i ].Node.local );
 		}
 	}

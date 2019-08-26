@@ -74,9 +74,9 @@ class Solver{
 			let rot = Quat.mul( wt.rot, chain.bind[ 0 ].rot ),	// Get World Space Rotation for Bone
 				up	= target.axis.z,							// Main Direction, Point Bone up toward axis forward.
 				fwd	= Vec3.transformQuat( Vec3.FORWARD, rot ),	// Get Bone's World Space Forward Direction.
-				lft	= Vec3.cross( up, fwd ).normalize();		// Figure out World Space Left Direction
+				lft	= Vec3.cross( up, fwd ).norm();		// Figure out World Space Left Direction
 			
-			Vec3.cross( lft, up, fwd ).normalize();				// Realign forward to keep axis orthogonal for proper rotation
+			Vec3.cross( lft, up, fwd ).norm();				// Realign forward to keep axis orthogonal for proper rotation
 
 			Quat.fromAxis( lft, up, fwd, out );					// Final World Space Rotation
 

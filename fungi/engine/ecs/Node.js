@@ -407,6 +407,25 @@ class Node{
 			return out;
 		}
 
+		get_world_parent_child( p, c ){
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			// Get the heirarchy nodes
+			let n = this, tree = [ ];
+
+			while( n.parent != null ){
+				tree.push( n.parent.Node );
+				n = n.parent.Node;
+			}
+
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			let i = tree.length - 1;
+			p.copy( tree[ i ].local );	// Copy in the Root Parent
+			
+			for( i--; i > -1; i-- ) p.add( tree[ i ].local ); // Add Up All Transforms from root to parent.
+
+			c.from_add( p, this.local );
+		}
+
 
 		static updateWorldTransform( e, incMatrix=true ){
 			let n = e.Node;
@@ -460,7 +479,7 @@ class NodeSystem extends System{
 			if( !cn.isModified ) continue;
 
 			// if parent exists, add parent's world transform to the child's local transform
-			if( cn.parent !== null )	Transform.add( cn.parent.Node.world, cn.local, cn.world );
+			if( cn.parent !== null )	cn.world.from_add( cn.parent.Node.world, cn.local ); //Transform.add( cn.parent.Node.world, cn.local, cn.world );
 			else						cn.world.copy( cn.local );
 
 			// Create Model Matrix for Shaders

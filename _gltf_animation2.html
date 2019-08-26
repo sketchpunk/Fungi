@@ -60,18 +60,18 @@ function q_dot_fix( buf ){
 async function dl_files(){
 	//let dl	= await XhrPromise.get( "./RiggedSimple.gltf", "json", "./RiggedSimple0.bin", "arraybuffer" );
 	let dl	= await XhrPromise.get( 
-		//"./walk_anim.gltf", "json", "./walk_anim.bin", "arraybuffer",
-		"./run_anim.gltf", "json", "./run_anim.bin", "arraybuffer",
+		"./walk_anim.gltf", "json", "./walk_anim.bin", "arraybuffer",
+		//"./run_anim.gltf", "json", "./run_anim.bin", "arraybuffer",
 		"./files/models/vegeta.txt", "text", "./files/models/vegeta.bin", "arraybuffer", //files/models/
 	);
 	
-	//build_anim_bones( dl[0], dl[1] );
+	build_anim_bones( dl[0], dl[1] );
 	build_target( dl[2], dl[3] );
 	//LeftArm ,LeftForeArm
 	//
 	//console.log( gModel.Armature );
 	//console.log( gTarget.Armature );
-/*
+/**/
 	gRetarget = new Retarget( gModel, gTarget );
 	gRetarget
 		.add( "Hips", "Hips" )
@@ -91,10 +91,10 @@ async function dl_files(){
 		.add( "RightArm", "RightArm" )
 		.add( "RightForeArm", "RightForeArm" )
 		;
-*/
+
 	//console.log( gRetarget.items );
-	//gAnim.at( 1.0  , gModel );
-	//gRetarget.run();
+	gAnim.at( 1.0  , gModel );
+	gRetarget.run();
 
 	/*
 	let props = Gltf.getMesh( "Cylinder", dl[0], dl[1], false ); //GLTF Sample's data is interleaved, Can not test bin to vao.
@@ -135,7 +135,7 @@ function build_anim_bones( json, bin ){
 
 function build_target( json, bin ){
 	let e = MeshLoader.entity( json, bin );
-	//e.Node.setPos( 1, 0, 0 );
+	e.Node.setPos( 1, 0, 0 );
 
 	gTarget = e;
 }
@@ -146,8 +146,8 @@ let gTime = 0;
 
 function onDraw( dt, ss ){
 	//if(!gPause) gAnim.at( gTime , gModel );
-	//gAnim.at( ss  , gModel );
-	//gRetarget.run();
+	gAnim.at( ss  , gModel );
+	gRetarget.run();
 
 	App.ecs.sys_run();
 }
