@@ -223,7 +223,7 @@ class Gltf{
 	////////////////////////////////////////////////////////
 		
 		//INFO : https://github.com/KhronosGroup/glTF-Tutorials/blob/master/gltfTutorial/gltfTutorial_020_Skins.md
-		static getSkin( name, json ){
+		static getSkin( name, json, node_info=null ){
 			if( !json.skins ){
 				console.error( "There is no skin in the GLTF file." );
 				return null;
@@ -302,6 +302,19 @@ class Gltf{
 				while( itm.p_idx != null ){ lvl++; itm = bones[ itm.p_idx ]; }
 
 				bones[ ji ].lvl = lvl;
+			}
+
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			// Set the Hierarchy Level for each bone
+			if( node_info ){
+				for( ji of json.nodes ){ 
+					if( ji.name == name ){ 
+						if( ji.rotation )	node_info["rot"] = ji.rotation;
+						if( ji.scale )		node_info["scl"] = ji.scale;
+						if( ji.position )	node_info["pos"] = ji.position;
+						break;
+					}
+				}
 			}
 
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
