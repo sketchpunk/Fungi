@@ -915,6 +915,59 @@ function decompSwingTwist( q, qSwing, qTwist ){
 }
 */
 
+/*
+//http://allenchou.net/2018/05/game-math-swing-twist-interpolation-sterp/
+function get_swing_twist( q, twist_axis=Vec3.UP, out_swing, out_twist ){
+	let r = new Vec3( q[0], q[1], q[2] );
+
+	// singularity: rotation by 180 degree
+	if( r.lengthSqr() < 0.00001 ){
+		let t_axis = Vec3.transformQuat( twist_axis, q );
+		let s_axis = Vec3.cross( twist_axis, t_axis );
+
+		if( s_axis.lengthSqr() > 0.00001 ){
+      		let s_angle = Vector3.angle( twist_axis, t_axis );
+      		out_swing.setAxisAngle( s_axis, s_angle );
+    	}else{ // more singularity rotation axis parallel to twist axis
+      		out_swing.reset() // no swing
+    	}
+
+    	// always twist 180 degree on singularity
+    	out_twist.setAxisAngle( twist_axis, Math.PI );
+    	console.log("singularity");
+    	return;
+	}
+
+	// meat of swing-twist decomposition
+	let p = vec3_project( r, twist_axis );
+	out_twist.set( p[0], p[1], p[2], q[3] ).norm();
+	out_swing.from_mul( Quat.invert( out_twist ), q ); //q * Quaternion.Inverse(twist);
+	//out_swing.from_mul( q, Quat.invert( out_twist ) );
+}
+
+// https://docs.unity3d.com/ScriptReference/Vector3.Project.html
+// https://github.com/Unity-Technologies/UnityCsReference/blob/master/Runtime/Export/Math/Vector3.cs#L265
+function vec3_project( v, v_norm, out ){
+	let sqr = Vec3.dot( v_norm, v_norm );
+	out = out || new Vec3();
+
+	if( sqr < 0.000001 ) return out.copy( Vec3.ZERO );
+
+	let dot 	= Vec3.dot( v, v_norm ),
+		sqr_i	= 1 / sqr;
+
+	return out.set(
+		//v_norm[0] * dot * sqr_i,
+		//v_norm[1] * dot * sqr_i,
+		//v_norm[2] * dot * sqr_i
+
+		v_norm[0] * dot / sqr,
+		v_norm[1] * dot / sqr,
+		v_norm[2] * dot / sqr
+	);
+}
+*/
+
 //https://github.com/libgdx/libgdx/blob/master/gdx/src/com/badlogic/gdx/math/Quat.java
 //http://physicsforgames.blogspot.com/2010/03/Quat-tricks.html
 //http://physicsforgames.blogspot.com/2010/02/Quats.html
