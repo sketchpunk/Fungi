@@ -2,6 +2,7 @@ import Vec3 from "./Vec3.js";
 
 // http://in2gpu.com/2016/03/14/opengl-fps-camera-Quat/
 // https://github.com/toji/gl-matrix/blob/master/src/gl-matrix/quat.js
+// http://gabormakesgames.com/blog_quats_intro.html
 
 class Quat extends Float32Array{
 	constructor(q = null){

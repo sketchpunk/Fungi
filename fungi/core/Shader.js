@@ -113,16 +113,13 @@ class Shader{
 			switch(type){
 				case "rgb"	: value = gl.rgbArray( value ); break;
 				case "rgba"	: value = gl.rgbaArray( value ); break;
-				
-				/*
-				case "tex"	: 
-					let tmp = (value instanceof WebGLTexture)? value : Fungi.getTexture( value ); 
+				case "sampler2D" : 
+					let tmp = (value instanceof WebGLTexture)? value : Cache.getTexture( value ); 
 					if(tmp == null){
 						console.error("Material.checkData: Texture not found %s for material %s uniform %s",uValue, this.name, uName);
 						return this;
 					}else value = tmp;
 				break;
-				*/
 			}
 
 			if(Array.isArray(value) && value.length == 0) value = null;

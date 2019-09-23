@@ -48,13 +48,13 @@ async function dl_files(){
 		"./walking.gltf", "json", "./walking.bin", "arraybuffer",
 		//"./running.gltf", "json", "./running.bin", "arraybuffer",
 		//"./run_anim.gltf", "json", "./run_anim.bin", "arraybuffer",
-		//"./files/models/vegeta.txt", "text", "./files/models/vegeta.bin", "arraybuffer", //files/models/
-		"./files/models/pitohui.txt", "text", "./files/models/pitohui.bin", "arraybuffer", //files/models/
+		"./files/models/vegeta.txt", "text", "./files/models/vegeta.bin", "arraybuffer", //files/models/
+		//"./files/models/pitohui.txt", "text", "./files/models/pitohui.bin", "arraybuffer", //files/models/
 	);
 	
 	build_src( dl[0], dl[1] );
-	//build_target( dl[2], dl[3] );
-	build_target2( dl[2], dl[3] );
+	build_target( dl[2], dl[3] );
+	//build_target2( dl[2], dl[3] );
 
 	//gAnim.at( 1.0, gAnimPose );
 	//gAnimPose.apply();
@@ -543,6 +543,7 @@ class MeshLoader{
 
 		/**/
 		let s, vao, spec = this.parse_section( "Vao", txt );
+		console.log( spec );
 		for( let i of mesh_list ){
 			//console.log( i );
 			s	= spec[ i ];
@@ -680,6 +681,7 @@ function retarget(){
 
 	//###################################################
 	// Pitohui
+	/*
 	retarget_tbone( "Hips", gSrcTPose, gAnimPose, "bip_pelvis", gDstTPose, gDstPose );
 	
 	
@@ -698,18 +700,18 @@ function retarget(){
 	retarget_tbone( "LeftShoulder", gSrcTPose, gAnimPose, "bip_collar_L", gDstTPose, gDstPose );
 	retarget_tbone( "LeftArm", gSrcTPose, gAnimPose, "bip_upperarm_L", gDstTPose, gDstPose );
 	retarget_tbone( "LeftForeArm", gSrcTPose, gAnimPose, "bip_lowerarm_L", gDstTPose, gDstPose );
-	/**/
+
 
 	
 	retarget_tbone( "RightShoulder", gSrcTPose, gAnimPose, "bip_collar_R", gDstTPose, gDstPose );
 	retarget_tbone( "RightArm", gSrcTPose, gAnimPose, "bip_upperarm_R", gDstTPose, gDstPose );
 	retarget_tbone( "RightForeArm", gSrcTPose, gAnimPose, "bip_lowerarm_R", gDstTPose, gDstPose );
-	/**/
+	*/
 
 
 	//###################################################
 	// VEGETA
-	/*
+	/**/
 	retarget_tbone( "LeftUpLeg", gSrcTPose, gAnimPose, "LeftUpLeg", gDstTPose, gDstPose );
 	retarget_tbone( "LeftLeg", gSrcTPose, gAnimPose, "LeftLeg", gDstTPose, gDstPose );
 	
@@ -722,9 +724,11 @@ function retarget(){
 
 	retarget_tbone( "RightUpLeg", gSrcTPose, gAnimPose, "RightUpLeg", gDstTPose, gDstPose );
 	retarget_tbone( "RightLeg", gSrcTPose, gAnimPose, "RightLeg", gDstTPose, gDstPose );
-	*/
+	
+	retarget_tbone( "LeftShoulder", gSrcTPose, gAnimPose, "LeftShoulder", gDstTPose, gDstPose );
+	retarget_tbone( "RightShoulder", gSrcTPose, gAnimPose, "RightShoulder", gDstTPose, gDstPose );
 
-	/*
+	/**/
 	retarget_tbone( "Hips", gSrcTPose, gAnimPose, "Hips", gDstTPose, gDstPose );
 	
 	retarget_tbone( "Spine", gSrcTPose, gAnimPose, "Spine", gDstTPose, gDstPose );
@@ -732,7 +736,7 @@ function retarget(){
 	retarget_tbone( "Spine2", gSrcTPose, gAnimPose, "Spine2", gDstTPose, gDstPose );
 	retarget_tbone( "Neck", gSrcTPose, gAnimPose, "Neck", gDstTPose, gDstPose );
 	//retarget_tbone( "Head", gSrcTPose, gAnimPose, "Head", gDstTPose, gDstPose );
-	*/
+	
 }
 
 

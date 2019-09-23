@@ -276,7 +276,7 @@ class Gltf{
 
 				// Scale isn't always available
 				if( n.scale ){
-					// Near One Testing, Clean up the data because of Floating point issues.
+					// Near Zero Testing, Clean up the data because of Floating point issues.
 					itm.scl		= n.scale.slice(0);
 					if( Math.abs( 1 - itm.scl[0] ) <= 0.000001 ) itm.scl[0] = 1;
 					if( Math.abs( 1 - itm.scl[1] ) <= 0.000001 ) itm.scl[1] = 1;
@@ -325,6 +325,7 @@ class Gltf{
 	////////////////////////////////////////////////////////
 	// Animation
 	////////////////////////////////////////////////////////
+		//TODO, DELETE
 		static getSkinAnimation( name, json, bin ){
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			// Validate there is animations and an anaimtion by a name exists in the json file.
@@ -374,11 +375,123 @@ class Gltf{
 				tData	= this.parseAccessor( s.input, json, bin );		// Get Time for all keyframes
 				dData	= this.parseAccessor( s.output, json, bin );	// Get Value that changes per keyframe
 
+				console.log( prop, s.input, s.output );
+
 				// Using the Node Index, Save it to the lookup table with the prop name.
 				tbl[ n ][ prop ] = { time: tData.data, data: dData.data, lerp:s.interpolation };
 			}
 
 			return tbl;
+		}
+
+		static get_animation( name, json, bin, limit=true, frame_inv=true ){
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			// Validate there is animations and an anaimtion by a name exists in the json file.
+			if( json.animations === undefined || json.animations.length == 0 ){ console.error("There is no animations in gltf"); return null; }
+
+			let i, a = null;
+			for( i of json.animations ) if( i.name === name ){ a = i; break; }
+
+			if( !a ){ console.error("Animation by the name", name, "not found in GLTF"); return null; }
+
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			// Create Lookup Table For Node Index to Bone Index.
+			let joints	= {},
+				j_ary	= json.skins[0].joints;
+
+			for( i=0; i < j_ary.length; i++ ){ 
+				joints[ j_ary[i] ] = i; // Node Index to Joint Index
+				//console.log( "Idx :", i, " Name: ", json.nodes[ j_ary[i] ].name );
+			}
+			
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			let chi = 0, ch, s, n, prop,
+				t_idx, n_name, s_time,
+				ch_ary		= [],	// Store all the channel information structs
+				time_ary	= [],	// Shared Time Information between Tracks
+				time_tbl	= {},	// Keep Track of Time Accessor ID thats been extracted
+				time_max	= 0;	// Max Time of the Track Animations
+
+			for( chi=0; chi < a.channels.length; chi++ ){
+				//.......................
+				// Must check that the channel points to a node that the animation is attached to.
+				ch = a.channels[ chi ];
+				if( ch.target.node == undefined ) continue;
+				n = ch.target.node;
+
+				if( joints[ n ] == undefined ){
+					console.log("Channel's target node is not a joint of the first skin.");
+					continue;
+				}
+
+				//.......................
+				// User a smaller property name then what GLTF uses.
+				switch( ch.target.path ){
+					case "rotation"		: prop = "rot"; break;
+					case "translation"	: prop = "pos"; break;
+					case "scale"		: prop = "scl"; break;
+					default: console.log( "unknown channel path", ch.path ); continue;
+				}
+
+				//.......................
+				// When limit it set, only want rotation tracks and if its the hip, position to.
+				n_name = json.nodes[ n ].name.toLowerCase();
+
+				if( limit && 
+					!( prop == "rot" ||  
+						( n_name.indexOf("hip") != -1 && prop == "pos" )
+					) 
+				) continue;
+
+				//.......................
+				// Parse out the Sampler Data from the Bin file.
+				s = a.samplers[ ch.sampler ];
+
+				// Get Time for all keyframes, cache it since its shared.
+				t_idx = time_tbl[ s.input ];
+				if( t_idx == undefined ){
+					time_tbl[ s.input ] = t_idx = time_ary.length;
+					s_time = this.parseAccessor( s.input, json, bin );
+
+					time_ary.push( s_time.data );
+
+					time_max = Math.max( time_max, s_time.max[0] );
+				}
+
+				//.......................
+				// Get the changing value per frame for the property
+				ch_ary.push({
+					type		: prop,
+					time_idx 	: t_idx,
+					joint_idx	: joints[ n ],
+					lerp 		: s.interpolation,
+					data		: this.parseAccessor( s.output, json, bin ).data,
+				});
+			}
+
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			let rtn = { time_max, times: time_ary, tracks:ch_ary };
+
+			// if Requested, create an array of values to help normalize time between frames.
+			// Normal time equation would be:  (x - a) / (b - a)  with A and B being time of two frames
+			// Can cache b - a, then invert it with 1 / (b-a), which allows us have a new equation of
+			// ( x - a ) * frame_inv
+ 			if( frame_inv ){
+				let j, t, tt;
+
+				rtn.frame_inv = new Array();
+				for( i=0; i < rtn.times.length; i++ ){
+					t 	= rtn.times[i];
+					tt 	= new Float32Array( t.length-1 );
+
+					for( j=0; j < t.length-1; j++ ) tt[ j ] = 1 / ( t[j+1] - t[j] ); //  1 / (b - a)
+
+					rtn.frame_inv.push( tt );
+				}
+			}
+
+
+			return rtn;
 		}
 }
 

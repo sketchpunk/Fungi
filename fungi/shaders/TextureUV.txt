@@ -1,17 +1,17 @@
 <shader>{
-	"name":"TextureUV",
-	"ubo":[ "UBOTransform", "UBOModel" ],
-	"options": { "modelMatrix":true },
-	"uniforms":[
-		{ "name":"u_tex01", "type":"sampler2D" },
-		{ "name":"u_texScale", "type":"vec2" }
+	"name"		: "TextureUV",
+	"ubo"		: [ "UBOGlobal", "UBOModel" ],
+	"uniforms"	: [
+		{ "name":"u_tex01",		"type":"sampler2D" },
+		{ "name":"u_texScale",	"type":"vec2" }
 	]
 }<\shader>
-	
+
 <materials>[
-	{ "name":"TextureUV","useBlending":true,"useSampleAlphaCoverage":false, 
-		"uniforms":[ 
-			{ "name":"u_tex01",		"value":"tex01", "type":"tex" },
+	{ 	"name"		: "TextureUV",
+		"options"	: { "blend":true, "sampleAlphaCoverage":false, "cullFace":true },
+		"uniforms"	: [ 
+			{ "name":"u_tex01",		"value":"tex01" },
 			{ "name":"u_texScale",	"value":[1,1] }
 		]
 	}
@@ -22,8 +22,8 @@
 	layout(location=0) in vec3 a_position;
 	layout(location=2) in vec2 a_uv;
 
-	uniform UBOTransform{
-		mat4 	projViewMatrix;
+	uniform UBOGlobal{
+		mat4	projViewMatrix;
 		vec3	cameraPos;
 		float	globalTime;
 		vec2	screenSize;
@@ -35,7 +35,6 @@
 	};
 
 	uniform vec2 u_texScale;
-
 	out vec2 v_uv;
 
 	void main(void){

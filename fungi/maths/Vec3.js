@@ -89,6 +89,12 @@ class Vec3 extends Float32Array{
 			return this;
 		}
 
+		from_div( a, b ){
+			this[0] = ( b[0] != 0 )? a[0] / b[0] : 0;
+			this[1] = ( b[1] != 0 )? a[1] / b[1] : 0;
+			this[2] = ( b[2] != 0 )? a[2] / b[2] : 0;
+			return this;
+		}
 
 		from_scale( a, s ){
 			this[0] = a[0] * s;
@@ -200,7 +206,7 @@ class Vec3 extends Float32Array{
 		}
 
 		//When values are very small, like less then 0.000001, just make it zero.
-		nearZero(out){
+		near_zero(out){
 			out = out || this;
 
 			if(Math.abs(out[0]) <= 1e-6) out[0] = 0;
