@@ -6,7 +6,7 @@ class Motion{
 
 		return ( dt )=>{
 			let s = Math.sin( (t += speed * dt) );
-			Vec3.scale( v_max, s, e.Node.local.pos ).add( offset );
+			e.Node.local.pos.from_scale( v_max, s ).add( offset );
 			e.Node.isModified = true;
 		}
 	}
@@ -48,7 +48,7 @@ class Motion{
 		return ( dt )=>{
 			let a = rad * Math.sin( (t += speed * dt) );
 			
-			q.setAxisAngle( axis, a ).mul( org_rot );
+			q.from_axis_angle( axis, a ).mul( org_rot );
 			e.Node.setRot( q );
 		}
 	}

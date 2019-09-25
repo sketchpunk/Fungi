@@ -45,7 +45,7 @@ class Transform{
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			//POSITION - parent.position + ( parent.rotation * ( parent.scale * child.position ) )
 			let v = new Vec3().from_mul( tp.scl, tc.pos ); // parent.scale * child.position;
-			Vec3.transformQuat( v, tp.rot, v );
+			Vec3.transform_quat( v, tp.rot, v );
 			this.pos.from_add( tp.pos, v ); // Vec3.add( tp.pos, v, this.pos );
 
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -73,7 +73,7 @@ class Transform{
 			//POSITION - parent.position + ( parent.rotation * ( parent.scale * child.position ) )
 			let v = new Vec3();
 			Vec3.mul( this.scl, cp, v ); // parent.scale * child.position;
-			this.pos.add( Vec3.transformQuat( v, this.rot, v ) );
+			this.pos.add( Vec3.transform_quat( v, this.rot, v ) );
 
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			// SCALE - parent.scale * child.scale
@@ -88,7 +88,7 @@ class Transform{
 
 		add_pos( cp, ignore_scl = false ){
 			//POSITION - parent.position + ( parent.rotation * ( parent.scale * child.position ) )
-			if( ignore_scl )	this.pos.add( Vec3.transformQuat( cp, this.rot ) );
+			if( ignore_scl )	this.pos.add( Vec3.transform_quat( cp, this.rot ) );
 			else 				this.pos.add( Vec3.mul( this.scl, cp ).transform_quat( this.rot ) );
 			return this;
 		}
@@ -104,7 +104,7 @@ class Transform{
 			out = out || v;
 			//GLSL - vecQuatRotation(model.rotation, a_position.xyz * model.scale) + model.position;
 			Vec3.mul( v, this.scl, out );
-			Vec3.transformQuat( out, this.rot, out ).add( this.pos );
+			Vec3.transform_quat( out, this.rot, out ).add( this.pos );
 			return out;
 		}
 
@@ -124,7 +124,7 @@ class Transform{
 			//POSITION - parent.position + ( parent.rotation * ( parent.scale * child.position ) )
 			let v = new Vec3();
 			Vec3.mul( tp.scl, tc.pos, v ); // parent.scale * child.position;
-			Vec3.transformQuat( v, tp.rot, v );
+			Vec3.transform_quat( v, tp.rot, v );
 			Vec3.add( tp.pos, v, tOut.pos );
 
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -152,7 +152,7 @@ class Transform{
 
 			// Invert Position : rotInv * ( invScl * invPos )
 			t.pos.invert( inv.pos ).mul( inv.scl );
-			Vec3.transformQuat( inv.pos, inv.rot, inv.pos );
+			Vec3.transform_quat( inv.pos, inv.rot, inv.pos );
 
 			return inv;
 		}

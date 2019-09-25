@@ -256,7 +256,7 @@ class CameraInputSystem extends System{
 				look	= Vec3.sub( pos, this.targetPos );
 
 			App.camera.Node.local.pos.copy( pos );
-			Quat.look( look, Vec3.UP, App.camera.Node.local.rot );
+			App.camera.Node.local.rot.from_look( look, Vec3.UP );
 			App.camera.Node.isModified = true;
 
 			//BETTER SOLUTION, FIX LAter.
@@ -282,12 +282,13 @@ class CameraInputSystem extends System{
 
 		// First Person Look Around by delta
 		look( dx=null, dy=null ){
-			let euler = Quat.toEuler( this.initRotation );
+			let euler = Quat.to_euler( this.initRotation );
 			
 			if( dy != null ) euler[0] += dy;
 			if( dx != null ) euler[1] += dx;
 
-			Quat.fromEuler( App.camera.Node.local.rot, euler[0], euler[1], 0, "YZX" );
+			//Quat.from_Euler( App.camera.Node.local.rot, euler[0], euler[1], 0, "YZX" );
+			App.camera.Node.local.rot.from_euler_order( euler[0], euler[1], 0, "YZX" );
 			App.camera.Node.isModified = true;
 		}
 
@@ -296,7 +297,7 @@ class CameraInputSystem extends System{
 			this.targetDistance = Math.max( this.targetDistanceMin, this.targetDistance + i );
 						
 			let delta = Vec3.sub( App.camera.Node.local.pos, this.targetPos );	// Get Distance Vector
-			delta.setLength( this.targetDistance ).add( this.targetPos );		// Resize and Append
+			delta.set_len( this.targetDistance ).add( this.targetPos );		// Resize and Append
 			App.camera.Node.setPos( delta );									// Update Camera
 		}
 

@@ -191,7 +191,7 @@ class TranslateGizmo{
 				// Get the closest two points between the ray and the axis line
 				info = Ray.nearSegmentPoints( ray, wt.pos, p );
 				if( info != null ){
-					len = info[0].lengthSqr( info[1] );
+					len = info[0].len_sqr( info[1] );
 					if( len <= AXIS_MIN_RNG && len < minLen ){
 						minLen	= len;
 						minAxis	= i;

@@ -217,7 +217,7 @@ class FungiGLTF{
 				}
 
 				b = ab.Node.children[0].Node.world;					// First Child's World Space Transform
-				ab.Bone.length = ab.Node.world.pos.length( b.pos );	// Distance from Parent to Child
+				ab.Bone.length = ab.Node.world.pos.len( b.pos );	// Distance from Parent to Child
 			}
 		}
 }
@@ -813,7 +813,8 @@ class AnimationRetarget{
 			let to_local_q = ( t_bone.p_idx == null )? 
 				t_pose.root_offset.rot.clone() : 
 				t_pose.bones[ t_bone.p_idx ].world.rot.clone();
-			to_local_q.invert();
+			
+			to_local_q.invert(); // Parent Model Space Rotation Inverted.
 
 
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

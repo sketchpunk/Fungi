@@ -39,10 +39,11 @@ function init(){
 		.line( [0,0,0], [0,1,0], 6 )				// Single Color Line
 
 		.quat( 
-			Quat.fromEuler(null, 
+			new Quat().from_euler( 
 				Maths.toRad(-45), 
 				Maths.toRad(-45), 
-				Maths.toRad(45)), 
+				Maths.toRad(45)
+			), 
 			[0, 0.2, 1], 
 			0.5
 		)

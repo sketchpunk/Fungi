@@ -16,6 +16,10 @@ class Vec3 extends Float32Array{
 	// GETTER - SETTERS
 	////////////////////////////////////////////////////////////////////
 
+		get x(){ return this[0]; }	set x( v ){ this[0] = v; }
+		get y(){ return this[1]; }	set y( v ){ this[1] = v; }
+		get z(){ return this[2]; }	set z( v ){ this[2] = v; }
+
 		set( x=null, y=null, z=null ){ 
 			if( x != null ) this[0] = x;
 			if( y != null ) this[1] = y; 
@@ -23,50 +27,41 @@ class Vec3 extends Float32Array{
 			return this;
 		}
 
-		get x(){ return this[0]; }	set x(val){ this[0] = val; }
-		get y(){ return this[1]; }	set y(val){ this[1] = val; }
-		get z(){ return this[2]; }	set z(val){ this[2] = val; }
-
-		clone(){ return new Vec3(this); }
+		copy( v ){ this[0] = v[0]; this[1] = v[1]; this[2] = v[2]; return this; }
+		clone(){ return new Vec3( this ); }
 		
-		copy(v){ this[0] = v[0]; this[1] = v[1]; this[2] = v[2]; return this; }
+		//-------------------------------------------
 
-		setLength(len){ return this.norm().scale(len); }
+		set_len( len ){ return this.norm().scale(len); }
 
-		length(v){
+		len( v ){
 			//Only get the magnitude of this vector
-			if(v === undefined) return Math.sqrt( this[0]*this[0] + this[1]*this[1] + this[2]*this[2] );
+			if( !v ) return Math.sqrt( this[0]**2 + this[1]**2 + this[2]**2 );
 
 			//Get magnitude based on another vector
-			var x = this[0] - v[0],
+			let x = this[0] - v[0],
 				y = this[1] - v[1],
 				z = this[2] - v[2];
 
 			return Math.sqrt( x*x + y*y + z*z );
 		}
 		
-		lengthSqr(v){
+		len_sqr( v ){
 			//Only get the squared magnitude of this vector
-			if(v === undefined) return this[0]*this[0] + this[1]*this[1] + this[2]*this[2];
+			if(v === undefined) return this[0]**2 + this[1]**2 + this[2]**2;
 
 			//Get squared magnitude based on another vector
-			var x = this[0] - v[0],
+			let x = this[0] - v[0],
 				y = this[1] - v[1],
 				z = this[2] - v[2];
 
 			return x*x + y*y + z*z;
 		}
 
-		dot( v ){ return this[0] * v[0] + this[1] * v[1] + this[2] * v[2]; }
 
-		from_cross( a, b ){
-			var ax = a[0], ay = a[1], az = a[2],
-				bx = b[0], by = b[1], bz = b[2];
-			this[0] = ay * bz - az * by;
-			this[1] = az * bx - ax * bz;
-			this[2] = ax * by - ay * bx;
-			return this;
-		}
+	////////////////////////////////////////////////////////////////////
+	// FROM SETTERS
+	////////////////////////////////////////////////////////////////////
 
 		from_add( a, b ){
 			this[0] = a[0] + b[0];
@@ -103,20 +98,26 @@ class Vec3 extends Float32Array{
 			return this;
 		}
 
-		from_lerp( t, a, b ){ //Linear Interpolation : (1 - t) * v0 + t * v1;
-			var ti = 1 - t;
+		//-------------------------------------------
+
+		from_cross( a, b ){
+			let ax = a[0], ay = a[1], az = a[2],
+				bx = b[0], by = b[1], bz = b[2];
+			this[0] = ay * bz - az * by;
+			this[1] = az * bx - ax * bz;
+			this[2] = ax * by - ay * bx;
+			return this;
+		}
+
+		from_lerp( a, b, t ){
+			let ti = 1 - t; // Linear Interpolation : (1 - t) * v0 + t * v1;
 			this[0] = a[0] * ti + b[0] * t;
 			this[1] = a[1] * ti + b[1] * t;
 			this[2] = a[2] * ti + b[2] * t;
 			return this;
 		}
 
-		from_quat( q, dir=null ){
-			Vec3.transformQuat( dir || Vec3.FORWARD, q, this );
-			return this;
-		}
-
-		set_polar( lon, lat ) {
+		from_polar( lon, lat ) {
 			let phi 	= ( 90 - lat ) * 0.01745329251, //deg 2 rad
 				theta 	= lon * 0.01745329251,  //( lon + 180 ) * 0.01745329251,
 				sp     	= Math.sin(phi);
@@ -127,11 +128,29 @@ class Vec3 extends Float32Array{
 			return this;
 		}
 
+		from_quat( q, v=Vec3.FORWARD ){
+			//Vec3.transform_quat( dir || Vec3.FORWARD, q, this );
+			let qx = q[0], qy = q[1], qz = q[2], qw = q[3],
+				vx = v[0], vy = v[1], vz = v[2],
+				x1 = qy * vz - qz * vy,
+				y1 = qz * vx - qx * vz,
+				z1 = qx * vy - qy * vx,
+				x2 = qw * x1 + qy * z1 - qz * y1,
+				y2 = qw * y1 + qz * x1 - qx * z1,
+				z2 = qw * z1 + qx * y1 - qy * x1;
+
+			this[0] = vx + 2 * x2;
+			this[1] = vy + 2 * y2;
+			this[2] = vz + 2 * z2;
+			return this;
+		}
+
 
 	////////////////////////////////////////////////////////////////////
 	// INSTANCE OPERATORS
 	////////////////////////////////////////////////////////////////////
-		add(v,out){
+		
+		add( v, out=null ){
 			out = out || this;
 			out[0] = this[0] + v[0];
 			out[1] = this[1] + v[1];
@@ -139,7 +158,7 @@ class Vec3 extends Float32Array{
 			return out;
 		}
 
-		sub(v,out){
+		sub( v, out=null ){
 			out = out || this;
 			out[0] = this[0] - v[0];
 			out[1] = this[1] - v[1];
@@ -147,41 +166,23 @@ class Vec3 extends Float32Array{
 			return out;
 		}
 
-		mul(v,out){
+		mul( v, out=null ){
 			out = out || this;
 			out[0] = this[0] * v[0];
 			out[1] = this[1] * v[1];
 			out[2] = this[2] * v[2];
-
 			return out;
 		}
 
-		div(v,out){
+		div( v, out=null ){
 			out = out || this;
 			out[0] = (v[0] != 0)? this[0] / v[0] : 0;
 			out[1] = (v[1] != 0)? this[1] / v[1] : 0;
 			out[2] = (v[2] != 0)? this[2] / v[2] : 0;
-
 			return out;
 		}
 
-		divInvScale(v,out){
-			out = out || this;
-			out[0] = (this[0] != 0)? v / this[0] : 0;
-			out[1] = (this[1] != 0)? v / this[1] : 0;
-			out[2] = (this[2] != 0)? v / this[2] : 0;
-			return out;
-		}	
-
-		scale(v,out){
-			out = out || this;
-			out[0] = this[0] * v;
-			out[1] = this[1] * v;
-			out[2] = this[2] * v;
-			return out;
-		}
-
-		divScale(v,out){
+		div_scale( v, out=null ){
 			out = out || this;
 			out[0] = this[0] / v;
 			out[1] = this[1] / v;
@@ -189,7 +190,25 @@ class Vec3 extends Float32Array{
 			return out;
 		}
 
-		abs( out ){
+		div_inv_scale( v=1, out=null ){
+			out = out || this;
+			out[0] = (this[0] != 0)? v / this[0] : 0;
+			out[1] = (this[1] != 0)? v / this[1] : 0;
+			out[2] = (this[2] != 0)? v / this[2] : 0;
+			return out;
+		}	
+
+		scale( v, out=null ){
+			out = out || this;
+			out[0] = this[0] * v;
+			out[1] = this[1] * v;
+			out[2] = this[2] * v;
+			return out;
+		}
+
+		//-------------------------------------------
+
+		abs( out=null ){
 			out = out || this;
 			out[0] = Math.abs( this[0] );
 			out[1] = Math.abs( this[1] );
@@ -197,7 +216,7 @@ class Vec3 extends Float32Array{
 			return out;
 		}
 
-		floor( out ){
+		floor( out=null ){
 			out = out || this;
 			out[0] = Math.floor( this[0] );
 			out[1] = Math.floor( this[1] );
@@ -206,17 +225,15 @@ class Vec3 extends Float32Array{
 		}
 
 		//When values are very small, like less then 0.000001, just make it zero.
-		near_zero(out){
+		near_zero( out=null ){
 			out = out || this;
-
 			if(Math.abs(out[0]) <= 1e-6) out[0] = 0;
 			if(Math.abs(out[1]) <= 1e-6) out[1] = 0;
 			if(Math.abs(out[2]) <= 1e-6) out[2] = 0;
-
 			return out;
 		}
 
-		invert(out){
+		invert( out=null ){
 			out = out || this;
 			out[0] = -this[0];
 			out[1] = -this[1];
@@ -224,14 +241,15 @@ class Vec3 extends Float32Array{
 			return out;
 		}
 
-		norm(out){
-			var mag = Math.sqrt( this[0]*this[0] + this[1]*this[1] + this[2]*this[2] );
+		norm( out=null ){
+			let mag = Math.sqrt( this[0]**2 + this[1]**2 + this[2]**2 );
 			if(mag == 0) return this;
 
+			mag = 1 / mag;
 			out = out || this;
-			out[0] = this[0] / mag;
-			out[1] = this[1] / mag;
-			out[2] = this[2] / mag;
+			out[0] = this[0] * mag;
+			out[1] = this[1] * mag;
+			out[2] = this[2] * mag;
 
 			return out;
 		}
@@ -241,8 +259,8 @@ class Vec3 extends Float32Array{
 	// TRANSFORMATIONS
 	////////////////////////////////////////////////////////////////////
 		
-		transformMat3(m,out){
-			var x = this[0], y = this[1], z = this[2];
+		transform_mat3( m, out=null ){
+			let x = this[0], y = this[1], z = this[2];
 			out = out || this;
 			out[0] = x * m[0] + y * m[3] + z * m[6];
 			out[1] = x * m[1] + y * m[4] + z * m[7];
@@ -250,8 +268,8 @@ class Vec3 extends Float32Array{
 			return out;
 		}
 
-		transformMat4(m,out){
-		    var x = this[0], y = this[1], z = this[2],
+		transform_mat4( m, out=null ){
+		    let x = this[0], y = this[1], z = this[2],
 		        w = m[3] * x + m[7] * y + m[11] * z + m[15];
 		    w = w || 1.0;
 
@@ -262,17 +280,17 @@ class Vec3 extends Float32Array{
 		    return out;
 		}
 
-		//https://www.siggraph.org/education/materials/HyperGraph/modeling/mod_tran/3drota.htm
-		rotate(rad, axis = "x", out = null){
+		rotate( rad, axis="x", out=null ){
+			//https://www.siggraph.org/education/materials/HyperGraph/modeling/mod_tran/3drota.htm
 			out = out || this;
 
-			var sin = Math.sin(rad),
+			let sin = Math.sin(rad),
 				cos = Math.cos(rad),
 				x 	= this[0],
 				y 	= this[1],
 				z 	= this[2];
 
-			switch(axis){
+			switch( axis ){
 				case "y": //..........................
 					out[0]	= z*sin + x*cos; //x
 					out[2]	= z*cos - x*sin; //z
@@ -290,20 +308,33 @@ class Vec3 extends Float32Array{
 			return out;
 		}
 
-		lerp(v, t, out){
+		lerp( v, t, out ){
 			if(out == null) out = this;
-			var tMin1 = 1 - t;
+			let ti = 1 - t;
 
 			//Linear Interpolation : (1 - t) * v0 + t * v1;
-			out[0] = this[0] * tMin1 + v[0] * t;
-			out[1] = this[1] * tMin1 + v[1] * t;
-			out[2] = this[2] * tMin1 + v[2] * t;
+			out[0] = this[0] * ti + v[0] * t;
+			out[1] = this[1] * ti + v[1] * t;
+			out[2] = this[2] * ti + v[2] * t;
 			return out;
 		}
 
-		transform_quat( q ){ return Vec3.transformQuat( this, q, this ); }
+		transform_quat( q ){ 
+			let qx = q[0], qy = q[1], qz = q[2], qw = q[3],
+				vx = this[0], vy = this[1], vz = this[2],
+				x1 = qy * vz - qz * vy,
+				y1 = qz * vx - qx * vz,
+				z1 = qx * vy - qy * vx,
+				x2 = qw * x1 + qy * z1 - qz * y1,
+				y2 = qw * y1 + qz * x1 - qx * z1,
+				z2 = qw * z1 + qx * y1 - qy * x1;
 
-		
+			this[0] = vx + 2 * x2;
+			this[1] = vy + 2 * y2;
+			this[2] = vz + 2 * z2;
+			return this;
+		}
+
 		rot_axis_angle( axis, rad, out ){
 			// Rodrigues Rotation formula:
 			// v_rot = v * cos(theta) + cross( axis, v ) * sin(theta) + axis * dot( axis, v) * (1-cos(theta))
@@ -324,8 +355,8 @@ class Vec3 extends Float32Array{
 	////////////////////////////////////////////////////////////////////
 	// STATIC OPERATORS
 	////////////////////////////////////////////////////////////////////
-
-		static add(a, b, out){ 
+		
+		static add( a, b, out=null ){ 
 			out = out || new Vec3();
 			out[0] = a[0] + b[0];
 			out[1] = a[1] + b[1];
@@ -333,7 +364,7 @@ class Vec3 extends Float32Array{
 			return out;
 		}
 
-		static sub(a, b, out){ 
+		static sub( a, b, out=null){ 
 			out = out || new Vec3();
 			out[0] = a[0] - b[0];
 			out[1] = a[1] - b[1];
@@ -341,7 +372,7 @@ class Vec3 extends Float32Array{
 			return out;
 		}
 
-		static mul(a, b, out){
+		static mul( a, b, out=null ){
 			out = out || new Vec3();
 			out[0] = a[0] * b[0];
 			out[1] = a[1] * b[1];
@@ -349,53 +380,20 @@ class Vec3 extends Float32Array{
 			return out;
 		}
 
-		static div(a,b,out){
+		static scale( v, s, out=null ){
 			out = out || new Vec3();
-			out[0] = (b[0] != 0)? a[0] / b[0] : 0;
-			out[1] = (b[1] != 0)? a[1] / b[1] : 0;
-			out[2] = (b[2] != 0)? a[2] / b[2] : 0;
-			return out;
-		}
-
-		static scale(v,s,out){
-			out	= out || new Vec3();
 			out[0] = v[0] * s;
 			out[1] = v[1] * s;
 			out[2] = v[2] * s;
 			return out;
 		}
 
-		static invert(v,out){
-			out	= out || new Vec3();
-			out[0] = -v[0];
-			out[1] = -v[1];
-			out[2] = -v[2];
-			return out;
-		}
+		//-------------------------------------------
 
-		static abs(v,out){
-			out = out || new Vec3();
-			out[0] = Math.abs( v[0] );
-			out[1] = Math.abs( v[1] );
-			out[2] = Math.abs( v[2] );
-			return out;
-		}
-
-		static norm(v, out){
-			var mag = Math.sqrt( v[0]*v[0] + v[1]*v[1] + v[2]*v[2] );
-			if(mag == 0) return null;
-			out		= out || new Vec3();
-
-			mag 	= 1 / mag;
-			out[0]	= v[0] * mag;
-			out[1]	= v[1] * mag;
-			out[2]	= v[2] * mag;
-			return out
-		}
-
-		static dot(a,b){ return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]; }
-		static cross(a,b,out){
-			var ax = a[0], ay = a[1], az = a[2],
+		static dot( a, b ){ return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]; }
+		
+		static cross( a, b, out ){
+			let ax = a[0], ay = a[1], az = a[2],
 				bx = b[0], by = b[1], bz = b[2];
 
 			out	= out || new Vec3();
@@ -416,102 +414,38 @@ class Vec3 extends Float32Array{
 			return Math.atan2( c.length(), d ); 
 		}
 
+		//-------------------------------------------
+
 		static len( a, b ){ return Math.sqrt( (a[0]-b[0]) ** 2 + (a[1]-b[1]) ** 2 + (a[2]-b[2]) ** 2 ); }
 		static len_sqr( a, b ){ return (a[0]-b[0]) ** 2 + (a[1]-b[1]) ** 2 + (a[2]-b[2]) ** 2; }
 
-		static from_polar( lon, lat, out ) {
-			let phi 	= ( 90 - lat ) * 0.01745329251, //deg 2 rad
-				theta 	= lon * 0.01745329251, //( lon + 180 ) * 0.01745329251,
-				sp     	= Math.sin(phi);
+		//-------------------------------------------
 
+		static transform_quat( v, q, out=null ){
 			out = out || new Vec3();
-			out[0] = -sp * Math.sin( theta );
-			out[1] = Math.cos( phi );
-			out[2] = sp * Math.cos( theta );
-			out.nearZero();
+			let qx = q[0], qy = q[1], qz = q[2], qw = q[3],
+				vx = v[0], vy = v[1], vz = v[2],
+				x1 = qy * vz - qz * vy,
+				y1 = qz * vx - qx * vz,
+				z1 = qx * vy - qy * vx,
+				x2 = qw * x1 + qy * z1 - qz * y1,
+				y2 = qw * y1 + qz * x1 - qx * z1,
+				z2 = qw * z1 + qx * y1 - qy * x1;
+
+			out[0] = vx + 2 * x2;
+			out[1] = vy + 2 * y2;
+			out[2] = vz + 2 * z2;
 			return out;
 		}
 
-		//https://github.com/toji/gl-matrix/blob/master/src/gl-matrix/vec3.js#L514
-		static transformQuat(a, q, out) {
-			// benchmarks: https://jsperf.com/quaternion-transform-vec3-implementations-fixed
-			let qx	= q[0], qy	= q[1], qz	= q[2], qw = q[3],
-				x	= a[0], y	= a[1], z	= a[2];
-
-			// var qvec = [qx, qy, qz];
-			// var uv = vec3.cross([], qvec, a);
-			let uvx = qy * z - qz * y,
-				uvy = qz * x - qx * z,
-				uvz = qx * y - qy * x;
-			// var uuv = vec3.cross([], qvec, uv);
-			let uuvx = qy * uvz - qz * uvy,
-				uuvy = qz * uvx - qx * uvz,
-				uuvz = qx * uvy - qy * uvx;
-			// vec3.scale(uv, uv, 2 * w);
-			let w2 = qw * 2;
-			uvx *= w2;
-			uvy *= w2;
-			uvz *= w2;
-			// vec3.scale(uuv, uuv, 2);
-			uuvx *= 2;
-			uuvy *= 2;
-			uuvz *= 2;
-
-			// return vec3.add(out, a, vec3.add(out, uv, uuv));
-			out = out || new Vec3();
-			out[0] = x + uvx + uuvx;
-			out[1] = y + uvy + uuvy;
-			out[2] = z + uvz + uuvz;
-			return out;
-		}
-
-		//When values are very small, like less then 0.000001, just make it zero.
-		static nearZero(v, out){
-			out = out || new Vec3();
-
-			out[0] = (Math.abs(v[0]) <= 1e-6) ? 0 : v[0];
-			out[1] = (Math.abs(v[1]) <= 1e-6) ? 0 : v[1];
-			out[2] = (Math.abs(v[2]) <= 1e-6) ? 0 : v[2];
-
-			return out;
-		}
-
-		static lerp(a, b, t, out){
-			out = out || new Vec3();
-			let ax = a[0],
-				ay = a[1],
-				az = a[2];
-			out[0] = ax + t * (b[0] - ax);
-			out[1] = ay + t * (b[1] - ay);
-			out[2] = az + t * (b[2] - az);
-			return out;
-		}
-
-		//Another Equation for Linear Interpolation : (1 - t) * v0 + t * v1;
-		//Todo, see if this one work better then whats there.
-		/*
-		static lerp(a, b, t, out){
-			out = out || new Vec3();
-
-			let ax = a[0],
-				ay = a[1],
-				az = a[2],
-				tMin1 = 1 - t;
-
-			out[0] = tMin1 * ax + t * b[0];
-			out[1] = tMin1 * ay + t * b[1];
-			out[2] = tMin1 * az + t * b[2];
-			return out;
-		}
-		*/
 
 	////////////////////////////////////////////////////////////////////
 	// MISC
 	////////////////////////////////////////////////////////////////////
 
 		// Create an Array of Vectors
-		static createArray(len){
-			var i, ary = new Array(len);
+		static create_array( len ){
+			let i, ary = new Array( len );
 			for(i=0; i < len; i++) ary[i] = new Vec3();
 			return ary;
 		}
@@ -568,4 +502,26 @@ export function bezier(out, a, b, c, d, t) {
 		//	out[2] = s * v[2];
 		//	return out;
 		//}
- */
+
+// https://docs.unity3d.com/ScriptReference/Vector3.Project.html
+// https://github.com/Unity-Technologies/UnityCsReference/blob/master/Runtime/Export/Math/Vector3.cs#L265
+function vec3_project( v, v_norm, out ){
+	let sqr = Vec3.dot( v_norm, v_norm );
+	out = out || new Vec3();
+
+	if( sqr < 0.000001 ) return out.copy( Vec3.ZERO );
+
+	let dot 	= Vec3.dot( v, v_norm ),
+		sqr_i	= 1 / sqr;
+
+	return out.set(
+		//v_norm[0] * dot * sqr_i,
+		//v_norm[1] * dot * sqr_i,
+		//v_norm[2] * dot * sqr_i
+
+		v_norm[0] * dot / sqr,
+		v_norm[1] * dot / sqr,
+		v_norm[2] * dot / sqr
+	);
+}
+*/

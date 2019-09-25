@@ -36,8 +36,8 @@ function init(){
 	
 	gShape 	= App.$Draw( "gShape", vao, "BaseColorDGray", 1 );
 	gShape.Node.setPos( 2, 1, 0 );
-	gShape.Node.local.rot.ry( Maths.toRad(30) );
-	gShape.Node.local.rot.rx( Maths.toRad(-45) );
+	gShape.Node.local.rot.rot_y( Maths.toRad(30) );
+	gShape.Node.local.rot.rot_x( Maths.toRad(-45) );
 
 	App.$Draw( "gShapeLocal", vao, "BaseColorRed", 1 );
 

@@ -111,7 +111,7 @@ class Node{
 		 * @public @return {Node}
 		 */
 		setRotAxis( axis, ang ){
-			this.local.rot.setAxisAngle( axis, ang );
+			this.local.rot.from_axis_angle( axis, ang );
 			this.isModified = true;
 			return this;
 		}
@@ -250,9 +250,9 @@ class Node{
 			out = out || new Vec3();
 
 			switch( dir ){
-				case 0: Vec3.transformQuat( Vec3.FORWARD, q, out ); break; // Forward
-				case 1: Vec3.transformQuat( Vec3.LEFT, q, out ); break; // Left
-				case 2: Vec3.transformQuat( Vec3.UP, q, out ); break; // Up
+				case 0: Vec3.transform_quat( Vec3.FORWARD, q, out ); break; // Forward
+				case 1: Vec3.transform_quat( Vec3.LEFT, q, out ); break; // Left
+				case 2: Vec3.transform_quat( Vec3.UP, q, out ); break; // Up
 			}
 			return out;
 		}

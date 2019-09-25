@@ -93,15 +93,15 @@ class GizmoSystem extends System{
 	//////////////////////////////////////////////////////////
 	camera_adjust( e ){
 		let vEye	= Vec3.sub( App.camera.Node.local.pos, e.Node.local.pos ),
-			eyeLen 	= vEye.length(),
+			eyeLen 	= vEye.len(),
 			scl 	= e.Node.local.scl;
 
 		vEye.norm();
 		scl.set( 1, 1, 1 ).scale( eyeLen / GizmoSystem.CameraScale );
 
-		if( vEye.dot( Vec3.LEFT )		< GizmoSystem.MinAdjust )	scl.x *= -1;
-		if( vEye.dot( Vec3.FORWARD )	< GizmoSystem.MinAdjust )	scl.z *= -1;
-		if( vEye.dot( Vec3.UP )			< GizmoSystem.MinAdjust )	scl.y *= -1;
+		if( Vec3.dot( vEye, Vec3.LEFT )		< GizmoSystem.MinAdjust )	scl.x *= -1;
+		if( Vec3.dot( vEye, Vec3.FORWARD )	< GizmoSystem.MinAdjust )	scl.z *= -1;
+		if( Vec3.dot( vEye, Vec3.UP )		< GizmoSystem.MinAdjust )	scl.y *= -1;
 		
 		e.Node.isModified = true;
 	}

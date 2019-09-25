@@ -26,17 +26,17 @@ class Ray{
 
 		getPos(t,out){
 			out = out || new Vec3();
-			return Vec3.lerp(this.origin, this.end, t, out); //out.copy(this.vecLen).scale(t).add(this.origin);
+			return out.from_lerp( this.origin, this.end, t ); //out.copy(this.vecLen).scale(t).add(this.origin);
 		}
 
 		get_by_len( len, out ){
 			out = out || new Vec3();
-			return Vec3.scale( this.dir, len, out ).add( this.origin );
+			return out.from_scale( this.dir, len ).add( this.origin );
 		}
 
 		prepareAABB(){
 			//Optimization trick from ScratchAPixel
-			this.vecLenInv = this.vecLen.clone().divInvScale(1); //Do inverse of distance, to use mul instead of div for speed.
+			this.vecLenInv = this.vecLen.clone().div_inv_scale( 1 ); //Do inverse of distance, to use mul instead of div for speed.
 
 			//Determine which bound will result in tMin so there will be no need to test if tMax < tMin to swop.
 			this.aabb = [ (this.vecLenInv.x < 0)? 1 : 0, (this.vecLenInv.y < 0)? 1 : 0, (this.vecLenInv.z < 0)? 1 : 0 ];
@@ -147,7 +147,7 @@ class Ray{
 			if(t == null) return null;
 
 			var ip 		= ray.getPos( t ),
-				lenSqr 	= ip.lengthSqr( planePos );
+				lenSqr 	= ip.len_sqr( planePos );
 
 			return ( lenSqr <= radius*radius )? t : null;
 		}
@@ -326,7 +326,7 @@ class Ray{
 			//...........................................
 			//Get length of projection point to center and check if its within the sphere
 			//Opposite^2 = hyptenuse^2 - adjacent^2
-			var oppLenSqr = rayToCenter.lengthSqr() - (tProj*tProj);  //Vec3.dot(rayToCenter, rayToCenter) - (tProj*tProj); 
+			var oppLenSqr = rayToCenter.len_sqr() - (tProj*tProj);  //Vec3.dot(rayToCenter, rayToCenter) - (tProj*tProj); 
 			if(oppLenSqr > radiusSqr) return false;
 			if(oppLenSqr == radiusSqr){
 				if(out) out.min = out.max = tProj;
@@ -343,7 +343,7 @@ class Ray{
 
 				out.min = t0; //var ipos0 = Vec3.scale(ray.dir,t0).add(ray.origin);
 				out.max = t1; //var ipos1 = Vec3.scale(ray.dir,t1).add(ray.origin);
-				out.pos = Vec3.scale(ray.dir,t0).add(ray.origin);
+				out.pos = Vec3.scale( ray.dir, t0 ).add( ray.origin );
 			}
 
 			return true;
@@ -354,12 +354,12 @@ class Ray{
 		//The T values this produces is based on the ray segment and will work with Ray.getPos()
 		//http://nic-gamedev.blogspot.com/2011/11/using-vector-mathematics-and-bit-of_09.html
 		static segInSphere(ray, pos, radius, out){
-			var rayLenSqr		= ray.vecLen.lengthSqr(),				// Ray's Length Squared
+			var rayLenSqr		= ray.vecLen.len_sqr(),					// Ray's Length Squared
 				rayToSphere		= Vec3.sub(pos, ray.origin),			// Vector length from Sphere Pos to Ray Origin.
 				raySphereDot	= Vec3.dot(ray.vecLen, rayToSphere),	// Vector Len . Vector Len of Ray To Sphere
 				t				= raySphereDot / rayLenSqr,				// Normalize based on ray length
 				ipos 			= ray.getPos(t),						// Closets ray point to Sphere Center
-				iSphereLenSqr 	= ipos.lengthSqr(pos),					// Length Sqr from Sphere to iPos
+				iSphereLenSqr 	= ipos.len_sqr(pos),					// Length Sqr from Sphere to iPos
 				radiusSqr 		= radius * radius;						// r^2
 
 			//......................................
@@ -402,10 +402,10 @@ class Ray{
 				AO		= Vec3.sub(ray.origin, A), 	// Vector length between start of ray and capsule line
 				AOxAB	= Vec3.cross(AO, AB),		// Perpendicular Vector between Cap Line & delta of Ray Origin & Capsule Line Start
 				VxAB 	= Vec3.cross(ray.dir, AB),	// Perpendicular Vector between Ray Dir & caplsule line
-				ab2		= AB.lengthSqr(), 			// Length Squared of Capsule Line
-				a		= VxAB.lengthSqr(),			// Length Squared of Perp Vec Length of Perp Vec of Ray&Cap
+				ab2		= AB.len_sqr(), 			// Length Squared of Capsule Line
+				a		= VxAB.len_sqr(),			// Length Squared of Perp Vec Length of Perp Vec of Ray&Cap
 				b		= 2 * Vec3.dot(VxAB,AOxAB),
-				c		= AOxAB.lengthSqr() - (cap.radiusSqr * ab2),
+				c		= AOxAB.len_sqr() - (cap.radiusSqr * ab2),
 				d		= b * b - 4 * a * c;
 
 			//...........................................
@@ -415,21 +415,21 @@ class Ray{
 			//T is less then 0 then ray goes through both end caps cylinder cap.
 			var t = (-b - Math.sqrt(d)) / (2 * a);
 			if(t < 0){
-				var pos = (A.lengthSqr(ray.origin) < B.lengthSqr(ray.origin))? A : B;
+				var pos = (A.len_sqr(ray.origin) < B.len_sqr(ray.origin))? A : B;
 				return Ray.rayInSphere( ray, pos, cap.radius, out );
 			}
 
 			//...........................................
 			//Limit intersection between the bounds of the cylinder's end caps.
-			var iPos	= Vec3.scale(ray.dir, t).add(ray.origin),	//Intersection Point
+			var iPos	= Vec3.scale( ray.dir, t ).add(ray.origin),	//Intersection Point
 				iPosLen	= Vec3.sub(iPos, A),						//Vector Length Between Intersection and Cap line Start
 				tLimit	= Vec3.dot(iPosLen, AB) / ab2;				//Projection of iPos onto Cap Line
 
 			if(tLimit >= 0 && tLimit <= 1){
 				if(out){ out.pos = iPos; }
 				return true;
-			}else if(tLimit < 0)	return Ray.rayInSphere(ray, A, cap.radius, out); 
-			else if(tLimit > 1)		return Ray.rayInSphere(ray, B, cap.radius, out); 
+			}else if(tLimit < 0)	return Ray.rayInSphere( ray, A, cap.radius, out); 
+			else if(tLimit > 1)		return Ray.rayInSphere( ray, B, cap.radius, out); 
 
 			return false;
 		}

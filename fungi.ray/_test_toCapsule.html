@@ -29,8 +29,8 @@ function init(){
 	gSpec	= new BoundingCapsule();
 	gShape	= BoundingCapsule.entity( "bShape", "BaseColorDGray" );
 	gShape.Node.setPos( 1, 1, 0 );
-	gShape.Node.local.rot.rx( Maths.toRad(-30) );
-	gShape.Node.local.rot.rz( Maths.toRad(-50) );
+	gShape.Node.local.rot.rot_x( Maths.toRad(-30) );
+	gShape.Node.local.rot.rot_z( Maths.toRad(-50) );
 
 	return true;
 }
