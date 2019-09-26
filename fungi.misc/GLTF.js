@@ -410,7 +410,8 @@ class Gltf{
 				ch_ary		= [],	// Store all the channel information structs
 				time_ary	= [],	// Shared Time Information between Tracks
 				time_tbl	= {},	// Keep Track of Time Accessor ID thats been extracted
-				time_max	= 0;	// Max Time of the Track Animations
+				time_max	= 0,	// Max Time of the Track Animations
+				frame_max	= 0;
 
 			for( chi=0; chi < a.channels.length; chi++ ){
 				//.......................
@@ -455,7 +456,8 @@ class Gltf{
 
 					time_ary.push( s_time.data );
 
-					time_max = Math.max( time_max, s_time.max[0] );
+					time_max	= Math.max( time_max, s_time.max[0] );
+					frame_max	= Math.max( frame_max, s_time.data.length );
 				}
 
 				//.......................
@@ -470,7 +472,7 @@ class Gltf{
 			}
 
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			let rtn = { time_max, times: time_ary, tracks:ch_ary };
+			let rtn = { time_max, frame_cnt_max: frame_max, times: time_ary, tracks:ch_ary };
 
 			// if Requested, create an array of values to help normalize time between frames.
 			// Normal time equation would be:  (x - a) / (b - a)  with A and B being time of two frames

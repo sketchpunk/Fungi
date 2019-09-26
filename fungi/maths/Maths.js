@@ -48,12 +48,14 @@ class Maths{
 	////////////////////////////////////////////////////////////////////
 	// TRIG
 	////////////////////////////////////////////////////////////////////
-		// SSS : Solve only knowing sides Side-Side-Side
-		// https://www.mathsisfun.com/algebra/trig-solving-sss-triangles.html
+
 		static lawcos_sss( aLen, bLen, cLen ){
 			// Law of Cosines - SSS : cos(C) = (a^2 + b^2 - c^2) / 2ab
 			// The Angle between A and B with C being the opposite length of the angle.
-			return Math.acos( (aLen*aLen + bLen*bLen - cLen*cLen) / (2 * aLen * bLen) );
+			let v = ( aLen*aLen + bLen*bLen - cLen*cLen ) / ( 2 * aLen * bLen );
+			if( v < -1 )		v = -1;	// Clamp to prevent NaN Errors
+			else if( v > 1 )	v = 1;
+			return Math.acos( v );
 		}
 
 

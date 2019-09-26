@@ -36,6 +36,8 @@ let App = {
 	deltaTime		: 0,		// Time between frames
 	sinceStart		: 1,		// Time since the render loop started.
 
+	global 			: {},
+
 	$Node	: ( name )=>{ return App.ecs.entity( name, "Node" ); },
 	$Draw	: ( name, vao = null, mat = null, mode = 4 ) => { 
 		let e = App.ecs.entity( name, [ "Node", "Draw" ] );
@@ -165,10 +167,10 @@ class AppBuilder{
 				let pAry = [];
 				pAry.push( import( "./lib/InputTracker.js").then( mod=>{ App.input = new mod.default() } ) );
 
-				if( useFloor ) pAry.push( import( "../primitives/GridFloor.js").then( mod=>mod.default() ) );
+				if( useFloor ) pAry.push( import( "../primitives/GridFloor.js").then( mod=>mod.default( "GridFloor", (is_dark)?"MatGridFloorDark":"MatGridFloor") ) );
 				if( useDebug ) pAry.push( import( "./Debug.js").then( mod=>mod.default.init( App.ecs ) ) );
 				if( pAry.length > 0 ) await Promise.all( pAry );
-	
+
 				return true;
 			});
 			return this;

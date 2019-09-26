@@ -409,9 +409,9 @@ class Vec3 extends Float32Array{
 			//return Math.acos( Math.max( -1, Math.min( 1, theta ) ) ); // clamp ( t, -1, 1 )
 
 			// atan2(len(cross(a,b)),dot(a,b))   Other in unstable near zero
-			let d = this.dot( v0, v1 );
-			let c = Vec3.cross( v0, v1 );
-			return Math.atan2( c.length(), d ); 
+			let d = this.dot( v0, v1 ),
+				c = this.cross( v0, v1 );
+			return Math.atan2( c.len(), d ); 
 		}
 
 		//-------------------------------------------

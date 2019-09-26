@@ -1,6 +1,7 @@
 import Vec3 from "./Vec3.js";
 import Quat from "./Quat.js";
 
+// http://gabormakesgames.com/blog_transforms_transforms.html
 
 class Transform{
 	constructor( t ){
@@ -71,9 +72,7 @@ class Transform{
 
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			//POSITION - parent.position + ( parent.rotation * ( parent.scale * child.position ) )
-			let v = new Vec3();
-			Vec3.mul( this.scl, cp, v ); // parent.scale * child.position;
-			this.pos.add( Vec3.transform_quat( v, this.rot, v ) );
+			this.pos.add( Vec3.mul( this.scl, cp ).transform_quat( this.rot ) );
 
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			// SCALE - parent.scale * child.scale
@@ -100,12 +99,12 @@ class Transform{
 			return this;
 		}
 
-		transformVec( v, out = null ){
-			out = out || v;
+		transform_vec( v, out = null ){
 			//GLSL - vecQuatRotation(model.rotation, a_position.xyz * model.scale) + model.position;
-			Vec3.mul( v, this.scl, out );
-			Vec3.transform_quat( out, this.rot, out ).add( this.pos );
-			return out;
+			return (out || v)
+				.from_mul( v, this.scl )
+				.transform_quat( this.rot )
+				.add( this.pos );
 		}
 
 		dispose(){
@@ -122,18 +121,15 @@ class Transform{
 
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			//POSITION - parent.position + ( parent.rotation * ( parent.scale * child.position ) )
-			let v = new Vec3();
-			Vec3.mul( tp.scl, tc.pos, v ); // parent.scale * child.position;
-			Vec3.transform_quat( v, tp.rot, v );
-			Vec3.add( tp.pos, v, tOut.pos );
+			tOut.pos.from_add( tp.pos, Vec3.mul( tp.scl, tc.pos ).transform_quat( tp.rot ) );
 
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			// SCALE - parent.scale * child.scale
-			Vec3.mul( tp.scl, tc.scl, tOut.scl );
+			tOut.scl.from_mul( tp.scl, tc.scl ); //Vec3.mul( tp.scl, tc.scl, tOut.scl );
 
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			// ROTATION - parent.rotation * child.rotation
-			Quat.mul( tp.rot, tc.rot, tOut.rot );
+			tOut.rot.from_mul( tp.rot, tc.rot ); //Quat.mul( tp.rot, tc.rot, tOut.rot );
 
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			return tOut;

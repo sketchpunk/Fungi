@@ -246,3 +246,5 @@ class ArmaturePreviewSystem extends System{
 //#################################################################
 export default ArmaturePreview;
 export { ArmaturePreviewSystem };
+
+App.global["ArmaturePreview"] = ArmaturePreview;

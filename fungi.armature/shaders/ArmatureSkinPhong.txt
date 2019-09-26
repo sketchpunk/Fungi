@@ -16,7 +16,7 @@
 	], "options":{ "cullFace": false }},
 
 	{ "name":"LowPolyPhong_grayBlend",	"uniforms":[
-		{ "name":"uBaseColor", "value": "A0A0A088" }
+		{ "name":"uBaseColor", "value": "A0A0A055" }
 	], "options":{ "blend":true }}
 ]<\materials> "useBlending":false
 	

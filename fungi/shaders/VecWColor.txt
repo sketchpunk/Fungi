@@ -13,7 +13,7 @@
 		"uniforms":[
 		{ "name":"u_colorAry", "value": ["ff0000","00dd00","0000ff","555555","999999","dddddd","000000","ff7f7f","ff8c00","ffff00"] }
 	]},
-	
+
 	{ "name":"MatGridFloor",	
 		"options"	: { "depthTest":true, "blend":false },
 		"uniforms":[
@@ -24,7 +24,7 @@
 	{ "name":"MatGridFloorDark",
 		"options"	: { "depthTest":true, "blend":false },
 		"uniforms":[
-		{ "name":"u_colorAry", "value": ["555555","bb5555","118811"] }
+		{ "name":"u_colorAry", "value": ["#555555","#bb5555","#118811"] }
 	] }
 ]<\materials>
 	

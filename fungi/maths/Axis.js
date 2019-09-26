@@ -20,15 +20,15 @@ class Axis{
 	}
 
 	////////////////////////////////////////////////////////////////////
-	// SETTERS
+	// SETTERS / GETTERS
 	////////////////////////////////////////////////////////////////////
 		//Passing in Vectors.
-		set( x, y, z, doNormalize = false ){
+		set( x, y, z, do_norm = false ){
 			this.x.copy( x );
 			this.y.copy( y );
 			this.z.copy( z );
 
-			if(doNormalize){
+			if(do_norm){
 				this.x.norm();
 				this.y.norm();
 				this.z.norm();
@@ -37,7 +37,8 @@ class Axis{
 		}
 
 		//Create axis based on a Quaternion
-		fromQuat( q ){
+		to_quat( out ){ return (out || new Quat()).from_axis( this.x, this.y, this.z ); }
+		from_quat( q ){
 			// Same code for Quat to Matrix 3 conversion
 			let x = q[0], y = q[1], z = q[2], w = q[3],
 				x2 = x + x,
@@ -57,11 +58,6 @@ class Axis{
 			this.y.set( yx - wz,		1 - xx - zz,	zy + wx );
 			this.z.set( zx + wy,		zy - wx,		1 - xx - yy );
 			return this;
-		}
-
-		toQuat( out ){
-			out = out || new Quat();
-			return Quat.fromAxis( this.x, this.y, this.z, out );
 		}
 
 		//Create an axis based on a looking direction
@@ -89,11 +85,10 @@ class Axis{
 		}
 		*/
 
-		//
-		fromDir( pFwd, pUp ){
-			this.z.copy( pFwd ).norm();
-			Vec3.cross( pUp, this.z, this.x ).norm();
-			Vec3.cross( this.z, this.x, this.y ).norm();
+		from_dir( fwd, up ){
+			this.z.copy( fwd ).norm();
+			this.x.from_cross( up, this.z ).norm();
+			this.y.from_cross( this.z, this.x ).norm();			
 			return this;
 		}
 
@@ -102,19 +97,18 @@ class Axis{
 	//  
 	////////////////////////////////////////////////////////////////////
 
-		//Axis is pretty much a Rotation Matrix, so easy to apply rotation to a vector.
-		transformVec3(v, out){
-			var x = v[0], y = v[1], z = v[2];
+		// Axis is pretty much a Rotation Matrix, so easy to apply rotation to a vector.
+		transform_vec3( v, out ){
+			let x = v[0], y = v[1], z = v[2];
 			
 			out = out || new Vec3();
-
 			out[0] = x * this.x[0] + y * this.y[0] + z * this.z[0];
 			out[1] = x * this.x[1] + y * this.y[1] + z * this.z[1];
 			out[2] = x * this.x[2] + y * this.y[2] + z * this.z[2];
 			return out;
 		}
 
-		rotate(rad, axis = "x", out = null){
+		rotate( rad, axis = "x", out = null ){
 			out = out || this;
 
 			let sin = Math.sin(rad),
@@ -155,7 +149,6 @@ class Axis{
 		}
 
 
-
 	////////////////////////////////////////////////////////////////////
 	// STATIC
 	////////////////////////////////////////////////////////////////////
@@ -164,14 +157,9 @@ class Axis{
 			origin = origin || Vec3.ZERO;
 
 			var v = new Vec3();
-			v.copy( axis.z ).scale( scl ).add( origin );
-			o.line( origin, v, 1 );
-
-			v.copy( axis.y ).scale( scl ).add( origin );
-			o.line( origin, v, 2 );
-
-			v.copy( axis.x ).scale( scl ).add( origin );
-			o.line(origin, v, 0);
+			o.line( origin, v.from_scale( axis.z, scl ).add( origin ), 1 );
+			o.line( origin, v.from_scale( axis.y, scl ).add( origin ), 2 );
+			o.line( origin, v.from_scale( axis.x, scl ).add( origin ), 0 );
 		}
 }
 

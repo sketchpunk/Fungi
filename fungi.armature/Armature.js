@@ -327,3 +327,5 @@ function fSort_bone_order( a, b ){
 //#################################################################
 export default Armature;
 export { Bone, BoneSystem, ArmatureSystem };
+
+App.global["Armature"] = Armature;
