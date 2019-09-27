@@ -857,6 +857,22 @@ class Quat extends Float32Array{
 			return out.norm();
 		}
 
+		static cubic_spline( a, b, c, d, t, out ){
+			// B & C are the main points, A & D are the tangents
+			let t2 = t * t,
+				t3 = t * t2,
+				a0 = d[0] - c[0] - a[0] + b[0],
+				a1 = d[1] - c[1] - a[1] + b[1],
+				a2 = d[2] - c[2] - a[2] + b[2],
+				a3 = d[3] - c[3] - a[3] + b[3];
+
+			out[0] = a0*t3 + ( a[0] - b[0] - a0 )*t2 + ( c[0] - a[0] )*t + b[0];
+			out[1] = a1*t3 + ( a[1] - b[1] - a1 )*t2 + ( c[1] - a[1] )*t + b[1];
+			out[2] = a2*t3 + ( a[2] - b[2] - a2 )*t2 + ( c[2] - a[2] )*t + b[2];
+			out[3] = a3*t3 + ( a[3] - b[3] - a3 )*t2 + ( c[3] - a[3] )*t + b[3];
+			return out.norm();
+		}
+
 	////////////////////////////////////////////////////////////////////
 	// STATIC TRANSFORMATIONS
 	////////////////////////////////////////////////////////////////////

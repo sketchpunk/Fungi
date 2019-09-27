@@ -23,8 +23,8 @@ import IKTarget		from "./IKTarget.js";
 	.load_scene( true, true, true )
 	.set_camera( -90, 10, 2, 0, 0.3, 0 )
 	.add( dl_files )
-	.render_loop( onDraw )
-	//.render_on_mouse( onDraw )
+	//.render_loop( onDraw )
+	.render_on_mouse( onDraw )
 	.build().catch( (e)=>console.error("error",e) );
 })();
 
@@ -35,12 +35,14 @@ function onDraw( dt, ss ){ App.ecs.sys_run(); }
 //#############################################################################
 let gRig, gTarget;
 async function dl_files(){
+	let mat = Material.clone( "ArmatureSkinPhong", "RexMat" ).opt_blend( true ).update_uniform( "uBaseColor", "b0b0b0aa" );
+
 	/**/
 	let dl	= await XhrPromise.get( 
 		"../robo_trex.gltf", "json", "../robo_trex.bin", "arraybuffer",
 		//"./files/models/vegeta.gltf", "json", "./files/models/vegeta.bin", "arraybuffer"
 	);
-	let e = FungiGLTF.$debug( "arm_debug", dl[0], dl[1], "Armature", "LowPolyPhong_grayBlend" );
+	let e = FungiGLTF.$debug( "arm_debug", dl[0], dl[1], "Armature", mat );
 	//let e = FungiGLTF.$( "mesh", dl[0], dl[1], "VecWColor" );
 	//let e = FungiGLTF.$preview( "src_preview", "Armature", dl[0] );
 

@@ -24,7 +24,7 @@
 	{ "name":"MatGridFloorDark",
 		"options"	: { "depthTest":true, "blend":false },
 		"uniforms":[
-		{ "name":"u_colorAry", "value": ["#555555","#bb5555","#118811"] }
+		{ "name":"u_colorAry", "value": ["#444444","#8a3f3f","#0c610c"] }
 	] }
 ]<\materials>
 	

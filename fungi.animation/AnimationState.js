@@ -1,28 +1,32 @@
-/*
-		animation = {
-			frame_cnt_max	: int
-			time_max		: float,
-			times			: [ float32array, float32array, etc ],
-			frame_inv		: [ float32array, float32array, etc ],
-			tracks			: [
-				{ 
-					type		: "rot || pos || scl",
-					time_idx 	: 0,
-					joint_idx	: 0,
-					lerp 		: "LINEAR || STEP || CUBICSPLINE", maybe rename to interp
-					data		: float32array,
-				},
-			]
-		}
-*/
+import { AnimUtil } from "./Animation.js";
 
-//Animation in Animation_path was improved.
-class AnimationMachine{
+//#################################################################################
+
+class AnimationHandler{
+	constructor(){}
+	dispose(){}
+	vec3( v, t ){ console.log( v ); }
+	quat( q, t ){ console.log( q ); }
+}
+
+
+class AHandler_Node extends AnimationHandler{
+	constructor( e ){ super(); this.node = e.Node; }
+	dispose(){ delete this.node; }
+	vec3( v, t ){ this.node.setPos( v ); }
+	quat( v, t ){ this.node.setRot( v ); }
+}
+
+
+//#################################################################################
+//Save the Spline Stuff with this for future addition to CubicSpline interp
+class AnimationState{
 	constructor(){
 		this.current	= null;
 		this.cross_to	= null;
 		this.cross_t 	= 0;
 		this.stack		= {};
+		this.handler	= null;
 	}
 
 	/////////////////////////////////////////////////////////////////
@@ -30,7 +34,7 @@ class AnimationMachine{
 	/////////////////////////////////////////////////////////////////
 		
 		// Add a new Animation to the Stack
-		set( name, data ){
+		add_stack( name, data ){
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			// Get the Max Key Frame Count
 			let t, max = 0;
@@ -58,14 +62,22 @@ class AnimationMachine{
 			return this;
 		}
 
+		set_handler( h ){ 
+			if( this.handler ) this.handler.dispose();
+			this.handler = h;
+			return this;
+		}
+
+		use_node_handler( e ){ this.set_handler( new AHandler_Node( e ) ); return this; }
+
 
 	/////////////////////////////////////////////////////////////////
 	// 
 	/////////////////////////////////////////////////////////////////
 
-		key_frame( ti, pose ){
+		key_frame( ti ){
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-			if( ti >= this.current.anim.key_frame_cnt ){
+			if( ti >= this.current.anim.frame_cnt ){
 				console.log("key frame index exceeds total key frames.");
 				return this;
 			}
@@ -82,14 +94,16 @@ class AnimationMachine{
 				if( ti >= anim.times[ track.time_idx ].length ) continue;
 
 				switch( track.type ){
-					case "rot": pose.set_bone( track.joint_idx, this.quat_buf_copy( track.data, q, qi ) ); break;
-					case "pos": pose.set_bone( track.joint_idx, null, this.vec3_buf_copy( track.data, v, vi ) ); break;
+					case "rot": this.handler.quat( AnimUtil.quat_buf_copy( track.data, q, qi ), track ); break;
+					case "pos": this.handler.vec3( AnimUtil.vec3_buf_copy( track.data, v, vi ), track ); break;
 				}
 			}
 		}
 
 		// Run animation and save results to pose object
-		run( dt, pose ){
+		run( dt ){
+			if( !dt ) return;
+
 			let f_times	= this.frame_times( dt, this.current ),
 				anim	= this.current.anim,
 				q 		= new Quat(),
@@ -97,18 +111,18 @@ class AnimationMachine{
 				track, frame;
 
 			for( track of anim.tracks ){
-				if( track.lerp == "STEP" ) continue; //TODO, add support for this
+				if( track.interp == "STEP" ) continue; //TODO, add support for this
 
 				frame = f_times[ track.time_idx ]; // [ FA_IDX, FB_IDX, NORM_TIME ]
 
 				switch( track.type ){
 					case "rot":
-						this.quat_buf_blend( track.data, frame[0]*4, frame[1]*4, frame[2], q );
-						pose.set_bone( track.joint_idx, q );
+						AnimUtil.quat_buf_blend( track.data, frame[0]*4, frame[1]*4, frame[2], q );
+						this.handler.quat( q, track );
 						break;
 					case "pos":
-						this.vec3_buf_lerp( track.data, frame[0]*3, frame[1]*3, frame[2], v );
-						pose.set_bone( track.joint_idx, null, v );
+						AnimUtil.vec3_buf_lerp( track.data, frame[0]*3, frame[1]*3, frame[2], v );
+						this.handler.vec3( v, track );
 						break;
 				}
 			}
@@ -140,60 +154,15 @@ class AnimationMachine{
 				//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 				// Normalize Time Between Frames
 				fb = fa + 1;
-				ft = ( data.clock - time[ fa ] ) / ( time[fb] - time[ fa ] );
-				//ft = ( anim.clock - time[ fa ] ) * frame_inc[ fa ];
+				ft = ( data.clock - time[ fa ] ) / ( time[ fb ] - time[ fa ] );
+				//ft = ( data.clock - time[ fa ] ) * frame_inc[ fa ];
 				rtn[ j ] = [ fa, fb, ft ];
 			}
 
 			return rtn;
 		}
-
-
-	/*///////////////////////////////////////////////////////////////
-	Animation data is saved in a flat array for simplicity & memory sake. 
-	Because of that can not easily use Quaternion / Vector functions. So 
-	recreate any functions needed to work with a flat data buffer.
-	///////////////////////////////////////////////////////////////*/
-
-		quat_buf_copy( buf, q, i ){ return q.set( buf[ i ], buf[ i+1 ], buf[ i+2 ], buf[ i+3 ] ); }
-
-		// Special Quaternion NLerp Function. Does DOT checking & Fix
-		quat_buf_blend( buf, ai, bi, t, out ){
-			let a_x = buf[ ai ],	// Quaternion From
-				a_y = buf[ ai+1 ],
-				a_z = buf[ ai+2 ],
-				a_w = buf[ ai+3 ],
-				b_x = buf[ bi ],	// Quaternion To
-				b_y = buf[ bi+1 ],
-				b_z = buf[ bi+2 ],
-				b_w = buf[ bi+3 ],
-				dot = a_x * b_x + a_y * b_y + a_z * b_z + a_w * b_w,
-				ti 	= 1 - t,
-				s 	= 1;
-
-		    // if Rotations with a dot less then 0 causes artifacts when lerping,
-		    // Can fix this by switching the sign of the To Quaternion.
-		    if( dot < 0 ) s = -1;
-			out[ 0 ] = ti * a_x + t * b_x * s;
-			out[ 1 ] = ti * a_y + t * b_y * s;
-			out[ 2 ] = ti * a_z + t * b_z * s;
-			out[ 3 ] = ti * a_w + t * b_w * s;
-			//console.log( "x", out );
-			return out.norm();
-		}
-
-		//#############################################################
-
-		vec3_buf_copy( buf, v, i ){ return v.set( buf[ i ], buf[ i+1 ], buf[ i+2 ] ); }
-
-		// basic vec3 lerp
-		vec3_buf_lerp( buf, ai, bi, t, out ){
-			let ti = 1 - t;
-			out[ 0 ] = ti * buf[ ai ]		+ t * buf[ bi ];
-			out[ 1 ] = ti * buf[ ai + 1 ]	+ t * buf[ bi + 1 ];
-			out[ 2 ] = ti * buf[ ai + 2 ]	+ t * buf[ bi + 2 ];
-			return out;
-		}
 }
 
-export default AnimationMachine;
+
+//#################################################################################
+export default AnimationState;

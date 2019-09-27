@@ -60,6 +60,7 @@ class Material{
 			return this;
 		}
 
+		opt_blend( b ){ this.options.blend = b; return this; }
 
 	///////////////////////////////////////////////////////
 	// STATIC METHODS
@@ -74,15 +75,15 @@ class Material{
 			return mat;
 		}
 
-		static clone( mat, name, cloneData=false ){
+		static clone( mat, name ){
 			if( typeof mat == "string" ) mat = Cache.getMaterial( mat );
 
 			let key, itm, m = new Material( name, mat.shader );
 			Cache.materials.set( name, m );
 			
 			for( [ key, itm ] of mat.uniforms ){
-				//TODO, Create ability to clone data.
-				m.add_uniform( key, null );
+				if( Array.isArray( itm ) )	m.uniforms.set( key, itm.slice(0) );
+				else 						m.uniforms.set( key, itm );
 			}		
 
 			return m;

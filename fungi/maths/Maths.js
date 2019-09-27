@@ -44,6 +44,11 @@ class Maths{
 			return ( tt > 1 )? 1 - (tt - 1) : tt;
 		}
 
+		static mod( a, b ){	//Modulas that handles Negatives, so (-1, 5) = 4
+			let v = a % b;
+			return ( v < 0 )? b+v : v;
+		}
+
 
 	////////////////////////////////////////////////////////////////////
 	// TRIG
@@ -148,6 +153,12 @@ class Maths{
 
 		static squareWave (v, min=0, max=1, period=1){ return ( (v % period) <  (period * 0.5) )? max : min; }
 
+		static triangle_wave( t ){
+			t -= Math.floor( t * 0.5 ) * 2;
+			t = Math.min( Math.max( t, 0 ), 2 );
+			return 1 - Math.abs( t - 1 );
+		}
+
 		
 	////////////////////////////////////////////////////////////////////
 	// CURVES
@@ -226,19 +237,19 @@ class Maths{
 	// Lines and Points
 	////////////////////////////////////////////////////////////////////
 
-	//From a point in space, closest spot to a 2D line
-	static closestPointToLine2D( x0,y0, x1,y1, px, py, out=null ){
-		var dx	= x1 - x0,
-			dy	= y1 - y0,
-			t	= ( (px-x0)*dx + (py-y0)*dy ) / ( dx*dx + dy*dy );
+		//From a point in space, closest spot to a 2D line
+		static closestPointToLine2D( x0,y0, x1,y1, px, py, out=null ){
+			var dx	= x1 - x0,
+				dy	= y1 - y0,
+				t	= ( (px-x0)*dx + (py-y0)*dy ) / ( dx*dx + dy*dy );
 
-		if( out ){
-			out[ 0 ] = x0 + (dx * t); //Util.lerp(x0, x1, t)
-			out[ 1 ] = y0 + (dy * t); //Util.lerp(y0, y1, t);
+			if( out ){
+				out[ 0 ] = x0 + (dx * t); //Util.lerp(x0, x1, t)
+				out[ 1 ] = y0 + (dy * t); //Util.lerp(y0, y1, t);
+			}
+
+			return t;
 		}
-
-		return t;
-	}
 
 	static newtons_method( x, f, fd=null ){
 		// without derivitive, use th following:
@@ -438,6 +449,32 @@ function closestPointS_2Segments(A0,A1,B0,B1){
         {
             return t * t * t * (t * (t * 6 - 15) + 10);
         }
+
+	//https://www.desmos.com/calculator/3zhzwbfrxd
+	function something( t, p, s ){
+		let c = (2 / (1-s)) - 1;
+		if( t > p ){
+			t = 1 - t;
+			p = 1 - p;
+		}
+		return (t**c) / (p**(c-1));
+	}
+
+	//https://stackoverflow.com/questions/13097005/easing-functions-for-bell-curves
+	//https://en.wikipedia.org/wiki/Beta_distribution
+	function bell_curve(t){
+		return ( Math.sin(2 * Math.PI * (t - 0.25)) + 1) * 0.5;
+	}
+
+	function beta_dist_curve( t, a ){ // 1.5, 2, 4, 9
+		return 4**a * (t * (1-t))**a;
+	}
+
+	function prob_density( t, a, b ){
+		return ( t**(a-1) * (1-t)**(b-1) ) / ( Math.log(a) * Math.log(b) / ( Math.log( a + b )) ); //NOT log, needs to be Gamma https://github.com/substack/gamma.js/blob/master/index.js
+	}
+
+
 */
 
 

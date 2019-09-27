@@ -32,6 +32,11 @@ class Vec3 extends Float32Array{
 		
 		//-------------------------------------------
 
+		from_buf( ary, i ){ this[0] = ary[i]; this[1] = ary[i+1]; this[2] = ary[i+2]; return this;}
+		to_buf( ary, i ){ ary[i] = this[0]; ary[i+1] = this[1]; ary[i+2] = this[2]; return this; }
+
+		//-------------------------------------------
+
 		set_len( len ){ return this.norm().scale(len); }
 
 		len( v ){
@@ -435,6 +440,24 @@ class Vec3 extends Float32Array{
 			out[0] = vx + 2 * x2;
 			out[1] = vy + 2 * y2;
 			out[2] = vz + 2 * z2;
+			return out;
+		}
+
+
+	////////////////////////////////////////////////////////////////////
+	// INTERPOLATION
+	////////////////////////////////////////////////////////////////////
+
+		// B & C are the main points, A & D are the tangents
+		static cubic_spline( a, b, c, d, t, out ){
+			let t2 = t * t,
+				t3 = t * t2,
+				a0 = d[0] - c[0] - a[0] + b[0],
+				a1 = d[1] - c[1] - a[1] + b[1],
+				a2 = d[2] - c[2] - a[2] + b[2];
+			out[0] = a0*t3 + ( a[0] - b[0] - a0 )*t2 + ( c[0] - a[0] )*t + b[0];
+			out[1] = a1*t3 + ( a[1] - b[1] - a1 )*t2 + ( c[1] - a[1] )*t + b[1];
+			out[2] = a2*t3 + ( a[2] - b[2] - a2 )*t2 + ( c[2] - a[2] )*t + b[2];
 			return out;
 		}
 

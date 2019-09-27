@@ -22,7 +22,7 @@ import ArmaturePreview	from "../fungi.armature/ArmaturePreview.js";
 		"../fungi.armature/shaders/ArmatureSkinPhong.txt", 
 	) ) 
 	.load_scene( true, true, false )
-	.set_camera( -90, 0, 1, 0, 0.3, 0 )
+	.set_camera( -90, 0, 2.2, 0, 0.8, 0 )
 	.add( dl_files )
 	.render_loop( onDraw )
 	//.render_on_mouse( onDraw )
@@ -60,7 +60,6 @@ function build_src( json, bin ){
 }
 
 
-
 //#############################################################################
 let gDone = false;
 let gTime = 0;
@@ -69,11 +68,11 @@ let gPath = new Array();
 
 function onDraw( dt, ss ){
 	gTime += dt;
-	if( gDone == false && gTime >= 0.01 ){
+	if( gDone == false && gTime >= 0.1 ){
 		gTime = 0;
 		gCnt++;
 
-		console.log( "View Frame: ", gCnt, gAnimMachine.current.anim.frame_cnt_max );
+		//console.log( "View Frame: ", gCnt, gAnimMachine.current.anim.frame_cnt_max );
 
 		if( gAnimMachine.key_frame( gCnt, gRig.pose_a ) ){
 			gRig

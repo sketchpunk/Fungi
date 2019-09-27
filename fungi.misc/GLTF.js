@@ -384,6 +384,26 @@ class Gltf{
 			return tbl;
 		}
 
+		/*
+		https://github.com/KhronosGroup/glTF/tree/master/specification/2.0#animations
+		https://github.com/KhronosGroup/glTF/tree/master/specification/2.0#appendix-c-spline-interpolation (Has math for cubic spline)
+
+		animation = {
+			frame_cnt_max	: int
+			time_max		: float,
+			times			: [ float32array, float32array, etc ],
+			frame_inv		: [ float32array, float32array, etc ],
+			tracks			: [
+				{ 
+					type		: "rot || pos || scl",
+					time_idx 	: 0,
+					joint_idx	: 0,
+					lerp 		: "LINEAR || STEP || CUBICSPLINE",
+					data		: float32array,
+				},
+			]
+		}
+		*/
 		static get_animation( name, json, bin, limit=true, frame_inv=true ){
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			// Validate there is animations and an anaimtion by a name exists in the json file.
@@ -491,7 +511,6 @@ class Gltf{
 					rtn.frame_inv.push( tt );
 				}
 			}
-
 
 			return rtn;
 		}

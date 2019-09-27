@@ -155,7 +155,7 @@ class AppBuilder{
 
 		load_scene( useFloor=true, useDebug=false, is_dark=false ){
 			this.add( async()=>{
-				if( is_dark ) gl.setClearColor("#3a3a3a");
+				if( is_dark ) gl.setClearColor("#3a3a3a"); // 3a3a3a 242424
 
 				//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 				// CAMERA
