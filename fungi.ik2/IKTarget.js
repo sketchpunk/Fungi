@@ -102,6 +102,24 @@ class IKTarget{
 			pose.set_bone( chain.bones[ 0 ], rot );
 		}
 
+		foot_ik( b_idx, bind_pose, pose, align_dir, do_calc=false ){
+			let b_bind	= bind_pose.bones[ b_idx ],		// Bone in Bind Pose
+				b_pose	= pose.bones[ b_idx ],			// Bone in Pose
+				pb_pose	= pose.bones[ b_pose.p_idx ];	// Parent Bone in Pose, SHOULD HAVE CORRECT CURRENT WORLD SPACE DATA. 
+
+			if( do_calc ) b_pose.world.from_add( pb_pose.world, b_bind.local ); // Get Model Space of foot
+			
+			let dir		= Vec3.transform_quat( Vec3.UP, b_pose.world.rot ), // Get Model Space UP Direction of Bone
+				angle	= Vec3.angle( dir, Vec3.FORWARD ),					// Get Angle between UP and WorldSpace Forward
+				dot 	= Vec3.dot( dir, Vec3.UP );							// Using WS Up to determine if negative.
+			if( dot < 0 ) angle = -angle;
+
+			b_pose.world.rot
+				.pmul_axis_angle( this.axis.x, angle );			// Rotate Foot
+
+			pose.set_bone( b_pose.idx, b_pose.world.rot );		// Set Local only to trigger update state
+			b_pose.local.rot.pmul_invert( pb_pose.world.rot );	// Then tweek the rotation directly.
+		}
 
 	///////////////////////////////////////////////////////////////////
 	// Multi Bone Solvers
@@ -155,55 +173,67 @@ class IKTarget{
 			// both triangles, but if bones are uneven, then we need to solve an angle for each triangle which this function does.	
 
 			//------------------------------------
-			let bone_a 	= bind_pose.bones[ chain.bones[0] ],	// Bone Reference
-				bone_b	= bind_pose.bones[ chain.bones[1] ],
-				bone_c	= bind_pose.bones[ chain.bones[2] ],
+			let bind_a 	= bind_pose.bones[ chain.bones[0] ],	// Bone Reference from Bind
+				bind_b	= bind_pose.bones[ chain.bones[1] ],
+				bind_c	= bind_pose.bones[ chain.bones[2] ],
 
-				a_len	= bone_a.len,							// First Bone length
-				b_len 	= bone_b.len,							// Second Bone Length
-				c_len	= bone_c.len,							// Third Bone Length
-				bh_len 	= bone_b.len * 0.5,				// How Much of Bone 2 to use with Bone 1
+				pose_a 	= pose.bones[ chain.bones[0] ],			// Bone Reference from Pose
+				pose_b	= pose.bones[ chain.bones[1] ],
+				pose_c	= pose.bones[ chain.bones[2] ],				
 
-				t_ratio	= ( a_len + bh_len ) / ( a_len + b_len + c_len ),
-				ta_len = this.len * t_ratio,
-				tb_len = this.len - ta_len,
+				a_len	= bind_a.len,				// First Bone length
+				b_len 	= bind_b.len,				// Second Bone Length
+				c_len	= bind_c.len,				// Third Bone Length
+				bh_len 	= bind_b.len * 0.5,			// How Much of Bone 2 to use with Bone 1
+
+				t_ratio	= ( a_len + bh_len ) / ( a_len + b_len + c_len ),	// How much to subdivide the Target length between the two triangles
+				ta_len = this.len * t_ratio,								// Goes with A & B
+				tb_len = this.len - ta_len,									// Goes with B & C
 
 				rot 	= new Quat(),
-				tmp 	= new Quat(),
-				wq		= new Quat(),
 				rad;
 				
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			// Bone A 
-			this._aim_bone( chain, bind_pose, wt, rot );	// Aim the first bone toward the target oriented with the bend direction.
+			this._aim_bone( chain, bind_pose, wt, rot );		// Aim the first bone toward the target oriented with the bend direction.
 
-			rad	= Maths.lawcos_sss( a_len, ta_len, bh_len );		// Get the Angle between First Bone and Target.
-			rot.pmul_axis_angle( this.axis.x, -rad );		// Rotate the the aimed bone by the angle from SSS
-			wq.copy( rot );									// Save a Copy as World Rotation for later use
+			rad	= Maths.lawcos_sss( a_len, ta_len, bh_len );	// Get the Angle between First Bone and Target.
+			rot
+				.pmul_axis_angle( this.axis.x, -rad )			// Rotate the the aimed bone by the angle from SSS
+				.pmul_invert( wt.rot );							// Convert to Bone's Local Space by mul invert of parent bone rotation
 
-			rot.pmul_invert( wt.rot );						// Convert to Bone's Local Space by mul invert of parent bone rotation
-			pose.set_bone( bone_a.idx, rot );
+			pose.set_bone( bind_a.idx, rot );
+
+			pose_a.world
+				.copy( wt )
+				.add( rot, bind_a.local.pos, bind_a.local.scl );
 
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			// Bone B
 			rad = Math.PI - Maths.lawcos_sss( a_len, bh_len, ta_len );
 
-			rot .from_mul( wq, bone_b.local.rot )		// Add Bone Local to get its WS rot
-				.pmul_axis_angle( this.axis.x, rad );	// Rotate it by the target's x-axis .pmul( tmp.from_axis_angle( this.axis.x, rad ) )
+			rot .from_mul( pose_a.world.rot, bind_b.local.rot )	// Add Bone Local to get its WS rot
+				.pmul_axis_angle( this.axis.x, rad )			// Rotate it by the target's x-axis .pmul( tmp.from_axis_angle( this.axis.x, rad ) )
+				.pmul_invert( pose_a.world.rot );				// Convert to Local Space in temp to save WS rot for next bone.
 
-			tmp.from_invert( wq ).mul( rot );			// Convert to Local Space in temp to save WS rot for next bone.
-			pose.set_bone( bone_b.idx, tmp );
+			pose.set_bone( bind_b.idx, rot );
 
-			wq.copy( rot );								// Save to invert for next bone
+			pose_b.world
+				.copy( pose_a.world )
+				.add( rot, bind_b.local.pos, bind_b.local.scl );
 
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			// Bone C
 			rad = Math.PI - Maths.lawcos_sss( c_len, bh_len, tb_len );
-			rot	.mul( bone_c.local.rot )				// Still contains WS from previous bone, Add next bone's local
-				.pmul_axis_angle( this.axis.x, -rad )	// Rotate it by the target's x-axis
-				.pmul_invert( wq );						// Convert to Bone's Local Space
+			rot	.from_mul( pose_b.world.rot, bind_c.local.rot  )	// Still contains WS from previous bone, Add next bone's local
+				.pmul_axis_angle( this.axis.x, -rad )				// Rotate it by the target's x-axis
+				.pmul_invert( pose_b.world.rot );									// Convert to Bone's Local Space
 
-			pose.set_bone( bone_c.idx, rot );
+			pose.set_bone( bind_c.idx, rot );
+
+			pose_c.world
+				.copy( pose_b.world )
+				.add( rot, bind_c.local.pos, bind_c.local.scl );
 		}
 
 		three_bone_adv( chain, bind_pose, pose, wt ){

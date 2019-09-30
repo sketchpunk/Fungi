@@ -26,7 +26,7 @@ import Overlay 		from "../fungi.misc/Overlay.js";
 		"../fungi.armature/shaders/ArmatureSkinPhong.txt", 
 	) ) 
 	.load_scene( true, true, true )
-	.set_camera( -50, 10, 3, 0, 0.7, 0 )
+	.set_camera( -50, 10, 3, 0, 0.3, 0 )
 	.add( dl_files )
 	.render_loop( onDraw )
 	//.render_on_mouse( onDraw )
@@ -35,26 +35,28 @@ import Overlay 		from "../fungi.misc/Overlay.js";
 
 //#############################################################################
 function onDraw( dt, ss ){
-	/**/
+	run_animation( dt );
+	App.ecs.sys_run();
+}
+
+function run_animation( dt ){
 	gAnimateA.next_frame( dt * ANIM_SPEED );
 	gMoveA.Node.setPos( gAnimateA.run() );
 	gMoveB.Node.setPos( gAnimateA.run( 15 ).mul([-1,1,1]) );
 
-	Kinematics.next()
-	
-	App.ecs.sys_run();
+	Kinematics.next();
 }
 
 
 //#############################################################################
-let gRig, gAnimateA, gMoveA, gAnimateB, gMoveB;
+let gRig, gAnimateA, gMoveA, gAnimateB, gMoveB, gStatA, gStatB;
 
 async function dl_files(){
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	let dl	= await XhrPromise.get( "../robo_trex.gltf", "json", "../robo_trex.bin", "arraybuffer" );
 	let mat = Material.clone( "ArmatureSkinPhong", "RexMat" ).opt_blend( true ).update_uniform( "uBaseColor", "b0b0b0aa" );
 	
-	let e	= FungiGLTF.$debug( "arm_debug", dl[0], dl[1], "Armature", mat );
+	let e = FungiGLTF.$debug( "arm_debug", dl[0], dl[1], "Armature", mat );
 	//let e = FungiGLTF.$preview( "src_preview", "Armature", dl[0] );
 
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -63,8 +65,58 @@ async function dl_files(){
 		//.set_chain( "tail", ["tail_1","tail_2","tail_3","tail_4","tail_5","tail_6","tail_7"] )
 		.set_leg_l( "LeftUpLeg", "LeftKnee", "LeftShin" )
 		.set_leg_r( "RightUpLeg", "RightKnee", "RightShin" )
-		.gen_tpose();
+		.set_feet( "LeftFoot", "RightFoot" )
+		.gen_tpose()
+		.finalize();
 
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	setup_anim();
+	setup_ui();
+
+	//run_animation( 0.6 );	
+	return true;
+}
+
+
+
+function test_feet(){
+	let bind = gRig.bind_pose,
+		chain = gRig.leg_l,
+		b;
+
+	/*
+	for( let i of chain.bones ){
+		b = bind.bones[i];
+		App.debug.point( b.world.pos, 8 );
+	}
+	*/
+
+	b = bind.bones[ gRig.foot_l.idx ];
+
+	App.debug.point( b.world.pos, 8 );
+	//App.debug.quat( b.world.rot, b.world.pos );
+
+	let dir		= Vec3.transform_quat( Vec3.UP, b.world.rot ),
+		angle	= Vec3.angle( Vec3.FORWARD, dir ),
+		dot		= Vec3.dot( dir, Vec3.UP );
+	if( dot < 0 ) angle = -angle;
+
+	gRig.foot_l = angle;
+
+	console.log( dot, angle, angle * 180 / Math.PI );
+
+	App.debug.line( b.world.pos, Vec3.add( b.world.pos, dir ) );
+	App.debug.line( b.world.pos, Vec3.add( b.world.pos, Vec3.FORWARD ), 1 );
+
+	// Get model Space UP Direction of Foot.
+	// To do a dot test againt world up. If positive its upwards, else downward of the forward direction.
+	// Take the Bone's model space up and get the angle from worldspace forward.
+	// The angle is the offset to make it straight.
+	// Foot Data { idx:, offset_angle: }
+}
+
+function setup_anim(){
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	draw_path( WALK_CYCLE.tracks[0].data, false, true );
 	//WALK_CYCLE_S.tracks[0].data = scale_path( WALK_CYCLE.tracks[0].data, 0.5, 0.5, true );
@@ -74,13 +126,17 @@ async function dl_files(){
 	gMoveA.DynamicVerts.raw_pnt( 0, 0, 0, 8 );
 	gMoveB.DynamicVerts.raw_pnt( 0, 0, 0, 7 );
 
+	gStatA = DVerts.$( App.$Draw( "stata" ) );
+	gStatB = DVerts.$( App.$Draw( "statb" ) );
+	gStatA.DynamicVerts.raw_pnt( 0, 0, 0, 0 );
+	gStatB.DynamicVerts.raw_pnt( 0, 0, 0, 1 );
+
+	gStatA.Node.setPos( 0.3, 0.0, -0.8 );
+	gStatB.Node.setPos( -0.3, 0.0, -0.8 );
+
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	gAnimateA = new SingleTrack()
 		.set( WALK_CYCLE_S );
-
-	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	setup_ui();
-	return true;
 }
 
 function setup_ui(){
@@ -229,17 +285,38 @@ const WALK_CYCLE_S	= new Animation( WALK_CYCLE );
 
 //#############################################################################
 
+let foot_l_down = false;
+let foot_r_down = false;
+let foot_min_y = 0.03;
+
 class Kinematics{
 	static next(){
 		this.ik_leg( gMoveA.Node.local.pos, gRig.leg_l );
 		this.ik_leg( gMoveB.Node.local.pos, gRig.leg_r );
+		this.update_foot_status();
+		
+		if( foot_l_down ) this.target.foot_ik( gRig.foot_l.idx, gRig.bind_pose, gRig.pose_a, Vec3.FORWARD );
+		if( foot_r_down ) this.target.foot_ik( gRig.foot_r.idx, gRig.bind_pose, gRig.pose_a, Vec3.FORWARD );
+
 		gRig.apply_pose();
 	}
 
-	static ik_leg( target_pos, chain ){
-		Pose.parent_world( gRig.bind_pose, chain.bones[0], this.ptran, this.ctran );	// Get the Starting Position of the Thigh Bone
+	static update_foot_status(){
+		let foot_lpos = gRig.calc_foot_l();
+		let foot_rpos = gRig.calc_foot_r();
+
+		if( foot_lpos.y <= foot_min_y && !foot_l_down ){	foot_l_down = true; gStatA.Node.setPos( 0.3, 0.0, -0.8 ); }
+		else if( foot_lpos.y > foot_min_y && foot_l_down ){	foot_l_down = false; gStatA.Node.setPos( 0.3, 0.5, -0.8 ); }
+
+		if( foot_rpos.y <= foot_min_y && !foot_r_down ){	foot_r_down = true; gStatB.Node.setPos( -0.3, 0.0, -0.8 ); }
+		else if( foot_rpos.y > foot_min_y && foot_r_down ){	foot_r_down = false; gStatB.Node.setPos( -0.3, 0.5, -0.8 ); }
+	}
+
+
+	static ik_leg( target_pos, leg, foot=null ){
+		Pose.parent_world( gRig.bind_pose, leg.bones[0], this.ptran, this.ctran );	// Get the Starting Position of the Thigh Bone
 		this.target.from_pos( this.ctran.pos, target_pos, Vec3.FORWARD );				// Setup Our IK target
-		this.target.three_bone( chain, gRig.bind_pose, gRig.pose_a, this.ptran );		// Execute IK on Chain
+		this.target.three_bone( leg, gRig.bind_pose, gRig.pose_a, this.ptran );		// Execute IK on Chain
 	}
 }
 Kinematics.ptran 	= new Transform();

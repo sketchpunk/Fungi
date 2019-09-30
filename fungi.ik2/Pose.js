@@ -146,7 +146,7 @@ class Pose{
 
 			this.parent_world( pose, b.idx, pt, ct );	// Get the Parent and Child Transforms. e.Armature,
 			
-			ct.transformVec( [0,b.len,0], v );			// Get the Tails of the Bone
+			ct.transform_vec( [0,b.len,0], v );			// Get the Tails of the Bone
 			v.sub( ct.pos );							// Get The direction to the tail
 			v[1] = 0;									// Flatten vector to 2D by removing Y Position
 			v.norm();									// Make it a unit vector
