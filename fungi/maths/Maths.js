@@ -251,6 +251,26 @@ class Maths{
 			return t;
 		}
 
+		//From a point in space, closest spot to a 3D line
+		static closest_point_to_line3D( ax, ay, az, bx, by, bz, px, py, pz, out=null ){
+			let dx	= bx - ax,
+				dy	= by - ay,
+				dz	= bz - az,
+				t	= ( (px-ax)*dx + (py-ay)*dy + (pz-az)*dz ) / ( dx*dx + dy*dy + dz*dz ) ;
+
+			if( out ){
+				let ti = 1-t;
+				//out[ 0 ] = ax + (dx * t);
+				//out[ 1 ] = ay + (dy * t);
+				//out[ 2 ] = az + (dz * t);
+				out[ 0 ] = ax * ti + bx * t;
+				out[ 1 ] = ay * ti + by * t;
+				out[ 2 ] = az * ti + bz * t;
+			}
+
+			return t;
+		}
+
 	static newtons_method( x, f, fd=null ){
 		// without derivitive, use th following:
 		// x = x - f(x) / ( (f(x+i) - f(x-1)) / (2*i) )

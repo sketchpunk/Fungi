@@ -151,6 +151,25 @@ class FungiGLTF{
 				ab.Bone.length = ab.Node.world.pos.len( b.pos );	// Distance from Parent to Child
 			}
 		}
+
+	/////////////////////////////////////////////////////////////////
+	//
+	/////////////////////////////////////////////////////////////////
+		static animation( a_name, json, bin ){
+			let ganim = Gltf.get_animation( a_name, json, bin, true, false ),
+				fanim = new App.global.Animation(),
+				i;
+
+			// Copy Over the Time Array
+			for( i of ganim.times ){ fanim.add_time_array( i ); }
+
+			// Copy Over Tracks
+			for( i of ganim.tracks ){
+				fanim.add_joint_track( i.type, i.time_idx, i.joint_idx, i.lerp, i.data );
+			}
+
+			return fanim;
+		}
 }
 
 //##############################################################################

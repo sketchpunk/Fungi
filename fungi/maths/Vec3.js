@@ -466,6 +466,22 @@ class Vec3 extends Float32Array{
 	// MISC
 	////////////////////////////////////////////////////////////////////
 
+		// From a point in space, closest spot to a 3D line
+		static point_to_line( a, b, p, out=null ){
+			let dx	= b[0] - a[0],
+				dy	= b[1] - a[1],
+				dz	= b[2] - a[2],
+				t	= ( (p[0]-a[0])*dx + (p[1]-a[1])*dy + (p[2]-a[2])*dz ) / ( dx*dx + dy*dy + dz*dz ) ;
+
+			if( out ){
+				let ti = 1-t;
+				out[ 0 ] = a[0] * ti + b[0] * t;
+				out[ 1 ] = a[1] * ti + b[1] * t;
+				out[ 2 ] = a[2] * ti + b[2] * t;
+			}
+			return t;
+		}
+
 		// Create an Array of Vectors
 		static create_array( len ){
 			let i, ary = new Array( len );

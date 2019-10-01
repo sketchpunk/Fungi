@@ -1,4 +1,5 @@
-import { AnimUtil } from "./Animation.js";
+import { AnimUtil }		from "./Animation.js";
+import { Vec3, Quat }	from "../fungi/maths/Maths.js";
 
 //#################################################################################
 
@@ -17,6 +18,12 @@ class AHandler_Node extends AnimationHandler{
 	quat( v, t ){ this.node.setRot( v ); }
 }
 
+class AHandler_Pose extends AnimationHandler{
+	constructor( p ){ super(); this.pose = p; }
+	dispose(){ delete this.pose; }
+	vec3( v, t ){ this.pose.set_bone( t.joint_idx, null, v ); }
+	quat( q, t ){ this.pose.set_bone( t.joint_idx, q );  }
+}
 
 //#################################################################################
 //Save the Spline Stuff with this for future addition to CubicSpline interp
@@ -69,6 +76,8 @@ class AnimationState{
 		}
 
 		use_node_handler( e ){ this.set_handler( new AHandler_Node( e ) ); return this; }
+
+		use_pose_handler( p ){ this.set_handler( new AHandler_Pose( p ) ); return this; }
 
 
 	/////////////////////////////////////////////////////////////////

@@ -1,0 +1,222 @@
+<!DOCTYPE html><html><head><title></title></head><script type="module">
+import App, { AppBuilder, Material } from "../fungi/engine/App.js";
+import Maths, { Quat, Vec3 } from "../fungi/maths/Maths.js";
+import Transform		from "../fungi/maths/Transform.js";
+import Points 			from "../fungi/engine/ecs/Points.js";
+import Lines 			from "../fungi/engine/ecs/Lines.js";
+
+import Animation 		from "../fungi.animation/Animation.js";
+//import SingleTrack 	from "../fungi.animation/SingleTrack.js";
+
+import XhrPromise		from "../fungi.misc/XhrPromise.js";
+import FungiGLTF		from "../fungi.misc/FungiGLTF.js";
+
+import Pose				from "./Pose.js";
+import HumanRig			from "./HumanRig.js";
+import IKTarget			from "./IKTarget.js";
+import AnimationState	from "../fungi.animation/AnimationState.js";
+
+
+//#############################################################################
+(function(){new AppBuilder()
+	.launch()
+	.load_armature()
+	.download( dl=>dl.addGrp( "shader", 
+		"../fungi/shaders/VecWColor.txt", 
+		"../fungi.armature/shaders/ArmaturePreview.txt", 
+		//"../fungi.armature/shaders/ArmatureSkinPhong.txt", 
+	) ) 
+	.load_scene( true, true, true )
+	.set_camera( -50, 10, 3, 0, 0.8, 0 )
+	.add( init )
+	//.render_loop( onDraw )
+	.render_on_mouse( onDraw )
+	.build().catch( (e)=>console.error("error",e) );
+})();
+
+
+//#############################################################################
+function onDraw( dt, ss ){
+	//run_animation( dt );
+	//IK_Visualize.update();
+
+	App.ecs.sys_run();
+}
+
+
+//#############################################################################
+let gAnimator, gRig_Animator, gRetarget_A;
+
+async function init(){
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	let dl	= await XhrPromise.get( 
+		"../walking.gltf", "json", "../walking.bin", "arraybuffer",
+	);
+
+	IK_Visualize.init();
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	setup_animation( dl[0], dl[1] );
+
+	gRetarget_A = new IKRig_Retarget( gRig_Animator );
+	
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	run_animation( 0.3 );
+	
+	gRetarget_A.update();
+	IK_Visualize.update();
+
+	return true;
+}
+
+
+//#############################################################################
+
+function run_animation( dt ){
+	gAnimator.run( dt );
+	gRig_Animator
+		.update_world()
+		.apply_pose();
+}
+
+function setup_animation( json, bin ){
+	let e = FungiGLTF.$preview( "src_preview", "Armature", json );
+	
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	gRig_Animator = new HumanRig( e, true )
+		.set_hip( "Hips" )
+		.set_arm_l( "LeftArm", "LeftForeArm" )
+		.set_arm_r( "RightArm", "RightForeArm" )
+		.set_leg_l( "LeftUpLeg", "LeftLeg" )
+		.set_leg_r( "RightUpLeg", "RightLeg" )
+		.set_feet( "LeftFoot", "RightFoot" );
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	gAnimator = new AnimationState();
+	gAnimator
+		.use_pose_handler( gRig_Animator.pose_a )
+		.add_stack( "walk", FungiGLTF.animation( "Armature|mixamo.com|Layer0", json, bin ) );
+}
+
+
+//#############################################################################
+
+class IK_Visualize{
+	static init(){
+		this.pnt = Points.$( null, 7, 10 ).Points;
+		this.lin = Lines.$( null, 8 ).Lines;
+
+		this.p_hip 			= this.pnt.add_diamond( [0,0,0], "orange", 18 );
+		
+		this.l_leg_l		= this.lin.add( [0,0,0], [0,1,1], "green", "red" );
+		this.l_knee_l		= this.lin.add( [0,0,0], [0,1,1], "cyan" );
+		this.p_leg_l		= this.pnt.add_circle( [0,0,0], "green", 14 );
+		this.p_knee_l		= this.pnt.add_circle( [0,0,0], "cyan", 8 );
+		this.p_foot_l		= this.pnt.add_circle( [0,0,0], "red", 14 );
+		
+		this.l_leg_r		= this.lin.add( [0,0,0], [0,1,1], "green", "red" );
+		this.l_knee_r		= this.lin.add( [0,0,0], [0,1,1], "cyan" );
+
+		this.p_leg_r		= this.pnt.add_circle( [0,0,0], "green", 14 );
+		this.p_knee_r		= this.pnt.add_circle( [0,0,0], "cyan", 8 );
+		this.p_foot_r		= this.pnt.add_circle( [0,0,0], "red", 14 );
+	}
+
+	static leg_l( pos ){ this.pnt.set( this.p_leg_l, pos ); return this; }
+	static foot_l( pos ){ this.pnt.set( this.p_foot_l, pos ); return this; }
+	static knee_l( pos ){ this.pnt.set( this.p_knee_l, pos ); return this; }
+
+	static legLeft( posA, posB ){ 
+		this.lin.set( this.l_leg_l[0], posA );
+		this.lin.set( this.l_leg_l[1], posB );
+		this.lin.set( this.l_leg_l[1], Vec3.len(posA, posB), "len" );
+		return this;
+	}
+
+	static kneeLeft( posA, posB ){ 
+		this.lin.set( this.l_knee_l[0], posA );
+		this.lin.set( this.l_knee_l[1], posB );
+		this.lin.set( this.l_knee_l[1], Vec3.len(posA, posB), "len" );
+		return this;
+	}
+
+	static legRight( posA, posB ){ 
+		this.lin.set( this.l_leg_r[0], posA );
+		this.lin.set( this.l_leg_r[1], posB );
+		this.lin.set( this.l_leg_r[1], Vec3.len(posA, posB), "len" );
+		return this;
+	}
+
+	static kneeRight( posA, posB ){ 
+		this.lin.set( this.l_knee_r[0], posA );
+		this.lin.set( this.l_knee_r[1], posB );
+		this.lin.set( this.l_knee_r[1], Vec3.len(posA, posB), "len" );
+		return this;
+	}
+
+	static leg_r( pos ){ this.pnt.set( this.p_leg_r, pos ); return this; }
+	static foot_r( pos ){ this.pnt.set( this.p_foot_r, pos ); return this; }
+	static knee_r( pos ){ this.pnt.set( this.p_knee_r, pos ); return this; }
+
+	static update(){
+		let b_hip = gRig_Animator.get_hip();
+
+		this.pnt.set( this.p_hip, b_hip.world.pos );
+
+		this.pnt.update();
+		this.lin.update();
+	}
+}
+
+//#############################################################################
+
+class IKRig_Retarget{
+	constructor( r_src, r_tar ){
+		this.rig_src = r_src;
+		this.rig_tar = r_tar;
+
+		this.leg_l = { dir: new Vec3() };
+	}
+
+	update(){
+		let v = new Vec3();
+		let rig = this.rig_src;
+		let a, b, c;
+
+		a = rig.get_bone( rig.leg_l.get_first() );
+		b = rig.get_bone( rig.leg_l.bones[1] );
+		c = rig.get_foot_l();
+		Vec3.point_to_line( a.world.pos, c.world.pos, b.world.pos, v );
+
+		IK_Visualize
+			.legLeft( a.world.pos, c.world.pos )
+			.kneeLeft( v, Vec3.sub(b.world.pos,v).norm().scale(0.3).add(v) );
+		IK_Visualize
+			.leg_l( a.world.pos )
+			.knee_l( b.world.pos )
+			.foot_l( c.world.pos );
+		
+
+		a = rig.get_bone( rig.leg_r.get_first() );
+		b = rig.get_bone( rig.leg_r.bones[1] );
+		c = rig.get_foot_r();
+		Vec3.point_to_line( a.world.pos, c.world.pos, b.world.pos, v );
+
+		IK_Visualize
+			.legRight( a.world.pos, c.world.pos )
+			.kneeRight( v, Vec3.sub(b.world.pos,v).norm().scale(0.3).add(v) );
+
+		IK_Visualize
+			.leg_r( a.world.pos )
+			.knee_r( b.world.pos )
+			.foot_r( c.world.pos );
+
+		//App.debug.point( b.world.pos );
+
+	}
+}
+
+
+</script><body>
+</body></html>

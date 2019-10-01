@@ -494,6 +494,7 @@ class Gltf{
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			let rtn = { time_max, frame_cnt_max: frame_max, times: time_ary, tracks:ch_ary };
 
+			// TODO REMOVE FEATURE
 			// if Requested, create an array of values to help normalize time between frames.
 			// Normal time equation would be:  (x - a) / (b - a)  with A and B being time of two frames
 			// Can cache b - a, then invert it with 1 / (b-a), which allows us have a new equation of

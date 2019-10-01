@@ -21,10 +21,11 @@ class Chain{
 			this.bones.push( b.idx );
 		}
 		this.cnt		= b_names.length;
-		this.len_str	= this.len ** 2;
+		this.len_sqr	= this.len ** 2;
 	}
 
 	get_last(){ return this.bones[ this.cnt-1 ]; }
+	get_first(){ return this.bones[ 0 ]; }
 }
 
 
@@ -60,6 +61,7 @@ class HumanRig{
 	}
 
 	apply_pose(){ this.pose_a.apply(); return this; }
+	update_world(){ this.pose_a.update_world(); return this; }
 
 	/////////////////////////////////////////////////////////////////
 	// 
@@ -91,6 +93,12 @@ class HumanRig{
 
 		set_bone_pos( b_idx, v ){ this.pose_a.set_bone( b_idx, null, v ); return this; }
 		set_bone_rot( b_idx, v ){ this.pose_a.set_bone( b_idx, v ); return this; }
+
+		get_bone( b_idx ){ return this.pose_a.bones[ b_idx ]; }
+		get_hip( ){ return this.pose_a.bones[ this.hip.idx ]; }
+		get_foot_l(){ return this.pose_a.bones[ this.foot_l.idx ]; }
+		get_foot_r(){ return this.pose_a.bones[ this.foot_r.idx ]; }
+
 
 		//get_foot_l_y(){ return this.pose_a.bones[ this.foot_l.idx].world.pos.y; }
 

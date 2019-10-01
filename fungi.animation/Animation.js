@@ -1,3 +1,5 @@
+import App from "../fungi/engine/App.js";
+
 
 class Animation{
 	constructor( anim = null ){
@@ -25,13 +27,18 @@ class Animation{
 			if( n > this.time_max ) this.time_max = n;
 
 			// Update frame count
-			if( tary.length > this.frame_cnt ) this.frame_cnt = tary.length();
+			if( tary.length > this.frame_cnt ) this.frame_cnt = tary.length;
 
 			return i;
 		}
 
 		add_track( type, time_idx, interp, data ){
 			this.tracks.push({ type, time_idx, interp, data });
+			return this;
+		}
+
+		add_joint_track( type, time_idx, joint_idx, interp, data ){
+			this.tracks.push({ type, time_idx, joint_idx, interp, data });
 			return this;
 		}
 
@@ -110,3 +117,5 @@ class AnimUtil{
 //#######################################################################
 export default Animation;
 export { AnimUtil };
+
+App.global["Animation"] = Animation;

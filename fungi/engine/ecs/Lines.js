@@ -1,5 +1,6 @@
 import App, { gl, Entity, Components, Shader, Material } from "../App.js";
 import Vao, { Buf }	from "../../core/Vao2.js";
+import { Vec3 } from "../../maths/Maths.js";
 
 
 //###################################################################################
@@ -27,13 +28,18 @@ function colour( c ){
 	return gl.rgbArray( "#ff0000" );		
 }
 
-class Points{
-	static $( e, capacity=5, dsize=10 ){
+class Lines{
+	static $( e, capacity=6 ){
 		if( !e ) e = App.$Draw();
-		if( e instanceof Entity && !e.Points ) Entity.com_fromName( e, "Points" );
+		if( e instanceof Entity && !e.Points ) Entity.com_fromName( e, "Lines" );
 
-		e.Points.init( capacity, dsize );
-		e.Draw.add( e.Points.vao, g_material, 0 );
+		e.Lines.init( capacity );
+		e.Draw.add( e.Lines.vao, g_material, 1 );
+
+		g_material
+			.add_uniform( "dash_seg", 1 / e.Lines.dash_seg )
+			.add_uniform( "dash_div", e.Lines.dash_div );
+
 		return e;
 	}
 
@@ -45,41 +51,38 @@ class Points{
 		this.is_modified	= true;
 		this.data			= null;
 		this.data_dbuf		= null;
-		this.default_size 	= 10;
+
+		this.dash_seg		= 0.06;
+		this.dash_div		= 0.5;
 	}
 
-	init( capacity=5, dsize=10 ){
+	init( capacity=6 ){
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		if( !g_shader ) init_shader();
-
-		this.default_size = dsize;
 
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		this.data = new InterleavedArray()
 			.add_var( "pos", 3 )
-			.add_var( "size", 1 )
 			.add_var( "color", 3 )
-			.add_var( "shape", 1 )
+			.add_var( "len", 1 )
 			.expand_by( capacity );
 		
 		let data_buf	= Buf.empty_array( this.data.byte_capacity, false );	// Create Empty Buffers on the GPU with the capacity needed.
 
-		this.data_dbuf	= new DynBuffer( data_buf, this.data.byte_capacity );		// Manage Updating / Resizing the Buffers on the GPU
+		this.data_dbuf	= new DynBuffer( data_buf, this.data.byte_capacity );	// Manage Updating / Resizing the Buffers on the GPU
 		
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		let stride_blen = this.data.stride_byte_len;
 		this.vao = new Vao()
 			.bind()
 			.add_buf( "vertices", data_buf, 0, 3, "FLOAT", stride_blen, this.data.var_byte_offset("pos") )
-			.add_partition( 1, 1, "FLOAT", stride_blen, this.data.var_byte_offset("size") )
-			.add_partition( 2, 3, "FLOAT", stride_blen, this.data.var_byte_offset("color") )
-			.add_partition( 3, 1, "FLOAT", stride_blen, this.data.var_byte_offset("shape") )
+			.add_partition( 1, 3, "FLOAT", stride_blen, this.data.var_byte_offset("color") )
+			.add_partition( 2, 1, "FLOAT", stride_blen, this.data.var_byte_offset("len") )
 			.unbind_all()
 			.set( 0 );
 		
 		return this;
 	}
-
 
 	////////////////////////////////////////////////////////
 	// 
@@ -92,13 +95,17 @@ class Points{
 			return this;
 		}
 
-		add(){ this.data.push.apply( this.data, arguments ); this.is_modified = true; return this; }
-		add_square	( pos, color=null, size=null ){ return this.data.push( pos, size || this.default_size, colour( color ), 0 ); }
-		add_circle	( pos, color=null, size=null ){ return this.data.push( pos, size || this.default_size, colour( color ), 1 ); }
-		add_diamond	( pos, color=null, size=null ){ return this.data.push( pos, size || this.default_size, colour( color ), 2 ); }
-		add_tri 	( pos, color=null, size=null ){ return this.data.push( pos, size || this.default_size, colour( color ), 3 ); }
-		add_penta	( pos, color=null, size=null ){ return this.data.push( pos, size || this.default_size, colour( color ), 4 ); }
-		add_hex		( pos, color=null, size=null ){ return this.data.push( pos, size || this.default_size, colour( color ), 5 ); }
+		add( a, b, col_a=null, col_b=null ){
+			this.is_modified = true;
+
+			let len = Vec3.len( a, b );
+			col_a = colour( col_a );
+			col_b = ( col_b )? colour( col_b ) : col_a;
+			return [ 
+				this.data.push( a, col_a, 0 ),
+				this.data.push( b, col_b, len ),
+			];
+		}
 
 	////////////////////////////////////////////////////////
 	// 
@@ -113,7 +120,7 @@ class Points{
 			this.is_modified	= false;
 			return this;
 		}
-} Components( Points );
+} Components( Lines );
 
 
 //###################################################################################
@@ -269,21 +276,25 @@ let g_shader = null, g_material = null;
 function init_shader(){
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// SETUP SHADER
-	g_shader = Shader.build( "PointShapes", v_shader_src, f_shader_src );
+	g_shader = Shader.build( "LineDash", v_shader_src, f_shader_src );
 	Shader.prepareUniformBlock( g_shader, "UBOGlobal" );
+	Shader.prepareUniform( g_shader, "dash_seg", "float" );
+	Shader.prepareUniform( g_shader, "dash_div", "float" );
+
 
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// SETUP MATERIAl
-	g_material = new Material( "PointShape", g_shader )
-		.opt_blend( true );
+	g_material = new Material( "LineDash", g_shader )
+		.opt_blend( true )
+		.add_uniform( "dash_seg", 1 / 0.1 )
+		.add_uniform( "dash_div", 0.4 );
 }
 
 //-----------------------------------------------
 let v_shader_src = `#version 300 es
 layout(location=0) in vec3 a_position;
-layout(location=1) in float a_point_size;
-layout(location=2) in vec3 a_color;
-layout(location=3) in float a_shape;
+layout(location=1) in vec3 a_color;
+layout(location=2) in float a_len;
 
 uniform UBOGlobal{
 	mat4	projViewMatrix;
@@ -293,78 +304,34 @@ uniform UBOGlobal{
 	float	deltaTime;
 };
 
-flat out vec3 v_color;
-flat out int v_shape;
+out vec3 v_color;
+out float v_len;
 
 void main(void){
-	v_shape 		= int( a_shape );
+	v_len 			= a_len;
 	v_color			= a_color;
-	gl_PointSize 	= a_point_size;
 	gl_Position 	= projViewMatrix * vec4( a_position.xyz, 1.0 );
 }`;
 
 //-----------------------------------------------
 let f_shader_src = `#version 300 es
 precision mediump float;
-#define PI	3.14159265359
-#define PI2	6.28318530718
 
-flat in vec3 v_color;
-flat in int v_shape;
+in vec3 v_color;
+in float v_len;
+
+uniform float dash_seg;
+uniform float dash_div;
 
 out vec4 oFragColor;
 
-float circle(){ 
-	//return smoothstep( 0.5, 0.45, length( gl_PointCoord - vec2(0.5) ) );
-	
-	//float len = length( gl_PointCoord - vec2(0.5) );
-	//float delta = fwidth( len );
-	//return smoothstep( 0.5, 0.5-delta, len );
-
-	vec2 coord		= gl_PointCoord * 2.0 - 1.0;
-	float radius	= dot( coord, coord );
-	float dxdy 		= fwidth( radius );
-	return smoothstep( 0.90 + dxdy, 0.90 - dxdy, radius );
-}
-
-float diamond(){
-	// http://www.numb3r23.net/2015/08/17/using-fwidth-for-distance-based-anti-aliasing/
-	const float radius = 0.5;
-	//vec2 coord = gl_PointCoord - vec2(0.5);
-	//float dst = dot( abs(coord), vec2(1.0) );
-	//return 1.0 - step( radius, dst );
-
-	float dst = dot( abs(gl_PointCoord-vec2(0.5)), vec2(1.0) );
-	float aaf = fwidth( dst );
-	return 1.0 - smoothstep( radius - aaf, radius, dst );
-}
-
-float poly( int sides, float offset, float scale ){
-	// https://thebookofshaders.com/07/
-	vec2 coord = gl_PointCoord * 2.0 - 1.0;
-	
-	coord.y += offset;
-	coord *= scale;
-
-	float a = atan( coord.x, coord.y ) + PI; // Angle of Pixel
-	float r = PI2 / float( sides ); // Radius of Pixel
-	float d = cos( floor( 0.5 + a / r ) * r-a ) * length( coord );
-	float f = fwidth( d );
-	return smoothstep( 0.5, 0.5 - f, d );
-}
-
 void main(void){ 
-	float alpha = 1.0;
-
-	if( v_shape == 1 ) alpha = circle();
-	if( v_shape == 2 ) alpha = diamond();
-	if( v_shape == 3 ) alpha = poly( 3, 0.2, 1.0 ); // Triangle
-	if( v_shape == 4 ) alpha = poly( 5, 0.0, 0.65 ); // Pentagram
-	if( v_shape == 5 ) alpha = poly( 6, 0.0, 0.65 ); // Hexagon
-
-	oFragColor = vec4( v_color, alpha );
+	oFragColor = vec4( 
+		v_color, 
+		step( dash_div, fract( v_len * dash_seg ) )
+	);
 }`;
 
 
 //###################################################################################
-export default Points;
+export default Lines;
