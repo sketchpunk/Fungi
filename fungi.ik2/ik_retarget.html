@@ -6,16 +6,15 @@ import Points 			from "../fungi/engine/ecs/Points.js";
 import Lines 			from "../fungi/engine/ecs/Lines.js";
 
 import Animation 		from "../fungi.animation/Animation.js";
-//import SingleTrack 	from "../fungi.animation/SingleTrack.js";
+import AnimationState	from "../fungi.animation/AnimationState.js";
 
 import XhrPromise		from "../fungi.misc/XhrPromise.js";
 import FungiGLTF		from "../fungi.misc/FungiGLTF.js";
+import FungiMesh		from "../fungi.misc/FungiMesh.js";
 
 import Pose				from "./Pose.js";
 import HumanRig			from "./HumanRig.js";
 import IKTarget			from "./IKTarget.js";
-import AnimationState	from "../fungi.animation/AnimationState.js";
-
 
 //#############################################################################
 (function(){new AppBuilder()
@@ -24,48 +23,55 @@ import AnimationState	from "../fungi.animation/AnimationState.js";
 	.download( dl=>dl.addGrp( "shader", 
 		"../fungi/shaders/VecWColor.txt", 
 		"../fungi.armature/shaders/ArmaturePreview.txt", 
-		//"../fungi.armature/shaders/ArmatureSkinPhong.txt", 
+		"../fungi.armature/shaders/ArmatureSkinPhong.txt", 
 	) ) 
 	.load_scene( true, true, true )
 	.set_camera( -50, 10, 3, 0, 0.8, 0 )
 	.add( init )
-	//.render_loop( onDraw )
-	.render_on_mouse( onDraw )
+	.render_loop( onDraw )
+	//.render_on_mouse( onDraw )
 	.build().catch( (e)=>console.error("error",e) );
 })();
 
 
 //#############################################################################
 function onDraw( dt, ss ){
-	//run_animation( dt );
-	//IK_Visualize.update();
-
+	run_animation( dt );
 	App.ecs.sys_run();
 }
 
 
 //#############################################################################
-let gAnimator, gRig_Animator, gRetarget_A;
+let gAnimator, gRig_Animator, gIK_Compute, 
+	gRigA, gRigB,
+	gTargetA, gTargetB;
+
+let TARGET_A = true,
+	TARGET_B = true;
 
 async function init(){
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	let dl	= await XhrPromise.get( 
 		"../walking.gltf", "json", "../walking.bin", "arraybuffer",
+		"../files/models/vegeta.txt", "text", "../files/models/vegeta.bin", "arraybuffer", // files/models/
+		"../robo_trex.gltf", "json", "../robo_trex.bin", "arraybuffer", // files/models/
 	);
 
 	IK_Visualize.init();
+	let mat = Material
+		.clone( "ArmatureSkinPhong", "RexMat" )
+		.update_uniform( "uBaseColor", "b0b0b0aa" )
+		.opt_blend( true );
 
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	setup_animation( dl[0], dl[1] );
+	if( TARGET_A ) setup_target_a( dl[2], dl[3], mat );
+	if( TARGET_B ) setup_target_b( dl[4], dl[5], mat );
 
-	gRetarget_A = new IKRig_Retarget( gRig_Animator );
+	gIK_Compute = new IKRig_Compute( gRig_Animator );
 	
-
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	run_animation( 0.3 );
-	
-	gRetarget_A.update();
-	IK_Visualize.update();
 
 	return true;
 }
@@ -74,10 +80,24 @@ async function init(){
 //#############################################################################
 
 function run_animation( dt ){
-	gAnimator.run( dt );
+	gAnimator.run( dt );	// Run Animaton, Set Changes to Rig's Pose
+
 	gRig_Animator
-		.update_world()
-		.apply_pose();
+		.update_world()		// Calc Model Space for all the bones
+		.apply_pose();		// Apply Pose to Armature
+
+	gIK_Compute.update();	// Take Model Space Src Rig and calc some IK Information
+	IK_Visualize.update();	// Visually Apply IK Info to Src Model
+
+	if( TARGET_A ){			
+		gTargetA.update( gIK_Compute );	// Run IK On Target
+		gRigA.apply_pose();				// Update Armature
+	}
+
+	if( TARGET_B ){
+		gTargetB.update( gIK_Compute );	// Run IK On Target
+		gRigB.apply_pose();				// Update Armature
+	}
 }
 
 function setup_animation( json, bin ){
@@ -99,122 +119,328 @@ function setup_animation( json, bin ){
 		.add_stack( "walk", FungiGLTF.animation( "Armature|mixamo.com|Layer0", json, bin ) );
 }
 
+function setup_target_a( txt, bin, mat ){
+	let e = FungiMesh.$debug( "TargetA", mat, txt, bin );
+	//let e = FungiMesh.$preview( "TargetA", txt );
+
+	gRigA = new HumanRig( e )
+		.set_hip( "Hips" )
+		.set_leg_l( "LeftUpLeg", "LeftLeg" )
+		.set_leg_r( "RightUpLeg", "RightLeg" )
+		.set_arm_l( "LeftArm", "LeftForeArm" )
+		.set_arm_r( "RightArm", "RightForeArm" )
+		.set_feet( "LeftFoot", "RightFoot" )
+		.gen_tpose();
+
+	e.Node.setPos( 1.3, 0, 0 );
+
+	gTargetA = new IKRig_Target( gRig_Animator, gRigA );
+}
+
+function setup_target_b( json, bin, mat ){
+	let e = FungiGLTF.$debug( "TargetA", json, bin, "Armature", mat );
+	//let e = FungiGLTF.$preview( "TargetB", "Armature", json );
+
+	gRigB = new HumanRig( e )
+		.set_hip( "hip" )
+		.set_leg_l( "LeftUpLeg", "LeftKnee", "LeftShin" )
+		.set_leg_r( "RightUpLeg", "RightKnee", "RightShin" )
+		.set_feet( "LeftFoot", "RightFoot" )
+		.gen_tpose()
+		.finalize();
+
+	e.Node.setPos( -1.3, 0, 0 );
+
+	gTargetB = new IKRig_Target( gRig_Animator, gRigB, 1 );
+}
+
 
 //#############################################################################
-
+// Overlay some visuals over the src armature to see the IK Target Information
 class IK_Visualize{
 	static init(){
 		this.pnt = Points.$( null, 7, 10 ).Points;
 		this.lin = Lines.$( null, 8 ).Lines;
 
-		this.p_hip 			= this.pnt.add_diamond( [0,0,0], "orange", 18 );
-		
-		this.l_leg_l		= this.lin.add( [0,0,0], [0,1,1], "green", "red" );
-		this.l_knee_l		= this.lin.add( [0,0,0], [0,1,1], "cyan" );
-		this.p_leg_l		= this.pnt.add_circle( [0,0,0], "green", 14 );
-		this.p_knee_l		= this.pnt.add_circle( [0,0,0], "cyan", 8 );
-		this.p_foot_l		= this.pnt.add_circle( [0,0,0], "red", 14 );
-		
-		this.l_leg_r		= this.lin.add( [0,0,0], [0,1,1], "green", "red" );
-		this.l_knee_r		= this.lin.add( [0,0,0], [0,1,1], "cyan" );
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		this.p_hip 	= this.pnt.add_diamond( [0,0,0], "orange", 18 );
+			
+		this.leg_l	= {
+			a	: this.pnt.add_circle( [0,0,0], "green", 14 ),
+			b	: this.pnt.add_circle( [0,0,0], "cyan", 8 ),
+			c 	: this.pnt.add_circle( [0,0,0], "red", 14 ),
+			ac 	: this.lin.add( [0,0,0], [0,1,1], "green", "red" ),
+			bb	: this.lin.add( [0,0,0], [0,1,1], "cyan" ),
+		}
 
-		this.p_leg_r		= this.pnt.add_circle( [0,0,0], "green", 14 );
-		this.p_knee_r		= this.pnt.add_circle( [0,0,0], "cyan", 8 );
-		this.p_foot_r		= this.pnt.add_circle( [0,0,0], "red", 14 );
+		this.leg_r	= {
+			a	: this.pnt.add_circle( [0,0,0], "green", 14 ),
+			b	: this.pnt.add_circle( [0,0,0], "cyan", 8 ),
+			c 	: this.pnt.add_circle( [0,0,0], "red", 14 ),
+			ac 	: this.lin.add( [0,0,0], [0,1,1], "green", "red" ),
+			bb	: this.lin.add( [0,0,0], [0,1,1], "cyan" ),
+		}
 	}
-
-	static leg_l( pos ){ this.pnt.set( this.p_leg_l, pos ); return this; }
-	static foot_l( pos ){ this.pnt.set( this.p_foot_l, pos ); return this; }
-	static knee_l( pos ){ this.pnt.set( this.p_knee_l, pos ); return this; }
-
-	static legLeft( posA, posB ){ 
-		this.lin.set( this.l_leg_l[0], posA );
-		this.lin.set( this.l_leg_l[1], posB );
-		this.lin.set( this.l_leg_l[1], Vec3.len(posA, posB), "len" );
-		return this;
-	}
-
-	static kneeLeft( posA, posB ){ 
-		this.lin.set( this.l_knee_l[0], posA );
-		this.lin.set( this.l_knee_l[1], posB );
-		this.lin.set( this.l_knee_l[1], Vec3.len(posA, posB), "len" );
-		return this;
-	}
-
-	static legRight( posA, posB ){ 
-		this.lin.set( this.l_leg_r[0], posA );
-		this.lin.set( this.l_leg_r[1], posB );
-		this.lin.set( this.l_leg_r[1], Vec3.len(posA, posB), "len" );
-		return this;
-	}
-
-	static kneeRight( posA, posB ){ 
-		this.lin.set( this.l_knee_r[0], posA );
-		this.lin.set( this.l_knee_r[1], posB );
-		this.lin.set( this.l_knee_r[1], Vec3.len(posA, posB), "len" );
-		return this;
-	}
-
-	static leg_r( pos ){ this.pnt.set( this.p_leg_r, pos ); return this; }
-	static foot_r( pos ){ this.pnt.set( this.p_foot_r, pos ); return this; }
-	static knee_r( pos ){ this.pnt.set( this.p_knee_r, pos ); return this; }
 
 	static update(){
-		let b_hip = gRig_Animator.get_hip();
+		let rik = gIK_Compute;
 
-		this.pnt.set( this.p_hip, b_hip.world.pos );
-
+		this.pnt.set( this.p_hip, rik.rig.get_hip().world.pos );
+		
+		this.update_limb( this.leg_l, rik.leg_l, rik.rig.leg_l, rik.rig.foot_l.idx, rik.rig.pose_a );
+		this.update_limb( this.leg_r, rik.leg_r, rik.rig.leg_r, rik.rig.foot_r.idx, rik.rig.pose_a );
+		
 		this.pnt.update();
 		this.lin.update();
+	}
+
+	static update_limb( ui, ik, chain, end, pose ){
+		const JNT_LEN = 0.2;
+
+		let a = pose.bones[ chain.bones[0] ],
+			b = pose.bones[ chain.bones[1] ],
+			c = pose.bones[ end ];
+
+		let len 	= ik.len_scale * ik.len, //chain.len,
+			end_pos	= new Vec3().from_scale( ik.fwd, len ).add( a.world.pos ),
+			jnt_dir = new Vec3().from_scale( ik.up, JNT_LEN ).add( b.world.pos );
+
+		// Display Limp Points
+		this.pnt
+			.set( ui.a, a.world.pos )
+			.set( ui.b, b.world.pos )
+			.set( ui.c, c.world.pos );
+
+		// Display Lines
+		this.lin
+			.set( ui.ac[0], a.world.pos )
+			.set( ui.ac[1], end_pos )
+			.set( ui.ac[1], len, "len" )
+
+			.set( ui.bb[0], b.world.pos )
+			.set( ui.bb[1], jnt_dir )
+			.set( ui.bb[1], JNT_LEN, "len" );
 	}
 }
 
 //#############################################################################
 
-class IKRig_Retarget{
-	constructor( r_src, r_tar ){
-		this.rig_src = r_src;
-		this.rig_tar = r_tar;
+// Take an Animated Rig and compute IK Target Information from its pose.
+class IKRig_Compute{
+	constructor( r_src ){
+		this.rig = r_src;
 
-		this.leg_l = { dir: new Vec3() };
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		// Setup Hip
+		let h_idx = r_src.hip.idx;
+		this.hip_bind_pos 	= new Vec3( r_src.bind_pose.bones[ h_idx ].world.pos );
+		this.hip_bind_rot 	= new Quat( r_src.bind_pose.bones[ h_idx ].world.rot ).invert();
+
+		this.hip_dif_pos 	= new Vec3(); // Position Difference from Bind to Pose
+		this.hip_dif_rot	= new Quat(); // Rotation Difference from Bind to Pose
+
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		// Setup Legs
+		this.leg_l = { fwd: new Vec3(), up: new Vec3(), len_scale:1, len:this.len_between_bones( "LeftUpLeg", "LeftFoot" ) };
+		this.leg_r = { fwd: new Vec3(), up: new Vec3(), len_scale:1, len:this.len_between_bones( "RightUpLeg", "RightFoot" ) };
+	
+		const damp = 1.0;
+		const osc = 2;
+		this.left_ls = new Vec3Spring( osc ).target( Vec3.FORWARD );
+		this.left_ls.damp_ratio = damp;
+		this.left_ls.pos.copy( Vec3.FORWARD );
+
+		this.left_rs = new Vec3Spring( osc ).target( Vec3.FORWARD );
+		this.left_rs.damp_ratio = damp;
+		this.left_rs.pos.copy( Vec3.FORWARD );
 	}
 
-	update(){
-		let v = new Vec3();
-		let rig = this.rig_src;
-		let a, b, c;
+	// Chain Length isn't reliable when the mesh has an offset scale.
+	// Rig Bind pose should be scaled, so calc distance between two joints.
+	len_between_bones( n0, n1 ){
+		let a = this.rig.bind_pose.get_bone( n0 ),
+			b = this.rig.bind_pose.get_bone( n1 );
+		return Vec3.len( a.world.pos, b.world.pos );
+	}
 
-		a = rig.get_bone( rig.leg_l.get_first() );
-		b = rig.get_bone( rig.leg_l.bones[1] );
-		c = rig.get_foot_l();
-		Vec3.point_to_line( a.world.pos, c.world.pos, b.world.pos, v );
+	update(){ 
+		App.debug.reset();
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		let b = this.rig.get_hip();
+		this.hip_dif_pos.from_sub( b.world.pos, this.hip_bind_pos );
+		this.hip_dif_rot.from_mul( this.hip_bind_rot, b.world.rot ); // Prob not the best way to get rotation, Not isolating bone but it is a hip so it might be ok.
 
-		IK_Visualize
-			.legLeft( a.world.pos, c.world.pos )
-			.kneeLeft( v, Vec3.sub(b.world.pos,v).norm().scale(0.3).add(v) );
-		IK_Visualize
-			.leg_l( a.world.pos )
-			.knee_l( b.world.pos )
-			.foot_l( c.world.pos );
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		this.ik_compute_limb( this.rig.leg_l, this.rig.foot_l.idx, this.leg_l );
+		this.ik_compute_limb( this.rig.leg_r, this.rig.foot_r.idx, this.leg_r );
+
+		this.left_ls.target( this.leg_l.up ).update( 0.01 ); //App.deltaTime
+		this.left_rs.target( this.leg_r.up ).update( 0.01 ); //App.deltaTime
+
+		//console.log( this.left_ls.pos );
+	}
+
+	// Chain is the arm or leg bones, where end is the hand or foot.
+	ik_compute_limb( chain, end, out ){
+		let a, b, c,
+			p = new Vec3();
+
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		// Get Reference to the 3 Points of the Limb. Forms a Triangle
+		a = this.rig.get_bone( chain.bones[0] );
+		b = this.rig.get_bone( chain.bones[1] );
+		c = this.rig.get_bone( end );
+
+		//App.debug.line( a.world.pos, Vec3.transform_quat( Vec3.FORWARD, a.world.rot ).add(a.world.pos), 0 );
+
+		// Find the perpendicular line based on the Knee position and the
+		// Segment from the Thigh to the Foot.
+		Vec3.point_to_line( a.world.pos, c.world.pos, b.world.pos, p );
+
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		// Calculate the Forward IK Direction and the Distance to end effector.
+		let dst = out.fwd
+			.from_sub( c.world.pos, a.world.pos ) 	// Calc Forward Direction
+			.len();									// Then Get the Length of the segment.
+
+		out.fwd.norm();								// Normalizing the forward direction
+		out.len_scale = dst / out.len;				// Scale he distance based on total limb length
+		out.up.from_sub( b.world.pos, p ).norm();	// Calculate the Joint Dir (Knee, Elbow)
 		
+		//out.up[1]=0;
+		//out.up.copy( Vec3.FORWARD );
 
-		a = rig.get_bone( rig.leg_r.get_first() );
-		b = rig.get_bone( rig.leg_r.bones[1] );
-		c = rig.get_foot_r();
-		Vec3.point_to_line( a.world.pos, c.world.pos, b.world.pos, v );
-
-		IK_Visualize
-			.legRight( a.world.pos, c.world.pos )
-			.kneeRight( v, Vec3.sub(b.world.pos,v).norm().scale(0.3).add(v) );
-
-		IK_Visualize
-			.leg_r( a.world.pos )
-			.knee_r( b.world.pos )
-			.foot_r( c.world.pos );
-
-		//App.debug.point( b.world.pos );
-
+		//console.log( "len_scale", dst, chain.len, out.len_scale );
 	}
+}
+
+// Apply IK Information to a Pose.
+class IKRig_Target{
+	constructor( r_src, r_tar, leg_solver=0 ){
+		this.target		= new IKTarget();
+		this.rig 		= r_tar;
+
+		this.pt			= new Transform();
+		this.ct			= new Transform();
+		this.target_pos	= new Vec3();
+
+		this.grd_offset = 0.06;
+		this.leg_solver = leg_solver;
+
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		// Hip Information
+		let ia	= r_src.hip.idx,
+			ib	= r_tar.hip.idx,
+			a	= r_src.bind_pose.bones[ia].world.pos.clone().near_zero(),
+			b	= r_tar.bind_pose.bones[ib].world.pos.clone().near_zero();
+		this.hip_scale = new Vec3().from_div( b, a );
+	}
+
+	/////////////////////////////////////////////////////////////////
+	//
+	/////////////////////////////////////////////////////////////////
+		update( ik ){
+			this.run_hip( ik );
+			this.run_limb( this.rig.leg_l, ik.leg_l, ik.left_ls.pos  );
+			this.run_limb( this.rig.leg_r, ik.leg_r, ik.left_rs.pos );
+		}
+
+	/////////////////////////////////////////////////////////////////
+	//
+	/////////////////////////////////////////////////////////////////
+		run_hip( ik ){
+			//TODO NEED TO HANDLE HIP ROTATION
+			let idx		= this.rig.hip.idx,
+				bind 	= this.rig.bind_pose.bones[ idx ],
+				pose 	= this.rig.pose_a.bones[ idx ];
+
+			// Need to fix hip in Human Rig. It should only contain { idx: }
+			// tar_bind + ( src_pose - src_bind ) * src2tar_scale
+			let p = new Vec3( bind.world.pos );
+			p[1] += ik.hip_dif_pos[1] * this.hip_scale[1];
+
+			this.rig.pose_a.set_bone( idx, null, p );	// Set Local Space
+			pose.world.pos.copy( p );					// Set World Space for later use.
+		}
+
+		run_limb( chain, ik, aa ){
+			Pose.parent_world( this.rig.pose_a, chain.bones[0], this.pt, this.ct );
+
+			//gRig_Animator.entity.Node.local.pos.y = 3;
+			//gRig_Animator.entity.Node.isModified = true;
+			//console.log( ik );
+
+			this.target_pos
+				.from_scale( ik.fwd, chain.len * ik.len_scale )
+				.add( this.ct.pos );
+
+			// Ground collision with target
+			if( this.target_pos[1] < this.grd_offset ){
+				this.target_pos[1] = this.grd_offset;
+				//let s = this.grd_offset / ik.fwd[1];
+				//this.target_pos
+				//	.from_scale( ik.fwd, s )
+				//	.add( this.ct.pos );
+			}
+
+			//this.target.from_pos( this.ct.pos, this.target_pos, ik.up );
+			this.target.from_pos( this.ct.pos, this.target_pos, aa );
+			
+
+			//console.log( this.target_pos );
+
+			//App.debug.point( this.target_pos, 8 );
+			//IKTarget.debug( App.debug, this.target );
+
+			
+			if( this.leg_solver == 0 )	this.target.limb( chain, this.rig.bind_pose, this.rig.pose_a, this.pt );
+			else 						this.target.three_bone( chain, this.rig.bind_pose, this.rig.pose_a, this.pt );
+		}
+}
+
+
+//#############################################################################
+class Vec3Spring{
+	constructor( osc_ps=1, damp_ratio=1 ){
+		this.vel = new Vec3();
+		this.pos = new Vec3();
+		this.tar = new Vec3();
+
+		this.damp_ratio	= damp_ratio;
+		this.osc_ps		= Math.PI * 2 * osc_ps; 
+	}
+
+	/////////////////////////////////////////////////////////////////
+	// Setters
+	/////////////////////////////////////////////////////////////////
+		target( p ){ this.tar.copy(p); return this; }
+		ocs( i ){ this.osc_ps = Math.PI * 2 * i; return this; }
+		damp_raw( damp ){ this.damp_ratio = damp; return this; }
+		damp( damp, damp_time ){ 
+			// Damp_ratio = Log(damp) / ( -osc_ps * damp_time ) 
+			// Damp Time, in seconds to damp. So damp 0.5 for every 2 seconds.
+			// Damp needs to be a value between 0 and 1, if 1, creates criticle clamping.
+			this.damp_ratio = Math.log(damp) / ( -this.osc_ps * damp_time ); 
+			return this; 
+		}
+
+	/////////////////////////////////////////////////////////////////
+	//
+	/////////////////////////////////////////////////////////////////
+		update( dt ){
+			let a = -2.0 * dt * this.damp_ratio * this.osc_ps,
+				b = dt * this.osc_ps * this.osc_ps;
+
+			this.vel[0] += a * this.vel[0] + b * ( this.tar[0] - this.pos[0] );
+			this.vel[1] += a * this.vel[1] + b * ( this.tar[1] - this.pos[1] );
+			this.vel[2] += a * this.vel[2] + b * ( this.tar[2] - this.pos[2] );
+
+			this.pos[0] += dt * this.vel[0];
+			this.pos[1] += dt * this.vel[1];
+			this.pos[2] += dt * this.vel[2];
+
+			return this.pos;
+		}
 }
 
 
