@@ -1,0 +1,220 @@
+<!DOCTYPE html><html><head><title></title></head><script type="module">
+import App, { AppBuilder }		from "../fungi/engine/App.js";
+import Maths, { Quat, Vec3 }	from "../fungi/maths/Maths.js";
+
+import XhrPromise				from "../fungi.misc/XhrPromise.js";
+
+import FungiGLTF, {Gltf} 		from "../fungi.misc/FungiGLTF.js";
+import FungiMesh 				from "../fungi.misc/FungiMesh.js";
+
+import AnimationState			from "../fungi.animation/AnimationState.js";
+
+import HumanRig 				from "./HumanRig.js";
+
+//#############################################################################
+(function(){new AppBuilder()
+	.launch()
+	.load_armature()
+	.download( dl=>dl.addGrp( "shader", 
+		"../fungi/shaders/VecWColor.txt", 
+		//"./fungi/shaders/LowPolyPhong.txt", 
+		"../fungi.armature/shaders/ArmaturePreview.txt", 
+		"../fungi.armature/shaders/ArmatureSkinPhong.txt", 
+	) ) 
+	.load_scene( true, true, false )
+	.set_camera( -50, 10, 3, 0, 0.7, 0 )
+	.add( dl_files )
+	.render_loop( onDraw )
+	//.render_on_mouse( onDraw )
+	.build().catch( (e)=>console.error("error",e) );
+})();
+
+let gIsActive = true;
+let gRigTar, gRigSrc, gRetarget, gAnimator;
+
+async function dl_files(){
+	let dl	= await XhrPromise.get( 
+		"../walking.gltf", "json", "../walking.bin", "arraybuffer",
+		"../files/models/vegeta.txt", "text", "../files/models/vegeta.bin", "arraybuffer", //files/models/
+	);
+	
+	build_src( dl[0], dl[1] );
+	build_target( dl[2], dl[3] );
+	gRetarget = new RetargetTester( gRigSrc, gRigTar );
+
+	return true;
+}
+
+
+function build_src( json, bin ){
+	let e 			= FungiGLTF.$preview( "src_preview", "Armature", json );
+	gRigSrc			= new HumanRig( e, true );
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	gAnimator = new AnimationState();
+	gAnimator
+		.use_pose_handler( gRigSrc.pose_a )
+		.add_stack( "walk", FungiGLTF.animation( "Armature|mixamo.com|Layer0", json, bin ) );
+}
+
+
+function build_target( txt, bin ){
+	let e = FungiMesh.$debug( "Target", "ArmatureSkinPhong", txt, bin );
+	//let e = FungiMesh.$preview( "Target", txt );
+
+	gRigTar = new HumanRig( e )
+		.set_leg_l( "LeftUpLeg", "LeftLeg" )
+		.set_leg_r( "RightUpLeg", "RightLeg" )
+		.set_arm_l( "LeftArm", "LeftForeArm" )
+		.set_arm_r( "RightArm", "RightForeArm" )
+		.set_feet( "LeftFoot", "RightFoot" )
+		.gen_tpose();
+
+	e.Node.setPos( 1, 0, 0 );
+}
+
+
+function run_retarget(){
+	gRetarget
+		.run_bone( "LeftUpLeg",		"LeftUpLeg" )
+		.run_bone( "LeftLeg",		"LeftLeg" )
+		.run_bone( "RightUpLeg",	"RightUpLeg" )
+		.run_bone( "RightLeg",		"RightLeg" )
+
+		.run_bone( "Hips",			"Hips", true )
+
+		.run_bone( "Spine",			"Spine" )
+		.run_bone( "Spine1",		"Spine1" )
+		.run_bone( "Spine2",		"Spine2" )
+		.run_bone( "Neck",			"Neck" )
+		.run_bone( "Head",			"Head" )
+
+		.run_bone( "LeftArm",		"LeftArm" )
+		.run_bone( "LeftForeArm",	"LeftForeArm" )
+		.run_bone( "RightArm",		"RightArm" )
+		.run_bone( "RightForeArm",	"RightForeArm" )
+
+		.run_bone( "LeftShoulder",	"LeftShoulder" )
+		.run_bone( "RightShoulder",	"RightShoulder" )
+
+		.run_bone( "LeftHand",		"LeftHand" )
+		.run_bone( "RightHand",		"RightHand" )
+
+		.run_bone( "LeftFoot",		"LeftFoot" )
+		.run_bone( "LeftToeBase",	"LeftToeBase" )
+		.run_bone( "RightFoot",		"RightFoot" )
+		.run_bone( "RightToeBase",	"RightToeBase" )		
+	;
+}
+
+
+//#############################################################################
+function onDraw( dt, ss ){
+	
+	if( gIsActive ){
+		gAnimator.run( dt );					// Animate and Save to Pose
+		gRigSrc.apply_pose();					// Apply Pose to Src Preview
+		gRigSrc.update_world(); 				// Calc Model Space Transforms for the pose
+		
+		run_retarget();
+
+		gRigTar.apply_pose();					// Apply Pose to Target Preview
+	}
+
+	App.ecs.sys_run();
+}
+
+
+//############################################################################
+
+class RetargetTester{
+	constructor( from_rig, to_rig ){
+		this.rig_from	= from_rig;
+		this.rig_to 	= to_rig;
+
+		this.convert	= new Quat();
+		this.rot 		= new Quat();
+		this.pos 		= new Vec3();
+		this.scale 		= new Vec3();
+		this.a			= new Vec3();
+		this.b			= new Vec3();
+	}
+
+	run_bone( from_name, to_name, inc_pos=false, y_only=true ){
+		// Pseudo code to retarget Rotations
+		//   shift = from_t.bone.ws.rot.invert * to_t.bone.ws.rot
+		//   dif   = from_t.parent_bone.ws.rot * src_pose.bone.ls.rot
+		//   dif   *= dot( dif, from_t.bone.ws.rot  ) >= 0 ? shift : -shift;
+		//   final_pose.bone.ls.rot = to_t.parent_bone.ws.rot.invert * Dif
+
+		// Pseudo code to retarget ip position
+		//   scale 	 = to_t.ws.pos / from_t.ws.pos;
+		//   pos_dif = ( src.ws.pos - from_t.ws.pos ) * scale;
+		//   final 	 = to_t.ls.pos + pos_dif;
+
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		// Get the Main Bones Needed.
+		let a_rig_bind = this.rig_from.bind_pose,
+			b_rig_bind = this.rig_to.bind_pose,
+			a_rig_pose = this.rig_from.pose_a,
+			b_rig_pose = this.rig_to.pose_a,
+
+			a_bind = a_rig_bind.get_bone( from_name ),
+			a_pose = a_rig_pose.get_bone( from_name ),
+			b_bind = b_rig_bind.get_bone( to_name ),
+			b_pose = b_rig_pose.get_bone( to_name ),
+
+			ap_bind_rot = ( a_bind.p_idx != null )?
+				a_rig_bind.bones[ a_bind.p_idx ].world.rot :
+				a_rig_bind.root_offset.rot,
+
+			bp_bind_rot = ( b_bind.p_idx != null )?
+				b_rig_bind.bones[ b_bind.p_idx ].world.rot :
+				b_rig_bind.root_offset.rot;
+
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		// Create Bind Rotation Difference from FROM -> TO
+		this.convert
+			.from_invert( a_bind.world.rot )
+			.mul( b_bind.world.rot );
+
+		// Isolate bone by using parent's world bind rotation + animated local space rot
+		this.rot.from_mul( ap_bind_rot, a_pose.local.rot );
+
+		// Do Check of the Bone's SRC WS rotation based on Src WS Bind Rotation.
+		if( Quat.dot( this.rot, a_bind.world.rot ) < 0 ) this.convert.negate();
+
+		this.rot
+			.mul( this.convert )			// Move rotation to target bones world space
+			.pmul_invert( bp_bind_rot );	// Convert down to local space
+
+		b_rig_pose.set_bone( b_pose.idx, this.rot );
+
+
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		if( inc_pos ){
+			// Get Scale   s = to / from
+			this.a.copy( a_bind.world.pos ).near_zero();
+			this.b.copy( b_bind.world.pos ).near_zero();
+			this.scale.from_div( this.b, this.a );
+
+			this.pos
+				.from_sub( a_pose.world.pos, a_bind.world.pos )	// Get the Animation Difference from Bind Pose
+				.mul( this.scale )								// Scale it to fit in TO
+				.add( b_bind.world.pos );						// Add Scaled Difference to TO's Bind Position
+
+			if( y_only ){
+				this.pos[ 0 ] = b_bind.world.pos[ 0 ];
+				this.pos[ 2 ] = b_bind.world.pos[ 2 ]; 
+			}
+
+			b_rig_pose.set_bone( b_pose.idx, null, this.pos );
+		}
+
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		return this;
+	}
+}
+
+</script><body>
+</body></html>
