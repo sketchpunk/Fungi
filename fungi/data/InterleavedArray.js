@@ -58,6 +58,8 @@ class InterleavedArray{
 			return this;
 		}
 
+		set_expand( n ){ this.auto_expand = n; return this; }
+
 		reset(){ this.len = 0; return this; }
 
 	///////////////////////////////////////////////////////////////////

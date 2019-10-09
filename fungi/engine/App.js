@@ -51,7 +51,9 @@ let App = {
 			return this;
 		}
 		return e;
-	}
+	},
+
+	builder : function(){ return new AppBuilder(); },
 };
 
 

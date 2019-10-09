@@ -1,9 +1,11 @@
 <!DOCTYPE html><html><head><title></title></head><script type="module">
-import App, { AppBuilder, Material } from "../fungi/engine/App.js";
+import App, { Material } from "../fungi/engine/App.js";
 import Maths, { Quat, Vec3 } from "../fungi/maths/Maths.js";
 import Transform		from "../fungi/maths/Transform.js";
 import Points 			from "../fungi/engine/ecs/Points.js";
 import Lines 			from "../fungi/engine/ecs/Lines.js";
+
+import Vec3Spring		from "../fungi/data/Vec3Spring.js";
 
 import Animation 		from "../fungi.animation/Animation.js";
 import AnimationState	from "../fungi.animation/AnimationState.js";
@@ -17,9 +19,7 @@ import HumanRig			from "./HumanRig.js";
 import IKTarget			from "./IKTarget.js";
 
 //#############################################################################
-(function(){new AppBuilder()
-	.launch()
-	.load_armature()
+App.builder().launch().load_armature()
 	.download( dl=>dl.addGrp( "shader", 
 		"../fungi/shaders/VecWColor.txt", 
 		"../fungi.armature/shaders/ArmaturePreview.txt", 
@@ -28,14 +28,13 @@ import IKTarget			from "./IKTarget.js";
 	.load_scene( true, true, true )
 	.set_camera( -50, 10, 3, 0, 0.8, 0 )
 	.add( init )
-	.render_loop( onDraw )
-	//.render_on_mouse( onDraw )
+	//.render_loop( on_draw )
+	.render_on_mouse( on_draw )
 	.build().catch( (e)=>console.error("error",e) );
-})();
 
 
 //#############################################################################
-function onDraw( dt, ss ){
+function on_draw( dt, ss ){
 	if( RUN_ANIM ) run_animation( dt );
 	App.ecs.sys_run();
 }
@@ -46,9 +45,9 @@ let gAnimator, gRig_Animator, gIK_Compute,
 	gRigA, gRigB,
 	gTargetA, gTargetB;
 
-let RUN_ANIM = true,
-	TARGET_A = true,
-	TARGET_B = true;
+let RUN_ANIM = false,
+	TARGET_A = false,
+	TARGET_B = false;
 
 async function init(){
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -160,71 +159,56 @@ function setup_target_b( json, bin, mat ){
 // Overlay some visuals over the src armature to see the IK Target Information
 class IK_Visualize{
 	static init(){
-		this.pnt = Points.$( null, 7, 10 ).Points;
-		this.lin = Lines.$( null, 8 ).Lines;
-
-		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		this.p_hip 	= this.pnt.add_diamond( [0,0,0], "orange", 18 );
-			
-		this.leg_l	= {
-			a	: this.pnt.add_circle( [0,0,0], "green", 14 ),
-			b	: this.pnt.add_circle( [0,0,0], "cyan", 8 ),
-			c 	: this.pnt.add_circle( [0,0,0], "red", 14 ),
-			ac 	: this.lin.add( [0,0,0], [0,1,1], "green", "red" ),
-			bb	: this.lin.add( [0,0,0], [0,1,1], "cyan" ),
-		}
-
-		this.leg_r	= {
-			a	: this.pnt.add_circle( [0,0,0], "green", 14 ),
-			b	: this.pnt.add_circle( [0,0,0], "cyan", 8 ),
-			c 	: this.pnt.add_circle( [0,0,0], "red", 14 ),
-			ac 	: this.lin.add( [0,0,0], [0,1,1], "green", "red" ),
-			bb	: this.lin.add( [0,0,0], [0,1,1], "cyan" ),
-		}
+		this.pnt = Points.$( null, 10, 10 ).Points;
+		this.lin = Lines.$( null, 10 ).Lines;
 	}
 
 	static update(){
 		App.debug.reset();
+		this.pnt.reset();
+		this.lin.reset();
 
 		let rik = gIK_Compute;
+
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		// HIP
 		let hip = rik.rig.get_hip();
+		this.pnt.add_diamond( hip.world.pos, "orange", 18 );
+		//App.debug.quat( rik.hip_dif_rot, hip.world.pos, 0.2 );
 
-		this.pnt.set( this.p_hip, hip.world.pos );
-		App.debug.quat( rik.hip_dif_rot, hip.world.pos, 0.2 );
-
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		// LEGS
 		this.update_limb( this.leg_l, rik.leg_l, rik.rig.leg_l, rik.rig.foot_l.idx, rik.rig.pose_a );
 		this.update_limb( this.leg_r, rik.leg_r, rik.rig.leg_r, rik.rig.foot_r.idx, rik.rig.pose_a );
 		
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		this.pnt.update();
 		this.lin.update();
 	}
 
 	static update_limb( ui, ik, chain, end, pose ){
-		const JNT_LEN = 0.2;
-
-		let a = pose.bones[ chain.bones[0] ],
-			b = pose.bones[ chain.bones[1] ],
-			c = pose.bones[ end ];
-
-		let len 	= ik.len_scale * ik.len, //chain.len,
-			end_pos	= new Vec3().from_scale( ik.fwd, len ).add( a.world.pos ),
-			jnt_dir = new Vec3().from_scale( ik.up, JNT_LEN ).add( b.world.pos );
-
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		// Display Limp Points
-		this.pnt
-			.set( ui.a, a.world.pos )
-			.set( ui.b, b.world.pos )
-			.set( ui.c, c.world.pos );
+		let a = pose.bones[ chain.bones[0] ],	// Starting Point
+			b = pose.bones[ chain.bones[1] ],	// Bending Point
+			c = pose.bones[ end ];				// End Point
 
+		this.pnt.add_circle( a.world.pos, "green", 14 );
+		this.pnt.add_circle( b.world.pos, "cyan", 8 );
+		this.pnt.add_circle( c.world.pos, "red", 14 );
+
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		// Display Lines
-		this.lin
-			.set( ui.ac[0], a.world.pos )
-			.set( ui.ac[1], end_pos )
-			.set( ui.ac[1], len, "len" )
+		const JNT_LEN = 0.2;
+		const end_pos = new Vec3();
+		const jnt_dir = new Vec3();
 
-			.set( ui.bb[0], b.world.pos )
-			.set( ui.bb[1], jnt_dir )
-			.set( ui.bb[1], JNT_LEN, "len" );
+		let len = ik.len_scale * ik.len; //chain.len
+		end_pos.from_scale( ik.fwd, len ).add( a.world.pos ),
+		jnt_dir.from_scale( ik.up, JNT_LEN ).add( b.world.pos );
+
+		this.lin.add( a.world.pos, end_pos, "green", "red" );
+		this.lin.add( b.world.pos, jnt_dir, "cyan" );
 	}
 }
 
@@ -313,7 +297,7 @@ class IKRig_Compute{
 		out.up.from_sub( b.world.pos, p ).norm();	// Calculate the Joint Dir (Knee, Elbow)
 		
 		out.joint_dir								// Smooth movement of the Up direction since it can be jittery
-			.target( out.up )				
+			.set_target( out.up )				
 			.update( dt );
 		//console.log( "len_scale", dst, chain.len, out.len_scale );
 	}
@@ -416,52 +400,6 @@ class IKRig_Target{
 			else 						this.target.three_bone( chain, this.rig.bind_pose, this.rig.pose_a, this.pt );
 		}
 }
-
-
-//#############################################################################
-class Vec3Spring{
-	constructor( osc_ps=1, damp_ratio=1, pos=null ){
-		this.vel = new Vec3();
-		this.pos = new Vec3( pos );
-		this.tar = new Vec3();
-
-		this.damp_ratio	= damp_ratio;
-		this.osc_ps		= Math.PI * 2 * osc_ps; 
-	}
-
-	/////////////////////////////////////////////////////////////////
-	// Setters
-	/////////////////////////////////////////////////////////////////
-		target( p ){ this.tar.copy(p); return this; }
-		ocs( i ){ this.osc_ps = Math.PI * 2 * i; return this; }
-		damp_raw( damp ){ this.damp_ratio = damp; return this; }
-		damp( damp, damp_time ){ 
-			// Damp_ratio = Log(damp) / ( -osc_ps * damp_time ) 
-			// Damp Time, in seconds to damp. So damp 0.5 for every 2 seconds.
-			// Damp needs to be a value between 0 and 1, if 1, creates criticle clamping.
-			this.damp_ratio = Math.log(damp) / ( -this.osc_ps * damp_time ); 
-			return this; 
-		}
-
-	/////////////////////////////////////////////////////////////////
-	//
-	/////////////////////////////////////////////////////////////////
-		update( dt ){
-			let a = -2.0 * dt * this.damp_ratio * this.osc_ps,
-				b = dt * this.osc_ps * this.osc_ps;
-
-			this.vel[0] += a * this.vel[0] + b * ( this.tar[0] - this.pos[0] );
-			this.vel[1] += a * this.vel[1] + b * ( this.tar[1] - this.pos[1] );
-			this.vel[2] += a * this.vel[2] + b * ( this.tar[2] - this.pos[2] );
-
-			this.pos[0] += dt * this.vel[0];
-			this.pos[1] += dt * this.vel[1];
-			this.pos[2] += dt * this.vel[2];
-
-			return this.pos;
-		}
-}
-
 
 </script><body>
 </body></html>

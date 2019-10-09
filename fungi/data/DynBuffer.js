@@ -1,5 +1,5 @@
 
-import { gl } from "../App.js";
+import { gl } from "../engine/App.js";
 
 class DynBuffer{
 	constructor( buf, cap, is_ary_buf=true ){
