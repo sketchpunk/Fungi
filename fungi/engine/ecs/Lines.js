@@ -77,15 +77,20 @@ class Lines{
 			return this;
 		}
 
-		add( a, b, col_a=null, col_b=null ){
+		add( a, b, col_a=null, col_b=null, is_dash=true ){
 			this.is_modified = true;
+			let alen = -1, blen = -1;
 
-			let len = Vec3.len( a, b );
+			if( is_dash ){
+				alen = 0;
+				blen = Vec3.len( a, b );
+			}	
+
 			col_a = Colour( col_a );
 			col_b = ( col_b )? Colour( col_b ) : col_a;
 			return [ 
-				this.data.push( a, col_a, 0 ),
-				this.data.push( b, col_b, len ),
+				this.data.push( a, col_a, alen ),
+				this.data.push( b, col_b, blen ),
 			];
 		}
 
@@ -160,11 +165,11 @@ let f_shader_src = `#version 300 es
 
 	out vec4 oFragColor;
 
-	void main(void){ 
-		oFragColor = vec4( 
-			v_color, 
-			step( dash_div, fract( v_len * dash_seg ) )
-		);
+	void main(void){
+		float alpha = 1.0;
+		if( v_len >= 0.0 ) alpha = step( dash_div, fract( v_len * dash_seg ) );
+
+		oFragColor = vec4( v_color, alpha );
 	}`;
 
 

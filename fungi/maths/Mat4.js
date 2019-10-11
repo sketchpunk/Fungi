@@ -14,11 +14,13 @@ class Matrix4 extends Float32Array{
 		}
 
 		//copy another matrix's data to this one.
-		copy(mat){
-			for(var i=0; i < 16; i++) this[i] = mat[i];
+		copy( mat, offset=0 ){
+			let i;
+			for(i=0; i < 16; i++) this[i] = mat[ offset + i ];
 			return this;
 		}
 
+		invert(){ Matrix4.invert( null, this ); return this; }
 
 	////////////////////////////////////////////////////////////////////
 	// STATIC SETTERS

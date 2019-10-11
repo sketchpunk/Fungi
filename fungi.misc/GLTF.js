@@ -1,8 +1,6 @@
 import Downloader, { HandlerTypes }	from "../fungi/engine/lib/Downloader.js";
 import App, { Vao } 				from "../fungi/engine/App.js";
-
-import Armature			from "../fungi.armature/Armature.js";
-import ArmaturePreview 	from "../fungi.armature/ArmaturePreview.js";
+import { Mat4, Vec3, Quat } 		from "../fungi/maths/Maths.js";
 
 /** 
  * Handle parsing data from GLTF Json and Bin Files
@@ -223,6 +221,8 @@ class Gltf{
 	////////////////////////////////////////////////////////
 		
 		//INFO : https://github.com/KhronosGroup/glTF-Tutorials/blob/master/gltfTutorial/gltfTutorial_020_Skins.md
+		// Uses the nodes to get the local space bind pose transform. But the real bind pose
+		// isn't always available there, blender export has a habit of using the current pose/frame in nodes.
 		static getSkin( name, json, node_info=null ){
 			if( !json.skins ){
 				console.error( "There is no skin in the GLTF file." );
@@ -315,6 +315,125 @@ class Gltf{
 						break;
 					}
 				}
+			}
+
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			return bones;
+		}
+
+		//https://github.com/KhronosGroup/glTF/tree/master/specification/2.0#skins
+		// this one uses the Inverted Bind Matrices in the bin file then converts
+		// to local space transforms.
+		static get_bind_skeleton( name, json, bin, node_info=null ){
+			if( !json.skins ){
+				console.error( "There is no skin in the GLTF file." );
+				return null;
+			}
+
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			let ji, skin = null;
+			for( ji of json.skins ) if( ji.name == name ){ skin = ji; break; }
+
+			if( !skin ){ console.error( "skin not found", name ); return null; }
+
+
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			// Create Bone Items
+			let boneCnt = skin.joints.length,
+				bones 	= new Array(boneCnt),
+				n2j 	= {},			// Lookup table to link Parent-Child (Node Idx to Joint Idx) Key:NodeIdx, Value:JointIdx
+				n, 						// Node
+				ni, 					// Node Index
+				itm;					// Bone Item
+
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			// Create Bone Array and Loopup Table.
+			for(ji=0; ji < boneCnt; ji++ ){
+				ni				= skin.joints[ ji ];
+				n2j[ "n"+ni ] 	= ji;
+
+				bones[ ji ] = {
+					idx : ji, p_idx : null, lvl : 0, name : null,
+					pos : null, rot : null, scl : null };
+			}
+
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			// Get Bone's name and set it's parent index value
+			for( ji=0; ji < boneCnt; ji++){
+				n				= json.nodes[ skin.joints[ ji ] ];
+				itm 			= bones[ ji ];
+				
+				// Each Bone Needs a Name, create one if one does not exist.
+				if( n.name === undefined || n.name == "" )	itm.name = "bone_" + ji;
+				else{
+					itm.name = n.name.replace("mixamorig:", "");
+				} 										
+
+				// Set Children who the parent is.
+				if( n.children && n.children.length > 0 ){
+					for( ni of n.children ) bones[ n2j["n"+ni] ].p_idx = ji;
+				}
+			}
+
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			// Set the Hierarchy Level for each bone
+			let lvl;
+			for( ji=0; ji < boneCnt; ji++){
+				// Check for Root Bones
+				itm = bones[ ji ];
+				if( itm.p_idx == null ){ itm.lvl = 0; continue; }
+
+				// Traverse up the tree to count how far down the bone is
+				lvl = 0;
+				while( itm.p_idx != null ){ lvl++; itm = bones[ itm.p_idx ]; }
+
+				bones[ ji ].lvl = lvl;
+			}
+
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			// Get Parent Node Transform, Node with the same name as the armature.
+			if( node_info ){
+				for( ji of json.nodes ){ 
+					if( ji.name == name ){ 
+						if( ji.rotation )	node_info["rot"] = ji.rotation;
+						if( ji.scale )		node_info["scl"] = ji.scale;
+						if( ji.position )	node_info["pos"] = ji.position;
+						break;
+					}
+				}
+			}
+
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			// Bind Pose from Inverted Model Space Matrices
+			let bind		= Gltf.parseAccessor( skin.inverseBindMatrices, json, bin ),
+				m0			= new Mat4(),
+				m1			= new Mat4(),
+				near_one	= ( v )=>{	// Need to cleanup scale, ex: 0.9999 is pretty much 1
+					if(1 - Math.abs(v[0]) <= 1e-4) v[0] = 1;
+					if(1 - Math.abs(v[1]) <= 1e-4) v[1] = 1;
+					if(1 - Math.abs(v[2]) <= 1e-4) v[2] = 1;
+					return v;
+				};
+
+			for( ji=0; ji < boneCnt; ji++ ){
+				itm = bones[ ji ];
+
+				// If no parent bone, The inverse is enough
+				if( itm.p_idx == null ){
+					m1.copy( bind.data, ji * 16 ).invert();
+
+				// if parent exists, keep it parent inverted since thats how it exists in gltf
+				// BUT invert the child bone then multiple to get local space matrix.
+				// parent_worldspace_mat4_invert * child_worldspace_mat4 = child_localspace_mat4
+				}else{
+					m0.copy( bind.data, itm.p_idx * 16 );	// Parent Bone Inverted
+					m1.copy( bind.data, ji * 16 ).invert();	// Child Bone UN-Inverted
+					Mat4.mul( m0, m1, m1 );
+				}
+
+				itm.pos = Mat4.getTranslation( new Vec3(), m1 ).near_zero();
+				itm.rot = Mat4.getRotation( new Quat(), m1 ).norm();
+				itm.scl = near_one( Mat4.getScaling( new Vec3(), m1 ) );
 			}
 
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -579,12 +698,12 @@ HandlerTypes.gltf = class{
 			e = this.meshEntity( i.name, i.matName, i.meshNames, i.json, i.bin );
 
 			if( i.skinName ){
-				Armature.$( e );
+				App.global.Armature.$( e );
 				let bones = Gltf.getSkin( i.skinName, i.json );
 				this.loadBones( e, bones );
 
 				//console.log( JSON.stringify( Armature.serialize( e.Armature, false ) ) );
-				if( i.loadPrev )  ArmaturePreview.$( e, "ArmaturePreview", 2 );
+				if( i.loadPrev )  App.global.ArmaturePreview.$( e, "ArmaturePreview", 2 );
 			}
 		}
 		return true;
@@ -618,7 +737,7 @@ HandlerTypes.gltf = class{
 		let i, b, ab, bLen = bones.length;
 		for( i=0; i < bLen; i++ ){
 			b	= bones[i];
-			ab	= Armature.addBone( arm, b.name, 1, null, b.idx );
+			ab	= App.global.Armature.addBone( arm, b.name, 1, null, b.idx );
 
 			if( b.rot ) ab.Node.setRot( b.rot );
 			if( b.pos ) ab.Node.setPos( b.pos );
@@ -638,7 +757,7 @@ HandlerTypes.gltf = class{
 			// Manual set node level, Must do it after addChild, else it will get overwritten.
 			ab.Node.level = b.lvl; 
 		}
-		Armature.finalize( e );	//This updates World Transforms
+		App.global.Armature.finalize( e );	//This updates World Transforms
 
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		// With the WorldTransforms update, Calculate the Length of each bone.

@@ -28,8 +28,8 @@ App.builder().launch().load_armature()
 	.load_scene( true, true, true )
 	.set_camera( -50, 10, 3, 0, 0.8, 0 )
 	.add( init )
-	//.render_loop( on_draw )
-	.render_on_mouse( on_draw )
+	.render_loop( on_draw )
+	//.render_on_mouse( on_draw )
 	.build().catch( (e)=>console.error("error",e) );
 
 
@@ -71,7 +71,7 @@ async function init(){
 	gIK_Compute = new IKRig_Compute( gRig_Animator );
 	
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	run_animation( 0.3 );
+	run_animation( 0.7 );
 
 	return true;
 }
@@ -120,8 +120,8 @@ function setup_animation( json, bin ){
 }
 
 function setup_target_a( txt, bin, mat ){
-	let e = FungiMesh.$debug( "TargetA", mat, txt, bin );
-	//let e = FungiMesh.$preview( "TargetA", txt );
+	//let e = FungiMesh.$debug( "TargetA", mat, txt, bin );
+	let e = FungiMesh.$preview( "TargetA", txt );
 
 	gRigA = new HumanRig( e )
 		.set_hip( "Hips" )
@@ -151,7 +151,7 @@ function setup_target_b( json, bin, mat ){
 
 	e.Node.setPos( -1.3, 0, 0 );
 
-	gTargetB = new IKRig_Target( gRig_Animator, gRigB, 1, true );
+	gTargetB = new IKRig_Target( gRig_Animator, gRigB, 1, true, 0.06 );
 }
 
 
@@ -171,19 +171,39 @@ class IK_Visualize{
 		let rik = gIK_Compute;
 
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		// HIP
-		let hip = rik.rig.get_hip();
-		this.pnt.add_diamond( hip.world.pos, "orange", 18 );
-		//App.debug.quat( rik.hip_dif_rot, hip.world.pos, 0.2 );
+		this.update_hip( rik )
 
-		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		// LEGS
 		this.update_limb( this.leg_l, rik.leg_l, rik.rig.leg_l, rik.rig.foot_l.idx, rik.rig.pose_a );
 		this.update_limb( this.leg_r, rik.leg_r, rik.rig.leg_r, rik.rig.foot_r.idx, rik.rig.pose_a );
+
+		this.update_foot( rik.rig.foot_l.idx, rik.foot_l_dir, rik.rig.pose_a );
+		this.update_foot( rik.rig.foot_r.idx, rik.foot_r_dir, rik.rig.pose_a );
 		
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		this.pnt.update();
 		this.lin.update();
+	}
+
+	static update_hip( rik ){
+		let hip = rik.rig.get_hip();
+		this.pnt.add_diamond( hip.world.pos, "orange", 18 );
+
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		// See Rotation Axis
+		this.show_axis( rik.hip_dif_rot, Vec3.add( hip.world.pos, [0,0,0.05] ) );
+	}
+
+	static show_axis( rot, pos, scl=0.08 ){
+		let dir = new Vec3();
+
+		dir.from_quat( rot, Vec3.FORWARD ).scale( scl ).add( pos );
+		this.lin.add( pos, dir, "green", null, false );
+
+		dir.from_quat( rot, Vec3.LEFT ).scale( scl ).add( pos );
+		this.lin.add( pos, dir, "red", null, false );
+
+		dir.from_quat( rot, Vec3.UP ).scale( scl ).add( pos );
+		this.lin.add( pos, dir, "blue", null, false );
 	}
 
 	static update_limb( ui, ik, chain, end, pose ){
@@ -204,19 +224,27 @@ class IK_Visualize{
 		const jnt_dir = new Vec3();
 
 		let len = ik.len_scale * ik.len; //chain.len
-		end_pos.from_scale( ik.fwd, len ).add( a.world.pos ),
+		end_pos.from_scale( ik.fwd, len ).add( a.world.pos );
+
 		jnt_dir.from_scale( ik.up, JNT_LEN ).add( b.world.pos );
+		//jnt_dir.from_scale( ik.joint_dir.pos, JNT_LEN ).add( b.world.pos );
 
 		this.lin.add( a.world.pos, end_pos, "green", "red" );
 		this.lin.add( b.world.pos, jnt_dir, "cyan" );
+	}
+
+	static update_foot( b_idx, dir, pose ){
+		let b = pose.bones[ b_idx ];
+		let v = Vec3.scale( dir, 0.3 ).add( b.world.pos );
+		this.lin.add( b.world.pos, v, "cyan" );
 	}
 }
 
 //#############################################################################
 
 // Take an Animated Rig and compute IK Target Information from its pose.
-const SMOOTHING_DAMP 	= 1.0;
-const SMOOTHING_OSC		= 2;
+//const SMOOTHING_DAMP 	= 1.0;
+//const SMOOTHING_OSC		= 2;
 
 class IKRig_Compute{
 	constructor( r_src ){
@@ -233,17 +261,21 @@ class IKRig_Compute{
 
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		// Setup Legs		
-		this.leg_l = this.new_limb( "LeftUpLeg", "LeftFoot", Vec3.FORWARD );
-		this.leg_r = this.new_limb( "RightUpLeg", "RightFoot", Vec3.FORWARD );
+		this.leg_l 		= this.new_limb( "LeftUpLeg", "LeftFoot" ); //, Vec3.FORWARD
+		this.leg_r		= this.new_limb( "RightUpLeg", "RightFoot" ); //, Vec3.FORWARD 
+		this.leg_dir	= Vec3.BACK;
+
+		this.foot_l_dir	= new Vec3();
+		this.foot_r_dir	= new Vec3();
 	}
 
-	new_limb( bname_0, b_name1, j_dir ){
+	new_limb( bname_0, b_name1 ){ //, j_dir
 		return { 
 			fwd			: new Vec3(), 
 			up			: new Vec3(), 
 			len_scale	: 1, 
 			len 		: this.len_between_bones( "LeftUpLeg", "LeftFoot" ),
-			joint_dir	: new Vec3Spring( SMOOTHING_OSC, SMOOTHING_DAMP, j_dir ),
+			//joint_dir	: new Vec3Spring( SMOOTHING_OSC, SMOOTHING_DAMP, j_dir ),
 		}
 	}
 
@@ -266,7 +298,8 @@ class IKRig_Compute{
 		this.ik_compute_limb( this.rig.leg_l, this.rig.foot_l.idx, this.leg_l, dt );
 		this.ik_compute_limb( this.rig.leg_r, this.rig.foot_r.idx, this.leg_r, dt );
 
-		//console.log( this.left_ls.pos );
+		this.ik_compute_foot( this.rig.foot_l.idx, this.foot_l_dir );
+		this.ik_compute_foot( this.rig.foot_r.idx, this.foot_r_dir );
 	}
 
 	// Chain is the arm or leg bones, where end is the hand or foot.
@@ -282,10 +315,6 @@ class IKRig_Compute{
 
 		//App.debug.line( a.world.pos, Vec3.transform_quat( Vec3.FORWARD, a.world.rot ).add(a.world.pos), 0 );
 
-		// Find the perpendicular line based on the Knee position and the
-		// Segment from the Thigh to the Foot.
-		Vec3.point_to_line( a.world.pos, c.world.pos, b.world.pos, p );
-
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		// Calculate the Forward IK Direction and the Distance to end effector.
 		let dst = out.fwd
@@ -294,18 +323,30 @@ class IKRig_Compute{
 
 		out.fwd.norm();								// Normalizing the forward direction
 		out.len_scale = dst / out.len;				// Scale he distance based on total limb length
-		out.up.from_sub( b.world.pos, p ).norm();	// Calculate the Joint Dir (Knee, Elbow)
+
+		//p.from_sub( b.world.pos, a.world.pos );	// Calculate the Joint Dir (Knee, Elbow)  ITS JITTERY
+		//p.from_cross( p, out.fwd );
+		//out.up.from_cross( out.fwd, p ).norm();
+
+		out.up.from_quat( a.world.rot, this.leg_dir ); // Calculate the Joint Dir (Knee, Elbow)  BETTER
 		
-		out.joint_dir								// Smooth movement of the Up direction since it can be jittery
-			.set_target( out.up )				
-			.update( dt );
+		//out.joint_dir								// Smooth movement of the Up direction since it can be jittery
+		//	.set_target( out.up )				
+		//	.update( dt );
 		//console.log( "len_scale", dst, chain.len, out.len_scale );
+	}
+
+	ik_compute_foot( b_idx, dir ){
+		let b = this.rig.pose_a.bones[ b_idx ];		
+		//App.debug.point( b.world.pos );
+		dir.from_quat( b.world.rot, Vec3.UP );//.scale(0.3)//.add( b.world.pos );
+		//App.debug.line( b.world.pos, dir );
 	}
 }
 
 // Apply IK Information to a Pose.
 class IKRig_Target{
-	constructor( r_src, r_tar, leg_solver=0, use_hip_height=false ){
+	constructor( r_src, r_tar, leg_solver=0, use_hip_height=false, grd_offset=0 ){
 		this.target		= new IKTarget();
 		this.rig 		= r_tar;
 
@@ -313,12 +354,16 @@ class IKRig_Target{
 		this.ct			= new Transform();
 		this.target_pos	= new Vec3();
 
-		this.grd_offset = 0.06;
+		this.grd_offset = grd_offset;
 		this.leg_solver = leg_solver;
 
 		//this.hip_bind_pos = r_tar.bind_pose.bones[ r_tar.hip.idx ].world.pos.clone();
 		
 		this.ik_leg_l_len = (use_hip_height) ? r_tar.bind_pose.bones[ r_tar.hip.idx ].world.pos.y : 0;
+		this.ik_leg_l_len -= this.grd_offset;
+
+		this.foot_l_up = this.run_foot( this.rig.foot_l.idx );
+		this.foot_r_up = this.run_foot( this.rig.foot_r.idx );
 
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		// Hip Information
@@ -375,7 +420,11 @@ class IKRig_Target{
 				.from_scale( ik.fwd, (this.ik_leg_l_len || chain.len) * ik.len_scale )
 				.add( this.ct.pos );
 
-			this.target_pos.mul( [1,1,1.0] );
+			//console.log("scale", ik.len_scale );
+
+			//App.debug.point( this.target_pos );
+
+			//this.target_pos.mul( [1,1,1.0] );
 
 			// Ground collision with target
 			if( this.target_pos[1] < this.grd_offset ){
@@ -387,10 +436,9 @@ class IKRig_Target{
 				//	.add( this.ct.pos );
 			}
 
-			//this.target.from_pos( this.ct.pos, this.target_pos, ik.up );
-			this.target.from_pos( this.ct.pos, this.target_pos, ik.joint_dir.pos );
+			this.target.from_pos( this.ct.pos, this.target_pos, ik.up );
+			//this.target.from_pos( this.ct.pos, this.target_pos, ik.joint_dir.pos );
 			
-
 			//console.log( this.target_pos );
 
 			//App.debug.point( this.target_pos, 8 );
@@ -398,6 +446,22 @@ class IKRig_Target{
 
 			if( this.leg_solver == 0 )	this.target.limb( chain, this.rig.bind_pose, this.rig.pose_a, this.pt );
 			else 						this.target.three_bone( chain, this.rig.bind_pose, this.rig.pose_a, this.pt );
+		}
+
+		run_foot( b_idx ){
+			let b = this.rig.bind_pose.bones[ b_idx ],
+				v = Vec3.transform_quat( Vec3.UP, b.world.rot ),
+				q = new Quat().from_unit_vecs( Vec3.FORWARD, v ); // How much to get from Forward to Bone's angled forward?
+
+			// use that change to create new up that would become forward
+			// when transformed by the bind world space rotation.
+			v.from_quat( q, Vec3.UP );			
+			
+			//v.transform_quat( b.world.rot );
+			//v.add( b.world.pos );
+			//App.debug.line( b.world.pos, v, 1 );
+
+			return v;
 		}
 }
 
