@@ -102,6 +102,7 @@ class IKTarget{
 			pose.set_bone( chain.bones[ 0 ], rot );
 		}
 
+		// TODO, Outdated, need to revisit.
 		foot_ik( b_idx, bind_pose, pose, align_dir, do_calc=false ){
 			let b_bind	= bind_pose.bones[ b_idx ],		// Bone in Bind Pose
 				b_pose	= pose.bones[ b_idx ],			// Bone in Pose
@@ -128,14 +129,14 @@ class IKTarget{
 		limb( chain, bind_pose, pose, wt ){
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			// Using law of cos SSS, so need the length of all sides of the triangle
-			let bone_a 	= bind_pose.bones[ chain.bones[0] ],
-				bone_b	= bind_pose.bones[ chain.bones[1] ],
-				aLen	= bone_a.len,
-				bLen	= bone_b.len,
-				cLen	= Math.sqrt( this.len_sqr ),
-				wq 		= new Quat(),
+			let bind_a 	= bind_pose.bones[ chain.bones[0] ],	// Bone Reference from Bind
+				bind_b	= bind_pose.bones[ chain.bones[1] ],
+				pose_a 	= pose.bones[ chain.bones[0] ],			// Bone Reference from Pose
+				pose_b	= pose.bones[ chain.bones[1] ],
+				aLen	= bind_a.len,
+				bLen	= bind_b.len,
+				cLen	= this.len,
 				rot 	= new Quat(),	
-				tmp		= new Quat(), // Can probably get rid of this if the new quaternion functions work well.
 				rad;
 
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -144,11 +145,13 @@ class IKTarget{
 			
 			rad	= Maths.lawcos_sss( aLen, cLen, bLen );					// Get the Angle between First Bone and Target.
 			
-			rot.pmul_axis_angle( this.axis.x, -rad );				// Use the Target's X axis for rotation along with the angle from SSS
-			wq.copy( rot );											// Save a Copy as World Rotation before converting to local space
-			rot.pmul_invert( wt.rot );								// Convert to Bone's Local Space by mul invert of parent bone rotation
+			rot	.pmul_axis_angle( this.axis.x, -rad )				// Use the Target's X axis for rotation along with the angle from SSS
+				.pmul_invert( wt.rot );								// Convert to Bone's Local Space by mul invert of parent bone rotation
 
-			pose.set_bone( bone_a.idx, rot );						// Save result to bone.
+			pose.set_bone( bind_a.idx, rot );						// Save result to bone.
+			pose_a.world											// Update World Data for future use
+				.copy( wt )
+				.add( rot, bind_a.local.pos, bind_a.local.scl );
 
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			// SECOND BONE
@@ -156,11 +159,14 @@ class IKTarget{
 			// the other direction. Ex. L->R 70 degrees == R->L 110 degrees
 			rad	= Math.PI - Maths.lawcos_sss( aLen, bLen, cLen );
 			
-			rot .from_mul( wq, bone_b.local.rot )					// Add Bone 2's Local Bind Rotation to Bone 1's new World Rotation.
+			rot .from_mul( pose_a.world.rot, bind_b.local.rot )		// Add Bone 2's Local Bind Rotation to Bone 1's new World Rotation.
 				.pmul_axis_angle( this.axis.x, rad )				// Rotate it by the target's x-axis
-				.pmul_invert( wq );									// Convert to Bone's Local Space
+				.pmul_invert( pose_a.world.rot );					// Convert to Bone's Local Space
 
-			pose.set_bone( bone_b.idx, rot );	
+			pose.set_bone( bind_b.idx, rot );						// Save result to bone.
+			pose_b.world											// Update World Data for future use
+				.copy( pose_a.world )
+				.add( rot, bind_b.local.pos, bind_b.local.scl );
 		}
 
 		three_bone( chain, bind_pose, pose, wt ){

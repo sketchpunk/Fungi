@@ -764,6 +764,33 @@ class Quat extends Float32Array{
 			return out;
 		}
 
+		static unit_vecs( a, b ){
+			// Using unit vectors, Shortest rotation from Direction A to Direction B
+			// http://glmatrix.net/docs/quat.js.html#line548
+			// http://physicsforgames.blogspot.com/2010/03/Quat-tricks.html
+			let dot = Vec3.dot( a, b );
+			let out = new Quat();
+
+		    if(dot < -0.999999){
+		      let tmp = Vec3.cross( Vec3.LEFT, a );
+		      if( tmp.length() < 0.000001 ) Vec3.cross( Vec3.UP, a, tmp );
+		      out.setAxisAngle( tmp.norm(), Math.PI );
+		    }else if(dot > 0.999999){
+		      out[0] = 0;
+		      out[1] = 0;
+		      out[2] = 0;
+		      out[3] = 1;
+		    }else{
+		      let v = Vec3.cross(a, b);
+		      out[0] = v[0];
+		      out[1] = v[1];
+		      out[2] = v[2];
+		      out[3] = 1 + dot;
+		      out.norm();
+		    }
+		    return out;
+		}
+
 	////////////////////////////////////////////////////////////////////
 	// INTERPOLATION
 	////////////////////////////////////////////////////////////////////
@@ -876,8 +903,25 @@ class Quat extends Float32Array{
 	////////////////////////////////////////////////////////////////////
 	// STATIC TRANSFORMATIONS
 	////////////////////////////////////////////////////////////////////
+		static transform_vec3( q, v, out = null ){
+			out = out || new Vec3();
 
-		static transform_vec3( qa, va, out = null ){
+			let qx = q[0], qy = q[1], qz = q[2], qw = q[3],
+				vx = v[0], vy = v[1], vz = v[2],
+				x1 = qy * vz - qz * vy,
+				y1 = qz * vx - qx * vz,
+				z1 = qx * vy - qy * vx,
+				x2 = qw * x1 + qy * z1 - qz * y1,
+				y2 = qw * y1 + qz * x1 - qx * z1,
+				z2 = qw * z1 + qx * y1 - qy * x1;
+
+			out[0] = vx + 2 * x2;
+			out[1] = vy + 2 * y2;
+			out[2] = vz + 2 * z2;
+		    return out;
+		}
+
+		static transform_vec3OLD( qa, va, out = null ){
 			//https://gamedev.stackexchange.com/questions/28395/rotating-vector3-by-a-Quat
 			//vprime = 2.0f * dot(u, v) * u
 			//			+ (s*s - dot(u, u)) * v
@@ -898,25 +942,6 @@ class Quat extends Float32Array{
 			out[1] = q[1] + v[1] + cqv[1];
 			out[2] = q[2] + v[2] + cqv[2];
 			return out;
-		}
-
-		//New need to try out
-		static rotate_vec3( q, v, out = null ){
-			out = out || new Vec3();
-
-			let qx = q[0], qy = q[1], qz = q[2], qw = q[3],
-				vx = v[0], vy = v[1], vz = v[2],
-				x1 = qy * vz - qz * vy,
-				y1 = qz * vx - qx * vz,
-				z1 = qx * vy - qy * vx,
-				x2 = qw * x1 + qy * z1 - qz * y1,
-				y2 = qw * y1 + qz * x1 - qx * z1,
-				z2 = qw * z1 + qx * y1 - qy * x1;
-
-			out[0] = vx + 2 * x2;
-			out[1] = vy + 2 * y2;
-			out[2] = vz + 2 * z2;
-		    return out;
 		}
 }
 

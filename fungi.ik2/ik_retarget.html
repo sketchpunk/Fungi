@@ -26,7 +26,7 @@ App.builder().launch().load_armature()
 		"../fungi.armature/shaders/ArmatureSkinPhong.txt", 
 	) ) 
 	.load_scene( true, true, true )
-	.set_camera( -50, 10, 3, 0, 0.8, 0 )
+	.set_camera( -50, 10, 4, 0, 0.8, 0 )
 	.add( init )
 	.render_loop( on_draw )
 	//.render_on_mouse( on_draw )
@@ -47,12 +47,12 @@ let gAnimator, gRig_Animator, gIK_Compute,
 
 let RUN_ANIM = false,
 	TARGET_A = false,
-	TARGET_B = false;
+	TARGET_B = true;
 
 async function init(){
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	let dl_ary = ["../walking.gltf", "json", "../walking.bin", "arraybuffer"];
-	if( TARGET_A || TARGET_B )	dl_ary.push( "../files/models/vegeta.txt", "text", "../files/models/vegeta.bin", "arraybuffer" );
+	if( TARGET_A || TARGET_B )	dl_ary.push( "../files/models/vegeta.txt", "text", "../files/models/vegeta.bin", "arraybuffer" ); //files/models/
 	if( TARGET_B ) 				dl_ary.push( "../robo_trex.gltf", "json", "../robo_trex.bin", "arraybuffer" );
 
 	let dl = await XhrPromise.get.apply( XhrPromise, dl_ary );
@@ -71,7 +71,7 @@ async function init(){
 	gIK_Compute = new IKRig_Compute( gRig_Animator );
 	
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	run_animation( 0.7 );
+	//run_animation( 0.7 );
 
 	return true;
 }
@@ -87,7 +87,7 @@ function run_animation( dt ){
 		.apply_pose();			// Apply Pose to Armature
 
 	gIK_Compute.update( dt );	// Take Model Space Src Rig and calc some IK Information
-	IK_Visualize.update();		// Visually Apply IK Info to Src Model
+	//IK_Visualize.update();		// Visually Apply IK Info to Src Model
 
 	if( TARGET_A ){			
 		gTargetA.update( gIK_Compute );	// Run IK On Target
@@ -102,15 +102,17 @@ function run_animation( dt ){
 
 function setup_animation( json, bin ){
 	let e = FungiGLTF.$preview( "src_preview", "Armature", json );
+	e.info.active = false;
 	
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	gRig_Animator = new HumanRig( e, true )
 		.set_hip( "Hips" )
-		.set_arm_l( "LeftArm", "LeftForeArm" )
-		.set_arm_r( "RightArm", "RightForeArm" )
-		.set_leg_l( "LeftUpLeg", "LeftLeg" )
-		.set_leg_r( "RightUpLeg", "RightLeg" )
-		.set_feet( "LeftFoot", "RightFoot" );
+		.set_arm_l( ["LeftArm", "LeftForeArm"] )
+		.set_arm_r( ["RightArm", "RightForeArm"] )
+		.set_leg_l( ["LeftUpLeg", "LeftLeg"] )
+		.set_leg_r( ["RightUpLeg", "RightLeg"] )
+		.set_foot( 0, "LeftFoot" )
+		.set_foot( 1, "RightFoot" );
 
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	gAnimator = new AnimationState();
@@ -120,8 +122,8 @@ function setup_animation( json, bin ){
 }
 
 function setup_target_a( txt, bin, mat ){
-	//let e = FungiMesh.$debug( "TargetA", mat, txt, bin );
-	let e = FungiMesh.$preview( "TargetA", txt );
+	let e = FungiMesh.$debug( "TargetA", mat, txt, bin );
+	//let e = FungiMesh.$preview( "TargetA", txt );
 
 	gRigA = new HumanRig( e )
 		.set_hip( "Hips" )
@@ -132,7 +134,7 @@ function setup_target_a( txt, bin, mat ){
 		.set_feet( "LeftFoot", "RightFoot" )
 		.gen_tpose();
 
-	e.Node.setPos( 1.3, 0, 0 );
+	//e.Node.setPos( 1.3, 0, 0 );
 
 	gTargetA = new IKRig_Target( gRig_Animator, gRigA );
 }
@@ -143,13 +145,13 @@ function setup_target_b( json, bin, mat ){
 
 	gRigB = new HumanRig( e )
 		.set_hip( "hip" )
-		.set_leg_l( "LeftUpLeg", "LeftKnee", "LeftShin" )
-		.set_leg_r( "RightUpLeg", "RightKnee", "RightShin" )
-		.set_feet( "LeftFoot", "RightFoot" )
-		.gen_tpose()
-		.finalize();
+		.set_leg_l( ["LeftUpLeg", "LeftKnee", "LeftShin"], true )
+		.set_leg_r( ["RightUpLeg", "RightKnee", "RightShin"], true )
+		.set_foot( 0, "LeftFoot", true, false, true )
+		.set_foot( 1, "RightFoot" )
+		.ready();
 
-	e.Node.setPos( -1.3, 0, 0 );
+	//e.Node.setPos( -1.3, 0, 0 );
 
 	gTargetB = new IKRig_Target( gRig_Animator, gRigB, 1, true, 0.06 );
 }
@@ -362,8 +364,8 @@ class IKRig_Target{
 		this.ik_leg_l_len = (use_hip_height) ? r_tar.bind_pose.bones[ r_tar.hip.idx ].world.pos.y : 0;
 		this.ik_leg_l_len -= this.grd_offset;
 
-		this.foot_l_up = this.run_foot( this.rig.foot_l.idx );
-		this.foot_r_up = this.run_foot( this.rig.foot_r.idx );
+		this.foot_l_up = this.setup_foot( this.rig.foot_l.idx ); //This information should be in the Rig, not calculated here.
+		this.foot_r_up = this.setup_foot( this.rig.foot_r.idx );
 
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		// Hip Information
@@ -381,6 +383,9 @@ class IKRig_Target{
 			this.run_hip( ik );
 			this.run_limb( this.rig.leg_l, ik.leg_l );
 			this.run_limb( this.rig.leg_r, ik.leg_r );
+
+			this.run_foot( this.rig.foot_l, ik.foot_l_dir, this.foot_l_up );
+			this.run_foot( this.rig.foot_r, ik.foot_r_dir, this.foot_r_up );
 		}
 
 	/////////////////////////////////////////////////////////////////
@@ -448,7 +453,31 @@ class IKRig_Target{
 			else 						this.target.three_bone( chain, this.rig.bind_pose, this.rig.pose_a, this.pt );
 		}
 
-		run_foot( b_idx ){
+		run_foot( foot, dir_to, up_dir ){
+			let bind 	= this.rig.bind_pose.bones[ foot.idx ];	// Foot's Bind Pose
+			let pose 	= this.rig.pose_a.bones[ foot.idx ];	// Foot's Animated Pose
+			let ppose 	= this.rig.pose_a.bones[ bind.p_idx ];	// Foot's Parent Animated Pose
+
+			let wp 			= new Transform().from_add( ppose.world, bind.local );
+			let dir_from	= Vec3.transform_quat( up_dir, wp.rot );
+			
+			let q = Quat
+				.unit_vecs( dir_from, dir_to )		// Create Rotate based on two Direction
+				.mul( wp.rot )						// Apply that rotation to our world space foot rotation
+				.pmul_invert( ppose.world.rot );	// TO LOCAL SPACE!
+
+			this.rig.pose_a.set_bone( foot.idx, q );	// Save to Pose
+			pose.world									// Update World Space for Later Use.
+				.copy( ppose.world )
+				.add( q, bind.local.pos, bind.local.scl );
+
+			//App.debug.point( wp.pos );
+			//App.debug.line( wp.pos, Vec3.add( dir_from, wp.pos), 0 );
+			//App.debug.line( wp.pos, Vec3.add( dir_to, wp.pos), 1 );
+			//App.debug.point( pose.world.pos );
+		}
+
+		setup_foot( b_idx ){
 			let b = this.rig.bind_pose.bones[ b_idx ],
 				v = Vec3.transform_quat( Vec3.UP, b.world.rot ),
 				q = new Quat().from_unit_vecs( Vec3.FORWARD, v ); // How much to get from Forward to Bone's angled forward?
