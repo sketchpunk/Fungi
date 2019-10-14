@@ -58,8 +58,8 @@ class HumanRig{
 		this.spine 	= new Chain( "z" );
 
 		this.hip 	= null;
-		this.foot_l = { idx:null, up:null };
-		this.foot_r = { idx:null, up:null };
+		this.foot_l = { idx:null, up:Vec3.UP.clone() };
+		this.foot_r = { idx:null, up:Vec3.UP.clone() };
 	}
 
 	apply_pose(){ this.pose_a.apply(); return this; }
@@ -105,11 +105,10 @@ class HumanRig{
 				ct	= new Transform();
 				b	= this.bind_pose.bones[ o.idx ];
 				q 	= new Quat();
-				rot = new Quat();
+				//rot = new Quat();
 				v 	= new Vec3();
-				Pose.parent_world( this.bind_pose, o.idx, pt, ct );
 
-				App.debug.point( ct.pos );
+				Pose.parent_world( this.bind_pose, o.idx, pt, ct );
 			}
 
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -146,20 +145,10 @@ class HumanRig{
 
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			// Find Foot's Up direction that will look forward when transformed by the bind rotation.
-			if( !find_up ) o.up = Vec3.UP.clone();
-			else{
-				console.log( "Find Up" );
-
-				/*
-				let b = this.rig.bind_pose.bones[ b_idx ],
-					v = Vec3.transform_quat( Vec3.UP, b.world.rot ),
-					q = new Quat().from_unit_vecs( Vec3.FORWARD, v ); // How much to get from Forward to Bone's angled forward?
-
-					// use that change to create new up that would become forward
-					// when transformed by the bind world space rotation.
-					v.from_quat( q, Vec3.UP );
-				*/
-			
+			if( find_up ){
+				v.from_quat( ct.rot, Vec3.UP );			// Get Current Direction
+				q.from_unit_vecs( Vec3.FORWARD, v );	// Difference between Forward and Dir
+				o.up.from_quat( q, Vec3.UP );			// UP offset to form Forward
 			}
 
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -195,8 +184,8 @@ class HumanRig{
 
 
 			if( spin_fwd || find_up || align_fwd ){
-				rot.copy( ct.rot ).pmul_invert( pt.rot );
-				this.bind_pose.set_bone( b.idx, rot );
+				q.copy( ct.rot ).pmul_invert( pt.rot );
+				this.bind_pose.set_bone( b.idx, q );
 			}
 			return this;
 		}

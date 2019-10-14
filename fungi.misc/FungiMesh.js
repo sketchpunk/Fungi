@@ -7,7 +7,13 @@ class FungiMesh{
 	// Main Loading Functions
 	/////////////////////////////////////////////////////////////////
 		static $(){} // Just Mesh
-		static $skin(){} // Mesh with arm
+		
+		static $skin( e_name, mat, txt, bin ){ // Mesh with arm
+			let e = App.$Draw( e_name );
+			this.build_vao( e, mat, txt, bin );
+			this.load_bones( e, txt );
+			return e;
+		}
 		
 		static $preview( e_name, txt ){ // Armature Preview Only
 			let e = App.$Draw( e_name );

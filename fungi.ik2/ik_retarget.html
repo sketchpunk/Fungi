@@ -45,8 +45,8 @@ let gAnimator, gRig_Animator, gIK_Compute,
 	gRigA, gRigB,
 	gTargetA, gTargetB;
 
-let RUN_ANIM = false,
-	TARGET_A = false,
+let RUN_ANIM = true,
+	TARGET_A = true,
 	TARGET_B = true;
 
 async function init(){
@@ -102,7 +102,7 @@ function run_animation( dt ){
 
 function setup_animation( json, bin ){
 	let e = FungiGLTF.$preview( "src_preview", "Armature", json );
-	e.info.active = false;
+	//e.info.active = false;
 	
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	gRig_Animator = new HumanRig( e, true )
@@ -122,25 +122,28 @@ function setup_animation( json, bin ){
 }
 
 function setup_target_a( txt, bin, mat ){
-	let e = FungiMesh.$debug( "TargetA", mat, txt, bin );
+	let e = FungiMesh.$skin( "TargetA", mat, txt, bin );
+	//let e = FungiMesh.$debug( "TargetA", mat, txt, bin );
 	//let e = FungiMesh.$preview( "TargetA", txt );
 
 	gRigA = new HumanRig( e )
 		.set_hip( "Hips" )
-		.set_leg_l( "LeftUpLeg", "LeftLeg" )
-		.set_leg_r( "RightUpLeg", "RightLeg" )
-		.set_arm_l( "LeftArm", "LeftForeArm" )
-		.set_arm_r( "RightArm", "RightForeArm" )
-		.set_feet( "LeftFoot", "RightFoot" )
-		.gen_tpose();
+		.set_leg_l( ["LeftUpLeg", "LeftLeg"], true )
+		.set_leg_r( ["RightUpLeg", "RightLeg"], true )
+		.set_arm_l( ["LeftArm", "LeftForeArm"], true )
+		.set_arm_r( ["RightArm", "RightForeArm"], true )
+		.set_foot( 0, "LeftFoot", true, true, false )
+		.set_foot( 1, "RightFoot", true, true, false )
+		.ready();
 
-	//e.Node.setPos( 1.3, 0, 0 );
+	e.Node.setPos( 1.3, 0, 0 );
 
 	gTargetA = new IKRig_Target( gRig_Animator, gRigA );
 }
 
 function setup_target_b( json, bin, mat ){
-	let e = FungiGLTF.$debug( "TargetA", json, bin, "Armature", mat );
+	let e = FungiGLTF.$skin( "TargetA", json, bin, "Armature", mat );
+	//let e = FungiGLTF.$debug( "TargetA", json, bin, "Armature", mat );
 	//let e = FungiGLTF.$preview( "TargetB", "Armature", json );
 
 	gRigB = new HumanRig( e )
@@ -151,7 +154,7 @@ function setup_target_b( json, bin, mat ){
 		.set_foot( 1, "RightFoot" )
 		.ready();
 
-	//e.Node.setPos( -1.3, 0, 0 );
+	e.Node.setPos( -1.3, 0, 0 );
 
 	gTargetB = new IKRig_Target( gRig_Animator, gRigB, 1, true, 0.06 );
 }
@@ -364,8 +367,8 @@ class IKRig_Target{
 		this.ik_leg_l_len = (use_hip_height) ? r_tar.bind_pose.bones[ r_tar.hip.idx ].world.pos.y : 0;
 		this.ik_leg_l_len -= this.grd_offset;
 
-		this.foot_l_up = this.setup_foot( this.rig.foot_l.idx ); //This information should be in the Rig, not calculated here.
-		this.foot_r_up = this.setup_foot( this.rig.foot_r.idx );
+		//this.foot_l_up = this.setup_foot( this.rig.foot_l.idx ); //This information should be in the Rig, not calculated here.
+		//this.foot_r_up = this.setup_foot( this.rig.foot_r.idx );
 
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		// Hip Information
@@ -384,8 +387,8 @@ class IKRig_Target{
 			this.run_limb( this.rig.leg_l, ik.leg_l );
 			this.run_limb( this.rig.leg_r, ik.leg_r );
 
-			this.run_foot( this.rig.foot_l, ik.foot_l_dir, this.foot_l_up );
-			this.run_foot( this.rig.foot_r, ik.foot_r_dir, this.foot_r_up );
+			this.run_foot( this.rig.foot_l, ik.foot_l_dir );
+			this.run_foot( this.rig.foot_r, ik.foot_r_dir );
 		}
 
 	/////////////////////////////////////////////////////////////////
@@ -453,13 +456,13 @@ class IKRig_Target{
 			else 						this.target.three_bone( chain, this.rig.bind_pose, this.rig.pose_a, this.pt );
 		}
 
-		run_foot( foot, dir_to, up_dir ){
+		run_foot( foot, dir_to ){
 			let bind 	= this.rig.bind_pose.bones[ foot.idx ];	// Foot's Bind Pose
 			let pose 	= this.rig.pose_a.bones[ foot.idx ];	// Foot's Animated Pose
 			let ppose 	= this.rig.pose_a.bones[ bind.p_idx ];	// Foot's Parent Animated Pose
 
 			let wp 			= new Transform().from_add( ppose.world, bind.local );
-			let dir_from	= Vec3.transform_quat( up_dir, wp.rot );
+			let dir_from	= Vec3.transform_quat( foot.up, wp.rot );
 			
 			let q = Quat
 				.unit_vecs( dir_from, dir_to )		// Create Rotate based on two Direction
