@@ -147,7 +147,7 @@ class Node{
 		 * @public @return {Node}
 		 */
 		setScl( x, y, z ){
-			if( Array.isArray(x) )									this.local.scl.copy( x );
+			if( Array.isArray(x) || ArrayBuffer.isView(x) )			this.local.scl.copy( x );
 			else if( arguments.length == 1 && typeof x == "number")	this.local.scl.set( x, x, x );
 			else if( arguments.length == 3 )						this.local.scl.set( x, y, z ); 
 			else { console.log("Unknown Scale Value"); return this; }

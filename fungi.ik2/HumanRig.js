@@ -190,6 +190,11 @@ class HumanRig{
 			return this;
 		}
 
+		set_spine( name_ary ){
+			this.spine.set_bones( this.bind_pose, name_ary );
+			return this;	
+		}
+
 		/*
 		set_arm_l(){ this.arm_l.set_bones( this.bind_pose, arguments ); return this; }
 		set_arm_r(){ this.arm_r.set_bones( this.bind_pose, arguments ); return this; }

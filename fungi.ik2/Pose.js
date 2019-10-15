@@ -51,6 +51,13 @@ class Pose{
 
 		get_local_rot( idx ){ return this.bones[ idx ].local.rot; }
 
+		static set_change_state( b, rot=false, pos=false, scl=false ){
+			if( rot ) b.chg_state |= Pose.ROT;
+			if( pos ) b.chg_state |= Pose.POS;
+			if( scl ) b.chg_state |= Pose.SCL;
+			return this;
+		}
+
 
 	/////////////////////////////////////////////////////////////////
 	// Methods
