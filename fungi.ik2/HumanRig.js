@@ -293,6 +293,46 @@ class HumanRig{
 
 		calc_foot_l(){ return this.calc_bone_world( this.foot_l.idx ); }
 		calc_foot_r(){ return this.calc_bone_world( this.foot_r.idx ); }
+
+		update_world_chain( chain ){
+			let i, bind, pose, ppose;
+			for( i of chain.bones ){
+				bind	= this.bind_pose.bones[ i ];
+				pose	= this.pose_a.bones[ i ];
+				ppose	= this.pose_a.bones[ pose.p_idx ];
+				pose.world.from_add( ppose.world, bind.local );
+			}
+			return this;
+		}
+
+		apply_world_quat_chain( q, chain ){
+			let i, bind, pose, ppose, rot = new Quat();
+			for( i of chain.bones ){
+				bind	= this.bind_pose.bones[ i ];
+				pose	= this.pose_a.bones[ i ];
+				ppose	= this.pose_a.bones[ pose.p_idx ];
+
+				rot	.from_mul( q, pose.world.rot )
+					.pmul_invert( ppose.world.rot );
+
+				this.pose_a.set_bone( pose.idx, rot );
+
+				pose.world
+					.copy( ppose.world )
+					.add( rot, bind.local.pos, bind.local.scl );
+			}
+			return this;
+		}
+
+		get_pose_bone_tail( idx, tf ){
+			let bind = this.bind_pose.bones[ idx ],
+				pose = this.pose_a.bones[ idx ];
+
+			tf	.copy( pose.world )
+				.add( bind.local.rot, [0, bind.len,0], bind.local.scl );
+			
+			return tf;	
+		}
 }
 
 //##############################################################################

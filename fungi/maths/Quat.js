@@ -76,6 +76,11 @@ class Quat extends Float32Array{
 			return [ this[0] / s, this[1] / s, this[2] / s, angle ];
 		}
 
+		get_angle(){
+			if(this[3] > 1) this.norm();
+			return 2 * Math.acos( this[3] );
+		}
+
 		get_axis( out=null ){
 			if( this[3] > 1 ) this.norm();
 			
@@ -555,6 +560,21 @@ class Quat extends Float32Array{
 			this[1] = r1 * Math.cos( Maths.PI_2 * u2 );
 			this[2] = r2 * Math.sin( Maths.PI_2 * u3 );
 			this[3] = r2 * Math.cos( Maths.PI_2 * u3 );
+			return this;
+		}
+
+		scale_angle( scl ){
+			if( this[3] > 1 ) this.norm();
+
+			let angle	= 2 * Math.acos( this[3] ),
+				len		= 1 / Math.sqrt( this[0]**2 + this[1]**2 + this[2]**2 ), // Get Length to normalize axis
+				half	= (angle * scl) * 0.5, // Calc Angle, Scale it then Half it.
+				s		= Math.sin( half ); // Do Normalize and SinHalf at the same time
+
+			this[0] = (this[0] * len) * s;
+			this[1] = (this[1] * len) * s;
+			this[2] = (this[2] * len) * s;
+			this[3] = Math.cos( half );
 			return this;
 		}
 
