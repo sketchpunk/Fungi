@@ -312,8 +312,8 @@ class Quat extends Float32Array{
 
 		    if(dot < -0.999999){
 		      let tmp = Vec3.cross( Vec3.LEFT, a );
-		      if( tmp.length() < 0.000001 ) Vec3.cross( Vec3.UP, a, tmp );
-		      this.setAxisAngle( tmp.norm(), Math.PI );
+		      if( tmp.len() < 0.000001 ) Vec3.cross( Vec3.UP, a, tmp );
+		      this.from_axis_angle( tmp.norm(), Math.PI );
 		    }else if(dot > 0.999999){
 		      this[0] = 0;
 		      this[1] = 0;
@@ -793,8 +793,8 @@ class Quat extends Float32Array{
 
 		    if(dot < -0.999999){
 		      let tmp = Vec3.cross( Vec3.LEFT, a );
-		      if( tmp.length() < 0.000001 ) Vec3.cross( Vec3.UP, a, tmp );
-		      out.setAxisAngle( tmp.norm(), Math.PI );
+		      if( tmp.len() < 0.000001 ) Vec3.cross( Vec3.UP, a, tmp );
+		      out.from_axis_angle( tmp.norm(), Math.PI );
 		    }else if(dot > 0.999999){
 		      out[0] = 0;
 		      out[1] = 0;

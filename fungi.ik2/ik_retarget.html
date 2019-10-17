@@ -26,7 +26,7 @@ App.builder().launch().load_armature()
 		"../fungi.armature/shaders/ArmatureSkinPhong.txt", 
 	) ) 
 	.load_scene( true, true, true )
-	.set_camera( -30, 10, 4, 0, 0.8, 0 )
+	.set_camera( -30, 10, 2, 0, 1.1, 0 )
 	.add( init )
 	.render_loop( on_draw )
 	//.render_on_mouse( on_draw )
@@ -46,13 +46,13 @@ let gAnimator, gRig_Animator, gIK_Compute,
 	gTargetA, gTargetB;
 
 let RUN_ANIM = true,
-	TARGET_A = true,
+	TARGET_A = false,
 	TARGET_B = true;
 
 async function init(){
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	//let dl_ary = ["../walking.gltf", "json", "../walking.bin", "arraybuffer"];
-	let dl_ary = ["../cat_walk.gltf", "json", "../cat_walk.bin", "arraybuffer"];
+	let dl_ary = ["../walking.gltf", "json", "../walking.bin", "arraybuffer"];
+	//let dl_ary = ["../cat_walk.gltf", "json", "../cat_walk.bin", "arraybuffer"];
 	if( TARGET_A || TARGET_B )	dl_ary.push( "../files/models/vegeta.txt", "text", "../files/models/vegeta.bin", "arraybuffer" ); //files/models/
 	if( TARGET_B ) 				dl_ary.push( "../robo_trex.gltf", "json", "../robo_trex.bin", "arraybuffer" );
 
@@ -72,7 +72,7 @@ async function init(){
 	gIK_Compute = new IKRig_Compute( gRig_Animator );
 	
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	run_animation( 1.6 );
+	run_animation( 1.6 ); //1.6
 
 	return true;
 }
@@ -115,7 +115,10 @@ function setup_animation( json, bin ){
 		.set_leg_l( ["LeftUpLeg", "LeftLeg"] )
 		.set_leg_r( ["RightUpLeg", "RightLeg"] )
 		.set_foot( 0, "LeftFoot" )
-		.set_foot( 1, "RightFoot" );
+		.set_foot( 1, "RightFoot" )
+		.set_hand( 0, "LeftHand" )
+		.set_hand( 1, "RightHand" )
+		.set_head( "Head" );
 
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	gAnimator = new AnimationState();
@@ -125,12 +128,13 @@ function setup_animation( json, bin ){
 }
 
 function setup_target_a( txt, bin, mat ){
-	let e = FungiMesh.$skin( "TargetA", mat, txt, bin );
-	//let e = FungiMesh.$debug( "TargetA", mat, txt, bin );
+	//let e = FungiMesh.$skin( "TargetA", mat, txt, bin );
+	let e = FungiMesh.$debug( "TargetA", mat, txt, bin );
 	//let e = FungiMesh.$preview( "TargetA", txt );
 
 	gRigA = new HumanRig( e )
 		.set_hip( "Hips" )
+		.set_head( "Neck" )
 		.set_spine( ["Spine", "Spine1", "Spine2"] )
 		.set_leg_l( ["LeftUpLeg", "LeftLeg"], true )
 		.set_leg_r( ["RightUpLeg", "RightLeg"], true )
@@ -140,19 +144,20 @@ function setup_target_a( txt, bin, mat ){
 		.set_foot( 1, "RightFoot", true, true, false )
 		.ready();
 
-	e.Node.setPos( 1.3, 0, 0 );
+	//e.Node.setPos( 1.3, 0, 0 );
 	//e.Node.setPos( 0, 0.17, 0 );
 
 	gTargetA = new IKRig_Target( gRig_Animator, gRigA );
 }
 
 function setup_target_b( json, bin, mat ){
-	let e = FungiGLTF.$skin( "TargetA", json, bin, "Armature", mat );
-	//let e = FungiGLTF.$debug( "TargetA", json, bin, "Armature", mat );
+	//let e = FungiGLTF.$skin( "TargetA", json, bin, "Armature", mat );
+	let e = FungiGLTF.$debug( "TargetA", json, bin, "Armature", mat );
 	//let e = FungiGLTF.$preview( "TargetB", "Armature", json );
 
 	gRigB = new HumanRig( e )
 		.set_hip( "hip" )
+		.set_head( "face_joint", true )
 		.set_spine( ["Spine", "Spine1" ] )
 		.set_leg_l( ["LeftUpLeg", "LeftKnee", "LeftShin"], true )
 		.set_leg_r( ["RightUpLeg", "RightKnee", "RightShin"], true )
@@ -160,7 +165,7 @@ function setup_target_b( json, bin, mat ){
 		.set_foot( 1, "RightFoot", true, false, true )
 		.ready();
 
-	e.Node.setPos( -1.3, 0, 0 );
+	//e.Node.setPos( -1.3, 0, 0 );
 
 	gTargetB = new IKRig_Target( gRig_Animator, gRigB, 1, true, 0.06 );
 }
@@ -272,24 +277,35 @@ class IKRig_Compute{
 
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		// Setup Legs		
-		this.leg_l 		= this.new_limb( "LeftUpLeg", "LeftFoot" ); //, Vec3.FORWARD
-		this.leg_r		= this.new_limb( "RightUpLeg", "RightFoot" ); //, Vec3.FORWARD 
-		this.leg_dir	= Vec3.BACK;
+		this.leg_l 		= this.new_limb( "LeftUpLeg", "LeftFoot", Vec3.BACK.clone() ); //, Vec3.FORWARD
+		this.leg_r		= this.new_limb( "RightUpLeg", "RightFoot", Vec3.BACK.clone() ); //, Vec3.FORWARD 
+		//this.leg_dir	= Vec3.BACK;
 
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		this.foot_l_dir	= new Vec3();
 		this.foot_r_dir	= new Vec3();
 
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		this.spine 		= new Vec3();
 		this.spine_dir 	= new Vec3();
 		this.spine_fwd 	= new Vec3();
+
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		this.arm_l		= this.new_limb( "LeftArm", "LeftHand", Vec3.FORWARD.clone() ); //, Vec3.FORWARD 
+		this.arm_r		= this.new_limb( "RightArm", "RightHand", Vec3.BACK.clone() ); //, Vec3.FORWARD 
+		//this.arm_dir	= Vec3.FORWARD;
+
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		this.head 		= { fwd:new Vec3(), up:new Vec3() };
 	}
 
-	new_limb( bname_0, b_name1 ){ //, j_dir
+	new_limb( bname_0, b_name1, joint_dir ){ //, j_dir
 		return { 
 			fwd			: new Vec3(), 
 			up			: new Vec3(), 
 			len_scale	: 1, 
-			len 		: this.len_between_bones( "LeftUpLeg", "LeftFoot" ),
+			len 		: this.len_between_bones( bname_0, b_name1 ),
+			joint_dir 	: joint_dir, 
 			//joint_dir	: new Vec3Spring( SMOOTHING_OSC, SMOOTHING_DAMP, j_dir ),
 		}
 	}
@@ -318,6 +334,12 @@ class IKRig_Compute{
 
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		this.ik_compute_spine();
+
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		this.ik_compute_limb( this.rig.arm_l, this.rig.hand_l.idx, this.arm_l, -1 );
+		this.ik_compute_limb( this.rig.arm_r, this.rig.hand_r.idx, this.arm_r, -1 );
+
+		this.ik_compute_head();
 	}
 
 	// Chain is the arm or leg bones, where end is the hand or foot.
@@ -346,8 +368,16 @@ class IKRig_Compute{
 		//p.from_cross( p, out.fwd );
 		//out.up.from_cross( out.fwd, p ).norm();
 
-		out.up.from_quat( a.world.rot, this.leg_dir ); // Calculate the Joint Dir (Knee, Elbow)  BETTER
+		out.up.from_quat( a.world.rot, out.joint_dir ); // Calculate the Joint Dir (Knee, Elbow)  BETTER
 		
+		//if( dt < 0 ){
+			//App.debug.point( a.world.pos, 0 );
+			//App.debug.point( c.world.pos, 0 );
+
+			//App.debug.line( a.world.pos, Vec3.scale( out.fwd, out.len_scale * out.len ).add(a.world.pos) );
+			//App.debug.line( a.world.pos, Vec3.add( out.up, a.world.pos ) );
+		//}
+
 		//out.joint_dir								// Smooth movement of the Up direction since it can be jittery
 		//	.set_target( out.up )				
 		//	.update( dt );
@@ -362,7 +392,7 @@ class IKRig_Compute{
 	}
 
 	ik_compute_spine(){
-		App.debug.reset();
+		//App.debug.reset();
 
 		//let binda = this.rig.bind_pose.bones[ this.rig.spine.get_first() ];
 		//let bindb = this.rig.bind_pose.bones[ this.rig.spine.get_last() ];
@@ -503,6 +533,12 @@ class IKRig_Compute{
 		//App.debug.line( pose.world.pos, Vec3.add( pose.world.pos, a) );
 		//App.debug.line( pose.world.pos, Vec3.add( pose.world.pos, b), 1 );
 	}
+
+	ik_compute_head(){
+		let b = this.rig.pose_a.bones[ this.rig.head.idx ];
+		this.head.fwd.from_quat( b.world.rot, Vec3.FORWARD );
+		this.head.up.from_quat( b.world.rot, Vec3.UP );
+	}
 }
 
 // Apply IK Information to a Pose.
@@ -547,6 +583,11 @@ class IKRig_Target{
 			this.run_foot( this.rig.foot_r, ik.foot_r_dir );
 
 			this.run_spine( ik );
+
+			if( this.rig.arm_l.len ) this.run_limb( this.rig.arm_l, ik.arm_l );
+			if( this.rig.arm_r.len ) this.run_limb( this.rig.arm_r, ik.arm_r );
+
+			this.run_head( ik );
 		}
 
 	/////////////////////////////////////////////////////////////////
@@ -707,8 +748,93 @@ class IKRig_Target{
 			//console.log( Maths.toDeg( ik.spine.y ) )
 			//App.debug.line( first.pos, Vec3.add( first.pos, a ), 2 );
 			//App.debug.line( first.pos, Vec3.add( first.pos, b ), 0 );
+		}
 
-	
+		run_head( ik ){
+
+			let b = this.rig.get_head();
+			let bind = this.rig.bind_pose.bones[ b.idx ];
+
+			let pt = new Transform();
+			let ct = new Transform();
+
+			Pose.parent_world( this.rig.pose_a, b.idx, pt );
+			ct.from_add( pt, bind.local );
+
+		
+			let fwd = Vec3.transform_quat( this.rig.head.fwd, ct.rot );
+			let up 	= Vec3.transform_quat( this.rig.head.up, ct.rot );
+		
+			//let h_lft = Vec3.cross( this.rig.head.fwd, this.rig.head.up );
+			//let lft = Vec3.transform_quat( h_lft, ct.rot );
+
+			/*
+			App.debug.reset();
+			//App.debug.point( ct.pos );
+			//App.debug.line( ct.pos, Vec3.add( ct.pos, fwd ), 0 );
+			//App.debug.line( ct.pos, Vec3.add( ct.pos, up ), 2 );
+			//App.debug.line( ct.pos, Vec3.add( ct.pos, lft ), 1 );
+
+			App.debug.line( ct.pos, Vec3.add( ct.pos, ik.head.fwd ), 1 );
+			App.debug.line( ct.pos, Vec3.add( ct.pos, ik.head.up ), 2 );
+			*/
+
+			let aa		= new Vec3(),
+				bb		= new Vec3(),
+				qz		= new Quat(),
+				qx		= new Quat(),
+				qy		= new Quat();
+
+			aa.copy( fwd ).set( null, 0 ).norm();
+			bb.copy( ik.head.fwd ).set( null, 0 ).norm();
+			qy.from_unit_vecs( aa, bb );
+
+			aa.copy( up ).set( 0 ).norm();
+			bb.copy( ik.head.up ).set( 0 ).norm();
+			qx.from_unit_vecs( aa, bb );
+
+			aa.copy( up ).set( null, null, 0 ).norm();
+			bb.copy( ik.head.up ).set( null, null, 0 ).norm();
+			qz.from_unit_vecs( aa, bb );
+
+			let q = qy.mul( qx ).mul( qz );
+			
+			b.world.rot
+				.from_mul( q, ct.rot )
+				.pmul_invert( pt.rot );
+			this.rig.pose_a.set_bone( b.idx, b.world.rot );
+			
+			//let q = new Quat().copy( ct.rot );
+				//.from_look( ik.head.fwd, ik.head.up )
+				//.pmul_invert( ct.rot )	// Move it to Bone's Local Space
+				//.pmul_invert( bind.local.rot )	// Get Difference
+				//.pmul( bind.local.rot )
+				;
+
+			//App.debug.line( ct.pos, Vec3.transform_quat( Vec3.FORWARD, q ).add( ct.pos ), 7 );
+
+			//this.rig.pose_a.set_bone( b.idx, q );
+
+			/* VEGETA
+			let q = new Quat();
+			q	.from_look( ik.head.fwd, ik.head.up )	// Diff of Current and Target Rotation.
+				.pmul_invert( ct.rot )					
+
+			b.world.rot
+				.from_mul( ct.rot, q )
+				.pmul_invert( pt.rot );
+
+			this.rig.pose_a.set_bone( b.idx, b.world.rot );
+			*/
+
+
+			//App.debug.reset().quat( ct.rot, ct.pos );
+
+
+			//let q = new Quat();
+			//q.from_look( ik.head.fwd, ik.head.up );
+			
+			//this.rig.pose_a.set_bone( b.idx, q );
 		}
 }
 

@@ -133,7 +133,7 @@ class Gltf{
 					out.byteLen		= acc.count * compLen * TAry.BYTES_PER_ELEMENT;
 					//console.log( bin );
 				}else{
-					let bOffset	= ( acc.byteOffset || 0 ) + ( bView.byteOffset || 0 )
+					let bOffset	= ( acc.byteOffset || 0 ) + ( bView.byteOffset || 0 );
 					out.data = new TAry( bin, bOffset, acc.count * compLen ); // ElementCount * ComponentLength
 				}
 			}

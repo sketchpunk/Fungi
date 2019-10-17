@@ -60,6 +60,11 @@ class HumanRig{
 		this.hip 	= null;
 		this.foot_l = { idx:null, up:Vec3.UP.clone() };
 		this.foot_r = { idx:null, up:Vec3.UP.clone() };
+
+		this.hand_l = { idx:null };
+		this.hand_r = { idx:null };
+
+		this.head	= { idx:null, fwd:Vec3.FORWARD.clone(), up:Vec3.UP.clone() };
 	}
 
 	apply_pose(){ this.pose_a.apply(); return this; }
@@ -190,9 +195,40 @@ class HumanRig{
 			return this;
 		}
 
+		set_hand( f, name ){
+			if( f == 0 )	this.hand_l.idx	= this.bind_pose.get_index( name );
+			else 			this.hand_r.idx	= this.bind_pose.get_index( name );
+			return this;
+		}
+
 		set_spine( name_ary ){
 			this.spine.set_bones( this.bind_pose, name_ary );
 			return this;	
+		}
+
+		set_head( name, do_axis=false ){
+			this.head.idx = this.bind_pose.get_index( name );
+
+			/**/
+			if( do_axis ){
+				let pt = new Transform();
+				let ct = new Transform();
+				let v = new Vec3();
+				let q = new Quat();
+
+				Pose.parent_world( this.bind_pose, this.head.idx, pt, ct );
+
+				v.from_quat( ct.rot, Vec3.FORWARD );
+				q.from_unit_vecs( Vec3.FORWARD, v );
+				this.head.fwd.from_quat( q, Vec3.FORWARD );
+
+				v.from_quat( ct.rot, Vec3.UP );
+				q.from_unit_vecs( Vec3.UP, v );
+				this.head.up.from_quat( q, Vec3.UP );
+			}
+			
+
+			return this;
 		}
 
 		/*
@@ -224,6 +260,7 @@ class HumanRig{
 
 		get_bone( b_idx ){ return this.pose_a.bones[ b_idx ]; }
 		get_hip( ){ return this.pose_a.bones[ this.hip.idx ]; }
+		get_head(){ return this.pose_a.bones[ this.head.idx ]; }
 		get_foot_l(){ return this.pose_a.bones[ this.foot_l.idx ]; }
 		get_foot_r(){ return this.pose_a.bones[ this.foot_r.idx ]; }
 
@@ -337,3 +374,4 @@ class HumanRig{
 
 //##############################################################################
 export default HumanRig;
+export { Chain };
