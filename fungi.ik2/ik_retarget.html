@@ -17,6 +17,8 @@ import FungiMesh		from "../fungi.misc/FungiMesh.js";
 import Pose				from "./Pose.js";
 import HumanRig			from "./HumanRig.js";
 import IKTarget			from "./IKTarget.js";
+import BoneChainSpring 	from "./BoneChainSpring.js";
+
 
 //#############################################################################
 App.builder().launch().load_armature()
@@ -26,7 +28,7 @@ App.builder().launch().load_armature()
 		"../fungi.armature/shaders/ArmatureSkinPhong.txt", 
 	) ) 
 	.load_scene( true, true, true )
-	.set_camera( -30, 10, 2, 0, 1.1, 0 )
+	.set_camera( -20, 0, 4, 0, 0.8, 0 )
 	.add( init )
 	.render_loop( on_draw )
 	//.render_on_mouse( on_draw )
@@ -41,18 +43,19 @@ function on_draw( dt, ss ){
 
 
 //#############################################################################
-let gAnimator, gRig_Animator, gIK_Compute, 
+let gAnimator, gRig_Animator, gIK_Compute, gSpring, 
 	gRigA, gRigB,
 	gTargetA, gTargetB;
 
 let RUN_ANIM = true,
-	TARGET_A = false,
+	TARGET_A = true,
 	TARGET_B = true;
 
 async function init(){
 	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	let dl_ary = ["../walking.gltf", "json", "../walking.bin", "arraybuffer"];
 	//let dl_ary = ["../cat_walk.gltf", "json", "../cat_walk.bin", "arraybuffer"];
+	//let dl_ary = ["../running.gltf", "json", "../running.bin", "arraybuffer"];
 	if( TARGET_A || TARGET_B )	dl_ary.push( "../files/models/vegeta.txt", "text", "../files/models/vegeta.bin", "arraybuffer" ); //files/models/
 	if( TARGET_B ) 				dl_ary.push( "../robo_trex.gltf", "json", "../robo_trex.bin", "arraybuffer" );
 
@@ -89,7 +92,7 @@ function run_animation( dt ){
 		.apply_pose();			// Apply Pose to Armature
 
 	gIK_Compute.update( dt );	// Take Model Space Src Rig and calc some IK Information
-	//IK_Visualize.update();		// Visually Apply IK Info to Src Model
+	IK_Visualize.update();		// Visually Apply IK Info to Src Model
 
 	if( TARGET_A ){			
 		gTargetA.update( gIK_Compute );	// Run IK On Target
@@ -98,6 +101,10 @@ function run_animation( dt ){
 
 	if( TARGET_B ){
 		gTargetB.update( gIK_Compute );	// Run IK On Target
+
+		gRigB.update_world();
+		gSpring.update( gRigB.bind_pose, gRigB.pose_a, dt );
+
 		gRigB.apply_pose();				// Update Armature
 	}
 }
@@ -144,7 +151,7 @@ function setup_target_a( txt, bin, mat ){
 		.set_foot( 1, "RightFoot", true, true, false )
 		.ready();
 
-	//e.Node.setPos( 1.3, 0, 0 );
+	e.Node.setPos( 1.3, 0, 0 );
 	//e.Node.setPos( 0, 0.17, 0 );
 
 	gTargetA = new IKRig_Target( gRig_Animator, gRigA );
@@ -155,7 +162,9 @@ function setup_target_b( json, bin, mat ){
 	let e = FungiGLTF.$debug( "TargetA", json, bin, "Armature", mat );
 	//let e = FungiGLTF.$preview( "TargetB", "Armature", json );
 
-	gRigB = new HumanRig( e )
+	e.Node.setPos( -1.3, 0, 0 );
+
+	gRigB = new HumanRig( e, true )
 		.set_hip( "hip" )
 		.set_head( "face_joint", true )
 		.set_spine( ["Spine", "Spine1" ] )
@@ -163,11 +172,17 @@ function setup_target_b( json, bin, mat ){
 		.set_leg_r( ["RightUpLeg", "RightKnee", "RightShin"], true )
 		.set_foot( 0, "LeftFoot", true, false, true )
 		.set_foot( 1, "RightFoot", true, false, true )
+		.set_chain( "tail", ["tail_1","tail_2","tail_3","tail_4","tail_5","tail_6","tail_7"] )
 		.ready();
 
-	//e.Node.setPos( -1.3, 0, 0 );
 
 	gTargetB = new IKRig_Target( gRig_Animator, gRigB, 1, true, 0.06 );
+
+	gRigB.bind_pose.update_world;
+
+	gSpring	= new BoneChainSpring( gRigB.chains.tail );
+	gSpring	.set_pos( gRigB.bind_pose )
+			.use_euler( 0.8, 0.1 / 7, 0.5, 6 / 7 );
 }
 
 
@@ -194,6 +209,13 @@ class IK_Visualize{
 
 		this.update_foot( rik.rig.foot_l.idx, rik.foot_l_dir, rik.rig.pose_a );
 		this.update_foot( rik.rig.foot_r.idx, rik.foot_r_dir, rik.rig.pose_a );
+
+		this.update_spine( rik );
+
+		this.update_limb( this.arm_l, rik.arm_l, rik.rig.arm_l, rik.rig.hand_l.idx, rik.rig.pose_a );
+		this.update_limb( this.arm_r, rik.arm_r, rik.rig.arm_r, rik.rig.hand_r.idx, rik.rig.pose_a );
+
+		this.update_head( rik );
 		
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		this.pnt.update();
@@ -206,7 +228,7 @@ class IK_Visualize{
 
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		// See Rotation Axis
-		this.show_axis( rik.hip_dif_rot, Vec3.add( hip.world.pos, [0,0,0.05] ) );
+		this.show_axis( rik.hip_dif_rot, Vec3.add( hip.world.pos, [0,0,0.05] ), 0.2 );
 	}
 
 	static show_axis( rot, pos, scl=0.08 ){
@@ -254,6 +276,32 @@ class IK_Visualize{
 		let v = Vec3.scale( dir, 0.3 ).add( b.world.pos );
 		this.lin.add( b.world.pos, v, "cyan" );
 	}
+
+	static update_spine( rik ){
+		let idx	= rik.rig.spine.get_first(),
+			idx2	= rik.rig.spine.get_last(),
+			b	= rik.rig.pose_a.bones[ idx ],
+			b2	= rik.rig.pose_a.bones[ idx2 ];
+
+		let pos = new Vec3( 0, b2.len, 0 );
+
+		b2.world.transform_vec( pos );
+
+		this.pnt.add_circle( b.world.pos, "green", 6 );
+		this.pnt.add_circle( pos, "red", 6 );
+
+		this.lin.add( b.world.pos, Vec3.add( b.world.pos, rik.spine_dir ), "green", "red" );
+		this.lin.add( pos, Vec3.scale( rik.spine_fwd, 0.3 ).add( pos ), "cyan" );
+	}
+
+	static update_head( rik ){
+		let idx = rik.rig.head.idx;
+		let b = rik.rig.pose_a.bones[ idx ];
+		this.pnt.add_diamond( b.world.pos, "orange", 20 );
+
+		this.lin.add( b.world.pos, Vec3.scale( rik.head.fwd, 0.5 ).add( b.world.pos ), "cyan" );
+		this.lin.add( b.world.pos, Vec3.scale( rik.head.up, 0.3 ).add( b.world.pos ), "cyan" );
+	}
 }
 
 //#############################################################################
@@ -286,8 +334,8 @@ class IKRig_Compute{
 		this.foot_r_dir	= new Vec3();
 
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		this.spine 		= new Vec3();
-		this.spine_dir 	= new Vec3();
+		//this.spine 		= new Vec3();
+		this.spine_dir 	= new Vec3(); // Direction of start of spine to tail end of spine
 		this.spine_fwd 	= new Vec3();
 
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -636,14 +684,14 @@ class IKRig_Target{
 			//this.target_pos.mul( [1,1,1.0] );
 
 			// Ground collision with target
-			if( this.target_pos[1] < this.grd_offset ){
+			//if( this.target_pos[1] < this.grd_offset ){
 				//this.target_pos[1] = this.grd_offset;
 
 				//let s = this.grd_offset / ik.fwd[1];
 				//this.target_pos
 				//	.from_scale( ik.fwd, s )
 				//	.add( this.ct.pos );
-			}
+			//}
 
 			this.target.from_pos( this.ct.pos, this.target_pos, ik.up );
 			//this.target.from_pos( this.ct.pos, this.target_pos, ik.joint_dir.pos );
@@ -750,6 +798,28 @@ class IKRig_Target{
 			//App.debug.line( first.pos, Vec3.add( first.pos, b ), 0 );
 		}
 
+		compute_rotate( from_fwd, to_fwd, from_up, to_up, out=null ){
+			let a = new Vec3(),
+				b = new Vec3(),
+				q = new Quat();
+
+			out = out || new Quat();
+
+			a.copy( from_fwd ).set( null, 0 ).norm();
+			b.copy( to_fwd ).set( null, 0 ).norm();
+			out.from_unit_vecs( a, b );
+
+			a.copy( from_up ).set( 0 ).norm();
+			b.copy( to_up ).set( 0 ).norm();
+			out.mul( q.from_unit_vecs( a, b ) );
+
+			a.copy( from_up ).set( null, null, 0 ).norm();
+			b.copy( to_up ).set( null, null, 0 ).norm();
+			out.mul( q.from_unit_vecs( a, b ) );
+
+			return out;
+		}
+
 		run_head( ik ){
 
 			let b = this.rig.get_head();
@@ -779,25 +849,16 @@ class IKRig_Target{
 			App.debug.line( ct.pos, Vec3.add( ct.pos, ik.head.up ), 2 );
 			*/
 
-			let aa		= new Vec3(),
-				bb		= new Vec3(),
-				qz		= new Quat(),
-				qx		= new Quat(),
-				qy		= new Quat();
+			let q = new Quat();
 
-			aa.copy( fwd ).set( null, 0 ).norm();
-			bb.copy( ik.head.fwd ).set( null, 0 ).norm();
-			qy.from_unit_vecs( aa, bb );
-
-			aa.copy( up ).set( 0 ).norm();
-			bb.copy( ik.head.up ).set( 0 ).norm();
-			qx.from_unit_vecs( aa, bb );
-
-			aa.copy( up ).set( null, null, 0 ).norm();
-			bb.copy( ik.head.up ).set( null, null, 0 ).norm();
-			qz.from_unit_vecs( aa, bb );
-
-			let q = qy.mul( qx ).mul( qz );
+			if( this.rig.head.is_mod ){
+				// Construct the rotation by reducing directions to 2D
+				// to create three rotations that can then be combined
+				this.compute_rotate( fwd, ik.head.fwd, up, ik.head.up, q );
+			}else{
+				q	.from_look( ik.head.fwd, ik.head.up )	// Diff of Current and Target Rotation.
+					.pmul_invert( ct.rot )
+			}
 			
 			b.world.rot
 				.from_mul( q, ct.rot )

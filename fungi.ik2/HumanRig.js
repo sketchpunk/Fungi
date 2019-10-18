@@ -24,6 +24,8 @@ class Chain{
 		}
 		this.cnt		= b_names.length;
 		this.len_sqr	= this.len ** 2;
+
+		return this;
 	}
 
 	get_last(){ return this.bones[ this.cnt-1 ]; }
@@ -64,7 +66,7 @@ class HumanRig{
 		this.hand_l = { idx:null };
 		this.hand_r = { idx:null };
 
-		this.head	= { idx:null, fwd:Vec3.FORWARD.clone(), up:Vec3.UP.clone() };
+		this.head	= { idx:null, fwd:Vec3.FORWARD.clone(), up:Vec3.UP.clone(), is_mod:false };
 	}
 
 	apply_pose(){ this.pose_a.apply(); return this; }
@@ -225,6 +227,8 @@ class HumanRig{
 				v.from_quat( ct.rot, Vec3.UP );
 				q.from_unit_vecs( Vec3.UP, v );
 				this.head.up.from_quat( q, Vec3.UP );
+
+				this.head.is_mod = true;
 			}
 			
 
