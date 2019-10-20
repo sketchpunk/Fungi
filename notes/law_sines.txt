@@ -1,0 +1,80 @@
+       B
+      / \
+  c  /   \  a
+    /     \
+   /       \
+A /_________\ C
+       b
+A = 21 deg
+b = 17 len
+a = 14 lne
+
+https://www.youtube.com/watch?v=IgKC_NMEPys
+//-----------------------------------------------------
+Need to Solve length of c.
+First need to get another angle, try for B
+
+a / sinA = b / sinB
+
+14 / sin21 = 17 / sinB                -> Mul both sides by sinB.
+
+(14 / sin21) * sinB = 17              -> Mul both sides by sin21
+
+14 * sinB = 17 * sin21                -> Div both sides by 14
+
+sinB = ( 17 * sin21 ) / 14            -> Inverse of Sin
+
+B = sin^-1(  ( 17 * sin21 ) / 14  )   -> sin^-1 ( (b * sinA) / a );
+
+B = 25.8 deg
+
+//-----------------------------------------------------
+Issue, there is a possible second angle because of the sin curve of 180 degrees.
+180 - 25.8 = 154.2
+
+Can disgard the second possible solution if it plus the known angles is less then 180 degrees.
+So 154.2 + A = 154.2 + 21 = 175.1,  Since under, its a possible answer.
+
+B = 25.8 || 154.2 deg
+
+//-----------------------------------------------------
+Case 1 : B = 25.8
+
+Get angle of C
+180 - B - A
+180 - 25.8 - 21 = 133.2
+
+C = 133.2
+
+Get length of c.
+
+a / sinA = c / sinC
+
+14 / sin21 = c / sin133.2
+
+( 14 / sin21 ) * sin133.2 = c
+
+c = 28.47 len
+
+//-----------------------------------------------------
+Case 2 : B = 154.2
+
+Get angle of C
+180 - 154.2 - 21
+C = 4.8
+
+a / sinA = c / sinC
+
+14 / sin21 = c / sin4.8
+
+( 14 / sin21 ) * sin4.8 = c
+
+c = 3.27 len 
+
+//-----------------------------------------------------
+c = 28.47 || 3.27
+
+
+
+
+

@@ -63,11 +63,12 @@ function build_target( txt, bin ){
 	//let e = FungiMesh.$preview( "Target", txt );
 
 	gRigTar = new HumanRig( e )
-		.set_leg_l( "LeftUpLeg", "LeftLeg" )
-		.set_leg_r( "RightUpLeg", "RightLeg" )
-		.set_arm_l( "LeftArm", "LeftForeArm" )
-		.set_arm_r( "RightArm", "RightForeArm" )
-		.set_feet( "LeftFoot", "RightFoot" )
+		.set_leg_l( ["LeftUpLeg", "LeftLeg"] )
+		.set_leg_r( ["RightUpLeg", "RightLeg"] )
+		.set_arm_l( ["LeftArm", "LeftForeArm"] )
+		.set_arm_r( ["RightArm", "RightForeArm"] )
+		.set_foot( 0, "LeftFoot" )
+		.set_foot( 1, "RightFoot" )
 		.gen_tpose();
 
 	e.Node.setPos( 1, 0, 0 );
