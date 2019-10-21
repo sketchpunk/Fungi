@@ -1,0 +1,213 @@
+<!DOCTYPE html><html><head><title></title></head><script type="module">
+import App						from "../fungi/engine/App.js";
+import Maths, { Quat, Vec3 }	from "../fungi/maths/Maths.js";
+import Armature					from "../fungi.armature/Armature.js";
+import ArmaturePreview			from "../fungi.armature/ArmaturePreview.js";
+
+//#############################################################################
+new App.builder()
+	.launch()
+	.load_armature()
+	.download( dl=>dl.addGrp( "shader", 
+		"../fungi/shaders/VecWColor.txt", 
+		"../fungi.armature/shaders/ArmaturePreview.txt", 
+		"../fungi.armature/shaders/ArmatureSkinPhong.txt", 
+	) ) 
+	.load_scene( true, true, true )
+	.set_camera( -0, 1, 4, 0, 1.4, 0 )
+	.add( init )
+	//.render_loop( on_draw )
+	.render_on_mouse( on_draw )
+	.build().catch( (e)=>console.error("error",e) );
+
+//#############################################################################
+function on_draw( dt, ss ){ App.ecs.sys_run(); }
+
+
+//#############################################################################
+const CHAIN_LEN = 3;
+let gOdd, gEven;
+
+async function init(){
+	mk_even_chain();
+
+	//mk_odd_chain();
+	//update_world( gOdd );
+	//show_points( gOdd );
+	return true;
+}
+
+function mk_even_chain(){
+	let e		= Armature.$( App.$Draw("Arm") ),
+		arm		= e.Armature,
+		b0 		= arm.add_bone( "b0", 0.5, null ),
+		b1 		= arm.add_bone( "b1", 0.5, b0 ),
+		b2 		= arm.add_bone( "b3", 0.5, b1 ),
+		b3 		= arm.add_bone( "b4", 0.5, b2 ),
+		b4 		= arm.add_bone( "b5", 0.5, b3 ),
+		b5 		= arm.add_bone( "b6", 0.5, b4 );
+
+	Armature.finalize( e );
+	ArmaturePreview.$( e, "ArmaturePreview", 2 );
+	gEven = e;
+	return true;
+}
+
+function mk_odd_chain(){
+	let e		= Armature.$( App.$Draw("Arm") ),
+		arm		= e.Armature,
+		b0 		= arm.add_bone( "b0", 0.2, null ),
+		b1 		= arm.add_bone( "b1", 0.8, b0 ),
+		b2 		= arm.add_bone( "b3", 0.6, b1 ),
+		b3 		= arm.add_bone( "b4", 0.4, b2 ),
+		b4 		= arm.add_bone( "b5", 0.3, b3 ),
+		b5 		= arm.add_bone( "b6", 0.7, b4 );
+
+	Armature.finalize( e );
+	ArmaturePreview.$( e, "ArmaturePreview", 2 );
+	gOdd = e;
+	return true;
+}
+
+function update_world( ent ){
+	let bones = ent.Armature.bones;
+	let e, n, pn;
+	for( e of bones ){
+		n = e.Node;
+		pn = (n.parent)? n.parent.Node : null;
+
+		if( pn ) n.world.from_add( pn.world, n.local );
+		else 	 n.world.copy( n.local );
+	}
+}
+
+function show_points( ent ){
+	let bones = ent.Armature.bones;
+	let e;
+	for( e of bones ){
+		App.debug.point( e.Node.world.pos );
+	}
+}
+
+
+
+//#############################################################################
+
+/*
+const QUAT_FWD2UP = new Quat().setAxisAngle(Vec3.LEFT, Maths.toRad(90));
+class IKChainSolver{
+	//////////////////////////////////////////////////////////////
+	// Single Pass Solvers
+	//////////////////////////////////////////////////////////////
+	static circleArc(chain, target, pose){
+		const BX1 = 0.42;	// Predefined Bezier curve control points
+		const BY1 = 0.175;	// .. Point 0 and Point 3 is 0,0 and 1,0
+		const BX2 = 0.98;
+		const BY2 = 2.208;
+
+		//------------------------------------
+		// If over the length of the chain, straighten chain.		
+		if(target.scale > 0.9999){
+			IKChainSolver.fullDirection(chain, target, pose);
+			return;
+		}
+
+		//------------------------------------
+		// Figure out what angle the arc of a circle, then based on its normalized value
+		// use a predefined bezier curve to get the proper offset on the angle which
+		// helps align the arc to the target position.
+
+		let chainPosition 	= TNode.getWorldPosition( chain.links[0] ),
+			scale			= target.scale;
+
+		if(!scale){
+			scale = chainPosition.length( target.position ) / chain.length;
+
+			//Check scale, if over length of chain, then straighten it out.
+			if(scale > 0.9999){
+				IKChainSolver.fullDirection(chain, target, pose);
+				return;
+			}
+		}
+
+		let arcAngle = Maths.PI_2 * -(1 - scale);
+		arcAngle -= Maths.CBezierEase( scale, 0,0, BX1, BY1, BX2, BY2, 1,0 );
+
+		
+		//------------------------------------
+		// Get starting world transform for joint chain and keep track as we traverse.
+		let tran		= new TransformData(),
+			cnt 		= Math.min(pose.count, chain.count),
+			angleInc	= -arcAngle / cnt, //Divide angle per bone for rotation increment;
+			qInc 		= new Quat().setAxisAngle(target.x, angleInc),	
+			i 			= 1,
+			c;
+
+		pose.links[0].rotation.copy( target.rotation );	// Start off By Setting the forward rotation of the bone toward the target.
+		pose.links[0].rotation.pmul( qInc );			// Then apply the first increment on it using target's X Axis Rotation
+		pose.links[0].useRotation = true;
+
+
+		// Need to keep track of WorldSpace rotation/position for final bone
+		// Start the transform data with the first bone information.
+		c = chain.links[ 0 ].com;
+		tran.set( pose.links[0].rotation, chainPosition, c.Transform.scale );
+		//DVao.vecPoint( ePoint, tran.position, 6 );	// DEBUG
+
+		qInc.setAxisAngle(Vec3.LEFT, angleInc); 	// With the root facing in the right direction, reset Inc with world X Axis
+
+		for(i; i < cnt; i++){
+			// Save rotation to the ik state to apply to bones later.
+			pose.links[i].rotation.copy( qInc );
+			pose.links[i].useRotation = true;
+
+			//------------------------
+			// Keep Track of World Space Rotation/Position.
+			c = chain.links[ i ].com;
+			tran.add( qInc, c.Transform.position, c.Transform.scale );
+			DVao.vecPoint( ePoint, tran.position, 6 );	// DEBUG
+		}
+
+		// Finish with last bone length to get the World Space Position of the end of the last bone.
+		tran.add( pose.links[cnt-1].rotation, [0,c.Bone.length,0], c.Transform.scale);
+		DVao.vecPoint( ePoint, tran.position, 2 );	// DEBUG
+
+		//------------------------------------
+		//The end position usually doesn't line up with the target, so try to align it
+		IKChainSolver.alignFwdRotation(chain, target, pose, tran.position.sub(chainPosition).normalize());
+	}
+
+	static CBezierEase(target, x0,y0, x1,y1, x2,y2, x3,y3 ){
+			const TRIES		= 30;
+			const MARGIN	= 0.001;
+
+			//if(target <= 0.00001) // Target is Zero
+			//else if(target > 0.99999 ) //target is One
+
+			let a		= 0,
+				b		= 1,
+				loop	= 0,
+				t,tt, i, ii, x;
+
+			while( loop++ < TRIES ){
+				t	= (b - a) * 0.5  + a;
+				i	= 1 - t;
+				tt	= t * t;
+				ii	= i * i;
+				x 	= i*ii*x0 + 3*t*ii*x1 + 3*tt*i*x2 + t*tt*x3;
+
+				//console.log("x",loop, x, target, Math.abs(target - x));
+
+				if( Math.abs(target - x) < MARGIN ) break; //console.log("found target at", t);
+
+				if(target > x)		a = t;
+				else if(target < x)	b = t;
+			}
+
+			return i*ii*y0 + 3*t*ii*y1 + 3*tt*i*y2 + t*tt*y3;
+		}
+
+*/
+
+</script><body>
+</body></html>
