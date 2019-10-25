@@ -1,8 +1,13 @@
 <!DOCTYPE html><html><head><title></title></head><script type="module">
 import App						from "../fungi/engine/App.js";
 import Maths, { Quat, Vec3 }	from "../fungi/maths/Maths.js";
+import Transform				from "../fungi/maths/Transform.js";
 import Armature					from "../fungi.armature/Armature.js";
 import ArmaturePreview			from "../fungi.armature/ArmaturePreview.js";
+import Pose						from "../fungi.ik2/Pose.js";
+import {Chain} 					from "../fungi.ik2/HumanRig.js";
+import IKTarget					from "../fungi.ik2/IKTarget.js";
+
 
 //#############################################################################
 new App.builder()
@@ -25,31 +30,76 @@ function on_draw( dt, ss ){ App.ecs.sys_run(); }
 
 
 //#############################################################################
-const CHAIN_LEN = 3;
 let gOdd, gEven;
+let gOddPose, gOddBind, gEvenPose, gEvenBind;
+let gOddChain, gEvenChain;
+
+let gTarget = new IKTarget();
+
+/* 0.05, 0.01 
+
+Tries 1 offset 0.01 scale 0.050000001986821495 angle -341.99999928484976
+Tries 006 offset 0.06 scale 0.1 angle -323.9999985695885
+Tries 018 offset 0.18 scale 0.2 angle -287.9999971390659
+Tries 034 offset 0.34 scale 0.3 angle -252.00000286110068
+Tries 051 offset 0.51 scale 0.4 angle -215.99999427802072
+Tries 068 offset 0.68 scale 0.5 angle -180.00000000005554
+Tries 083 offset 0.83 scale 0.6 angle -144.00000572209032
+Tries 096 offset 0.96 scale 0.7 angle -108.00001144412514
+Tries 100 offset 1 scale 	0.75 angle -90.00000000002777
+Tries 102 offset 1.02 scale 0.8 angle -71.9999885559304
+Tries 101 offset 1.01 scale 0.85 angle -54.00000572206255
+Tries 98 offset 0.98 scale 0.875 angle -45.000000000013884
+Tries 094 offset 0.94 scale 0.9 angle -35.99999427796522
+Tries 88 offset 0.88 scale 0.925 angle -26.99998855591652
+Tries 077 offset 0.77 scale 0.95 angle -18.000011444097364
+Tries 58 offset 0.58 scale 0.975 angle -9.00000572204866
+Tries 035 offset 0.35 scale 0.99 angle -3.5999965667735716
+*/
 
 async function init(){
-	mk_even_chain();
+	let target = Vec3.LEFT.clone().scale( 3 * 0.1 );
 
-	//mk_odd_chain();
+	gTarget.from_pos( [0,0,0], target, Vec3.UP );
+	IKTarget.debug( App.debug, gTarget );
+
+	/*
+	mk_even_chain( 6, 0.5 );
+	circle_arc_new( gEvenChain, gTarget, gEvenBind, gEvenPose );
+	//circle_arc( gEvenChain, gTarget, gEvenPose );
+	//circle_arc_tester( gEvenChain, gTarget, gEvenPose );
+	//run_tester( gEvenChain, gTarget, gEvenPose, gEvenBind );
+	*/
+
+	/**/
+	mk_odd_chain();
+	//circle_arc( gOddChain, gTarget, gOddPose );
+	circle_arc_new2( gOddChain, gTarget, gOddBind, gOddPose );
+	
+
+	//
 	//update_world( gOdd );
 	//show_points( gOdd );
 	return true;
 }
 
-function mk_even_chain(){
+function mk_even_chain( cnt=6, inc=0.5 ){
 	let e		= Armature.$( App.$Draw("Arm") ),
-		arm		= e.Armature,
-		b0 		= arm.add_bone( "b0", 0.5, null ),
-		b1 		= arm.add_bone( "b1", 0.5, b0 ),
-		b2 		= arm.add_bone( "b3", 0.5, b1 ),
-		b3 		= arm.add_bone( "b4", 0.5, b2 ),
-		b4 		= arm.add_bone( "b5", 0.5, b3 ),
-		b5 		= arm.add_bone( "b6", 0.5, b4 );
+		arm		= e.Armature;
+
+	let p = null, names = [];
+	for( let i=0; i < cnt; i++ ){
+		names.push( "b" + i );
+		p = arm.add_bone( "b" + i, inc, p );
+	}
 
 	Armature.finalize( e );
 	ArmaturePreview.$( e, "ArmaturePreview", 2 );
-	gEven = e;
+
+	gEven		= e;
+	gEvenPose	= new Pose( e.Armature ).update_world();
+	gEvenBind	= new Pose( e.Armature ).update_world();
+	gEvenChain	= new Chain().set_bones( gEvenPose, names );
 	return true;
 }
 
@@ -58,14 +108,18 @@ function mk_odd_chain(){
 		arm		= e.Armature,
 		b0 		= arm.add_bone( "b0", 0.2, null ),
 		b1 		= arm.add_bone( "b1", 0.8, b0 ),
-		b2 		= arm.add_bone( "b3", 0.6, b1 ),
-		b3 		= arm.add_bone( "b4", 0.4, b2 ),
-		b4 		= arm.add_bone( "b5", 0.3, b3 ),
-		b5 		= arm.add_bone( "b6", 0.7, b4 );
+		b2 		= arm.add_bone( "b2", 0.6, b1 ),
+		b3 		= arm.add_bone( "b3", 0.4, b2 ),
+		b4 		= arm.add_bone( "b4", 0.3, b3 ),
+		b5 		= arm.add_bone( "b5", 0.7, b4 );
 
 	Armature.finalize( e );
 	ArmaturePreview.$( e, "ArmaturePreview", 2 );
-	gOdd = e;
+
+	gOdd		= e;
+	gOddPose	= new Pose( e.Armature ).update_world();
+	gOddBind	= new Pose( e.Armature ).update_world();
+	gOddChain	= new Chain().set_bones( gOddPose, ["b0","b1","b2","b3","b4","b5"] );
 	return true;
 }
 
@@ -89,125 +143,319 @@ function show_points( ent ){
 	}
 }
 
+//##########################################################
 
+function circle_arc_offset_map( scl ){
+	const offset_scl = [
+		0, 0,
+		0.1, 0.06,
+		0.2, 0.18,
+		0.3, 0.34,
+		0.4, 0.51,
+		0.5, 0.68,
+		0.6, 0.83,
+		0.7, 0.96,
+		0.75, 1,
+		0.8, 1.02,
+		0.85, 1.01,
+ 		0.875, 0.98,
+		0.9, 0.94,
+		0.925, 0.88, 
+		0.95, 0.77,
+		0.975, 0.58,
+		0.99, 0.35,
+		1, 0 ];
 
-//#############################################################################
-
-/*
-const QUAT_FWD2UP = new Quat().setAxisAngle(Vec3.LEFT, Maths.toRad(90));
-class IKChainSolver{
-	//////////////////////////////////////////////////////////////
-	// Single Pass Solvers
-	//////////////////////////////////////////////////////////////
-	static circleArc(chain, target, pose){
-		const BX1 = 0.42;	// Predefined Bezier curve control points
-		const BY1 = 0.175;	// .. Point 0 and Point 3 is 0,0 and 1,0
-		const BX2 = 0.98;
-		const BY2 = 2.208;
-
-		//------------------------------------
-		// If over the length of the chain, straighten chain.		
-		if(target.scale > 0.9999){
-			IKChainSolver.fullDirection(chain, target, pose);
-			return;
+	let i, ii, sa, sb, st;
+	for( i=0; i < offset_scl.length-1; i+=2 ){
+		if( offset_scl[i] >= scl ){
+			ii = i - 2;				
+			sa = offset_scl[ ii ];		// Previous offset scale
+			sb = offset_scl[ i ];		// Found Offset, scale
+			st = (scl-sa) / (sb-sa);	// Normalize scale between A and B
+			return offset_scl[ ii+1 ] * (1-st) + offset_scl[ i+1 ] * st;
 		}
+	}
+	return 0;
+}
 
-		//------------------------------------
-		// Figure out what angle the arc of a circle, then based on its normalized value
-		// use a predefined bezier curve to get the proper offset on the angle which
-		// helps align the arc to the target position.
+function circle_arc_new( chain, target, bind, pose ){
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// Figure out what angle the arc of a circle, then based on its normalized value
+	// use a predefined bezier curve to get the proper offset on the angle which
+	// helps align the arc to the target position.
 
-		let chainPosition 	= TNode.getWorldPosition( chain.links[0] ),
-			scale			= target.scale;
+	let chainPosition 	= target.start_pos,
+		scale			= target.len / chain.len;
 
-		if(!scale){
-			scale = chainPosition.length( target.position ) / chain.length;
+	let arc_angle = Maths.PI_2 * -(1 - scale);
+	arc_angle -= circle_arc_offset_map( scale );
 
-			//Check scale, if over length of chain, then straighten it out.
-			if(scale > 0.9999){
-				IKChainSolver.fullDirection(chain, target, pose);
-				return;
-			}
-		}
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// Get starting world transform for joint chain and keep track as we traverse.
+	let cnt 		= chain.cnt,
+		angle_inc	= -arc_angle / cnt, //Divide angle per bone for rotation increment;
+		q_inc 		= new Quat().from_axis_angle( target.axis.x, angle_inc ),
+		i, c, p, root;
 
-		let arcAngle = Maths.PI_2 * -(1 - scale);
-		arcAngle -= Maths.CBezierEase( scale, 0,0, BX1, BY1, BX2, BY2, 1,0 );
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	root = pose.bones[ chain.get_first() ];
+	root.world.rot
+		.copy( bind.bones[ root.idx ].world.rot )
+		.pmul( q_inc );
 
+	pose.set_bone( root.idx, root.world.rot );
+
+	for(i=1; i < cnt; i++){
+		c = pose.bones[ chain.bones[ i ] ];
+		p = pose.bones[ c.p_idx ];
 		
-		//------------------------------------
-		// Get starting world transform for joint chain and keep track as we traverse.
-		let tran		= new TransformData(),
-			cnt 		= Math.min(pose.count, chain.count),
-			angleInc	= -arcAngle / cnt, //Divide angle per bone for rotation increment;
-			qInc 		= new Quat().setAxisAngle(target.x, angleInc),	
-			i 			= 1,
-			c;
+		c.world.rot
+			.from_mul( p.world.rot, bind.bones[ c.idx ].local.rot )
+			.pmul( q_inc )
+			.pmul_invert( p.world.rot );
 
-		pose.links[0].rotation.copy( target.rotation );	// Start off By Setting the forward rotation of the bone toward the target.
-		pose.links[0].rotation.pmul( qInc );			// Then apply the first increment on it using target's X Axis Rotation
-		pose.links[0].useRotation = true;
-
-
-		// Need to keep track of WorldSpace rotation/position for final bone
-		// Start the transform data with the first bone information.
-		c = chain.links[ 0 ].com;
-		tran.set( pose.links[0].rotation, chainPosition, c.Transform.scale );
-		//DVao.vecPoint( ePoint, tran.position, 6 );	// DEBUG
-
-		qInc.setAxisAngle(Vec3.LEFT, angleInc); 	// With the root facing in the right direction, reset Inc with world X Axis
-
-		for(i; i < cnt; i++){
-			// Save rotation to the ik state to apply to bones later.
-			pose.links[i].rotation.copy( qInc );
-			pose.links[i].useRotation = true;
-
-			//------------------------
-			// Keep Track of World Space Rotation/Position.
-			c = chain.links[ i ].com;
-			tran.add( qInc, c.Transform.position, c.Transform.scale );
-			DVao.vecPoint( ePoint, tran.position, 6 );	// DEBUG
-		}
-
-		// Finish with last bone length to get the World Space Position of the end of the last bone.
-		tran.add( pose.links[cnt-1].rotation, [0,c.Bone.length,0], c.Transform.scale);
-		DVao.vecPoint( ePoint, tran.position, 2 );	// DEBUG
-
-		//------------------------------------
-		//The end position usually doesn't line up with the target, so try to align it
-		IKChainSolver.alignFwdRotation(chain, target, pose, tran.position.sub(chainPosition).normalize());
+		pose.set_bone( c.idx, c.world.rot );
+		c.world.from_add( p.world, c.local );
 	}
 
-	static CBezierEase(target, x0,y0, x1,y1, x2,y2, x3,y3 ){
-			const TRIES		= 30;
-			const MARGIN	= 0.001;
+	let end_pos = c.world.transform_vec( new Vec3( 0, c.len, 0 ) );
+	//App.debug.point( end_pos, 1 );
 
-			//if(target <= 0.00001) // Target is Zero
-			//else if(target > 0.99999 ) //target is One
+	q_inc.from_unit_vecs( end_pos.norm(), target.axis.z );
+	root.local.rot.pmul( q_inc );
 
-			let a		= 0,
-				b		= 1,
-				loop	= 0,
-				t,tt, i, ii, x;
 
-			while( loop++ < TRIES ){
-				t	= (b - a) * 0.5  + a;
-				i	= 1 - t;
-				tt	= t * t;
-				ii	= i * i;
-				x 	= i*ii*x0 + 3*t*ii*x1 + 3*tt*i*x2 + t*tt*x3;
+	pose.update_world(); // Need this?
+	c = pose.bones[ chain.get_last() ];
+	end_pos = c.world.transform_vec( new Vec3( 0, c.len, 0 ) );
+	App.debug.point( end_pos, 2 );
 
-				//console.log("x",loop, x, target, Math.abs(target - x));
+	pose.apply();
+}
 
-				if( Math.abs(target - x) < MARGIN ) break; //console.log("found target at", t);
+function circle_arc_new2( chain, target, bind, pose ){
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// Figure out what angle the arc of a circle, then based on its normalized value
+	// use a predefined bezier curve to get the proper offset on the angle which
+	// helps align the arc to the target position.
 
-				if(target > x)		a = t;
-				else if(target < x)	b = t;
-			}
+	let chainPosition 	= target.start_pos,
+		scale			= target.len / chain.len;
 
-			return i*ii*y0 + 3*t*ii*y1 + 3*tt*i*y2 + t*tt*y3;
-		}
+	let arc_angle = Maths.PI_2 * -(1 - scale);
+	arc_angle -= circle_arc_offset_map( scale );
 
-*/
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// Get starting world transform for joint chain and keep track as we traverse.
+	let cnt 		= chain.cnt,
+		angle_inc	= -arc_angle / cnt, //Divide angle per bone for rotation increment;
+		q_inc 		= new Quat().from_axis_angle( target.axis.x, angle_inc ),
+		i, c, p, root;
 
+	let t_angle = angle_inc * cnt;
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	root = pose.bones[ chain.get_first() ];
+	root.world.rot
+		.copy( bind.bones[ root.idx ].world.rot )
+		.pmul( q_inc );
+
+	pose.set_bone( root.idx, root.world.rot );
+
+	for(i=1; i < cnt; i++){
+		c = pose.bones[ chain.bones[ i ] ];
+		p = pose.bones[ c.p_idx ];
+		
+		q_inc.from_axis_angle( target.axis.x, t_angle * (c.len / chain.len) ),
+
+		c.world.rot
+			.from_mul( p.world.rot, bind.bones[ c.idx ].local.rot )
+			.pmul( q_inc )
+			.pmul_invert( p.world.rot );
+
+		pose.set_bone( c.idx, c.world.rot );
+		c.world.from_add( p.world, c.local );
+	}
+
+	let end_pos = c.world.transform_vec( new Vec3( 0, c.len, 0 ) );
+	//App.debug.point( end_pos, 1 );
+
+	q_inc.from_unit_vecs( end_pos.norm(), target.axis.z );
+	root.local.rot.pmul( q_inc );
+
+
+	pose.update_world(); // Need this?
+	c = pose.bones[ chain.get_last() ];
+	end_pos = c.world.transform_vec( new Vec3( 0, c.len, 0 ) );
+	App.debug.point( end_pos, 2 );
+
+	pose.apply();
+}
+
+
+
+//##########################################################
+
+function circle_arc_old( chain, target, pose ){
+	const BX1 = 0.42;	// Predefined Bezier curve control points
+	const BY1 = 0.175;	// .. Point 0 and Point 3 is 0,0 and 1,0
+	const BX2 = 0.98;
+	const BY2 = 2.208;
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// Figure out what angle the arc of a circle, then based on its normalized value
+	// use a predefined bezier curve to get the proper offset on the angle which
+	// helps align the arc to the target position.
+
+	let chainPosition 	= target.start_pos,
+		scale			= target.len / chain.len;
+
+	let arc_angle = Maths.PI_2 * -(1 - scale);
+	arc_angle -= Maths.CBezierEase( scale, 0,0, BX1, BY1, BX2, BY2, 1,0 );
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// Get starting world transform for joint chain and keep track as we traverse.
+	let cnt 		= chain.cnt,
+		angle_inc	= -arc_angle / cnt, //Divide angle per bone for rotation increment;
+		q_inc 		= new Quat().from_axis_angle( target.axis.x, angle_inc ),
+		i, c, p;
+
+	c = pose.bones[ 0 ];
+	c.world.rot.pmul( q_inc );
+	pose.set_bone( 0, c.world.rot );
+
+	for(i=1; i < cnt; i++){
+		p = pose.bones[ i-1 ];
+		c = pose.bones[ i ];
+
+		c.world.rot
+			.from_mul( p.world.rot, c.local.rot )
+			.pmul( q_inc )
+			.pmul_invert( p.world.rot );
+
+		pose.set_bone( c.idx, c.world.rot );
+		c.world.from_add( p.world, c.local );
+	}
+
+	let end_pos = c.world.transform_vec( new Vec3( 0, c.len, 0 ) );
+	App.debug.point( end_pos, 1 );
+
+	q_inc.from_unit_vecs( end_pos.norm(), target.axis.z );
+	c = pose.bones[0];
+	c.local.rot.pmul( q_inc );
+
+	pose.apply();
+}
+
+function CBezierEase(target, x0,y0, x1,y1, x2,y2, x3,y3 ){
+	const TRIES		= 30;
+	const MARGIN	= 0.001;
+
+	//if(target <= 0.00001) // Target is Zero
+	//else if(target > 0.99999 ) //target is One
+
+	let a		= 0,
+		b		= 1,
+		loop	= 0,
+		t,tt, i, ii, x;
+
+	while( loop++ < TRIES ){
+		t	= (b - a) * 0.5  + a;
+		i	= 1 - t;
+		tt	= t * t;
+		ii	= i * i;
+		x 	= i*ii*x0 + 3*t*ii*x1 + 3*tt*i*x2 + t*tt*x3;
+
+		//console.log("x",loop, x, target, Math.abs(target - x));
+
+		if( Math.abs(target - x) < MARGIN ) break; //console.log("found target at", t);
+
+		if(target > x)		a = t;
+		else if(target < x)	b = t;
+	}
+
+	return i*ii*y0 + 3*t*ii*y1 + 3*tt*i*y2 + t*tt*y3;
+}
+
+
+//##########################################################
+function run_tester( chain, target, pose, bind ){
+	const TRIES = 200;
+	const INC = 0.01;
+	const scale = target.len / chain.len;
+
+	let info = { angle:0 };
+
+
+	let i, pos, offset, len = 0;
+	for( i=1; i <= TRIES; i++ ){
+		offset	= i * INC;
+		pos 	= circle_arc_tester( chain, target, pose, bind, offset, info );
+		len 	= Vec3.len( pos, target.end_pos );
+
+		//console.log( i, offset, len );
+		if( len < INC ) break;
+	}
+
+	console.log( "Tries", i, "offset", offset, "scale", scale, "angle", info.angle );
+	pose.apply();
+}
+
+function circle_arc_tester( chain, target, pose, bind, offset, info ){
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// Figure out what angle the arc of a circle, then based on its normalized value
+	// use a predefined bezier curve to get the proper offset on the angle which
+	// helps align the arc to the target position.
+
+	let chainPosition 	= target.start_pos,
+		scale			= target.len / chain.len;
+
+	let arc_angle = Maths.PI_2 * -(1 - scale);
+	info.angle = Maths.toDeg( arc_angle );
+
+	arc_angle -= offset;
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// Get starting world transform for joint chain and keep track as we traverse.
+	let cnt 		= chain.cnt,
+		angle_inc	= -arc_angle / cnt, //Divide angle per bone for rotation increment;
+		q_inc 		= new Quat().from_axis_angle( target.axis.x, angle_inc ),
+		i, c, p;
+
+	c = pose.bones[ 0 ];
+	c.world.rot.copy( bind.bones[ 0 ].world.rot );
+	c.world.rot.pmul( q_inc );
+	pose.set_bone( 0, c.world.rot );
+
+	for(i=1; i < cnt; i++){
+		p = pose.bones[ i-1 ];
+		c = pose.bones[ i ];
+
+		c.world.rot
+			.from_mul( p.world.rot, bind.bones[ i ].local.rot )
+			.pmul( q_inc )
+			.pmul_invert( p.world.rot );
+
+		pose.set_bone( c.idx, c.world.rot );
+		c.world.from_add( p.world, c.local );
+	}
+
+	let end_pos = c.world.transform_vec( new Vec3( 0, c.len, 0 ) );
+	//App.debug.point( end_pos, 1 );
+
+	q_inc.from_unit_vecs( end_pos.norm(), target.axis.z );
+	c = pose.bones[0];
+	c.local.rot.pmul( q_inc );
+
+	pose.update_world();
+	c = pose.bones[5];
+	end_pos = c.world.transform_vec( new Vec3( 0, c.len, 0 ) );
+	//App.debug.point( end_pos, 2 );
+
+	return end_pos;
+}
+
+//#############################################################################
 </script><body>
 </body></html>
