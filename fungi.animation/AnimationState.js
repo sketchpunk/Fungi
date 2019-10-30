@@ -96,7 +96,7 @@ class AnimationState{
 				q		= new Quat(),
 				v		= new Vec3(),
 				qi 		= ti*4,
-				vi 		= vi*3,
+				vi 		= ti*3,
 				track;
 
 			for( track of anim.tracks ){

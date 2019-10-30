@@ -106,7 +106,7 @@ class FungiGLTF{
 		// Takes the bones information from gltf and
 		// create the Entity Heirarchy of the bones and assign
 		// it to the armature.
-		static gen_bones( e, bones, def_len=0.3 ){
+		static gen_bones( e, bones, def_len=0.1 ){
 			let arm = e.Armature;
 
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
