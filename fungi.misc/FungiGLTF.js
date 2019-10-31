@@ -23,10 +23,25 @@ class FungiGLTF{
 			return e;
 		}
 
+		static $skin_bind( e_name, json, bin, arm_name="Armature", mat="ArmatureSkinPhong", mesh_names=null ){
+			let e = App.$Draw( e_name );
+			this.setup_mesh( e, json, bin, mat, mesh_names );
+			this.setup_armature_bind( e, arm_name, json, bin );
+			return e;
+		}
+
 		// Armature Preview Only
 		static $preview( e_name, arm_name, json ){
 			let e = App.$Draw( e_name );
 			this.setup_armature( e, arm_name, json );
+			App.global.ArmaturePreview.$( e, "ArmaturePreview", 2 );
+			return e;
+		}
+
+		// Armature Preview Only
+		static $preview_bind( e_name, arm_name, json, bin ){
+			let e = App.$Draw( e_name );
+			this.setup_armature_bind( e, arm_name, json, bin );
 			App.global.ArmaturePreview.$( e, "ArmaturePreview", 2 );
 			return e;
 		}
@@ -39,6 +54,14 @@ class FungiGLTF{
 			return e;
 		}
 
+		static $debug_bind( e_name, json, bin, arm_name="Armature", mat="ArmatureSkinPhong", mesh_names=null ){
+			let e = App.$Draw( e_name );
+			this.setup_mesh( e, json, bin, mat, mesh_names );
+			this.setup_armature_bind( e, arm_name, json, bin );
+			App.global.ArmaturePreview.$( e, "ArmaturePreview", 2 );
+			return e;
+		}
+
 
 	/////////////////////////////////////////////////////////////////
 	// Helper Functions
@@ -46,6 +69,20 @@ class FungiGLTF{
 		static setup_armature( e, arm_name, json ){
 			let node	= {},
 				bones 	= Gltf.getSkin( arm_name, json, node );
+
+			App.global.Armature.$( e );
+			this.gen_bones( e, bones );
+
+			// Set the Entity Transfrom from Armature's Node Transform if available.
+			if( node.scl ) e.Node.setScl( node.scl );
+			if( node.rot ) e.Node.setRot( node.rot );
+
+			return e;
+		}
+
+		static setup_armature_bind( e, arm_name, json, bin ){
+			let node	= {},
+				bones 	= Gltf.get_bind_skeleton( arm_name, json, bin, node );
 
 			App.global.Armature.$( e );
 			this.gen_bones( e, bones );

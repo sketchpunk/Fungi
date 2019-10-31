@@ -1,3 +1,7 @@
+//import App			from "../fungi/engine/App.js";
+import Mat4			from "../fungi/maths/Mat4.js";
+import Transform	from "../fungi/maths/Transform.js";
+
 class GltfExport{
 	constructor(){
 		this.nodes			= new Array();
@@ -105,8 +109,8 @@ class GltfExport{
 		}
 
 		add_joint( s_idx, name, p_idx=null, rot=null, pos=null, scl=null, len=0.3 ){
-			let s	= this.skins[ s_idx ];
-			let ji 	= s.joints.length;
+			let s	= this.skins[ s_idx ],
+				ji 	= s.joints.length;
 
 			// Create a Node for the Joint
 			let ni	= this.add_node( name, true );
@@ -129,12 +133,11 @@ class GltfExport{
 		}
 
 		gen_inverse_bind( s_idx ){
-			let s = this.skins[ s_idx ];
-			let tary = new Array( s.joints.length );
-			let fbuf = new Float32Array( s.joints.length * 16 );
-
-			let m4 = new Mat4();
-			let i,ii,j, n, b, t;
+			let s		= this.skins[ s_idx ],
+				tary	= new Array( s.joints.length ),
+				fbuf	= new Float32Array( s.joints.length * 16 ),
+				m4		= new Mat4(),
+				i,ii,j, n, b, t;
 
 			for( i=0; i < s.joints.length; i++ ){
 				n = this.nodes[ s.joints[ i ] ];
@@ -163,9 +166,9 @@ class GltfExport{
 			{
 				name		: "ANIMATION_NAME",
 				channels	: [
-					{ sampler : SAMPLES_INDEX, target: { node:NODE_INDEX, path:"translation|rotation|scale"} }
+					{ sampler : SAMPLERS_INDEX, target: { node:NODE_INDEX, path:"translation|rotation|scale"} }
 				],
-				samples		: [
+				samplers	: [
 					{ 	input: ACCESSOR_INDEX_TO_TIME_DATA, 
 						output: ACCESSOR_INDEX_TO_TRANSFORM_DATA, 
 						interpolation:"LINEAR" }
@@ -181,7 +184,7 @@ class GltfExport{
 				frame_cnt 	: frame_cnt,		// Extra Fungi Info
 				time_max 	: time_max,			// Extra Fungi Info
 				channels 	: new Array(),
-				samples 	: new Array(),
+				samplers 	: new Array(),
 			});
 
 			return i;
@@ -199,9 +202,9 @@ class GltfExport{
 
 		add_anim_sample( ai, time_accessor_idx, tran_accessor_idx, inter_type="LINEAR" ){
 			let o	= this.animations[ ai ],
-				si	= o.samples.length;
+				si	= o.samplers.length;
 
-			o.samples.push({
+			o.samplers.push({
 				input			: time_accessor_idx,
 				output			: tran_accessor_idx,
 				interpolation	: inter_type,
@@ -214,10 +217,22 @@ class GltfExport{
 	// ACCESSORS AND BUFFER VIEWS
 	///////////////////////////////////////////////////////////////////////
 		// type = SCALAR | VEC2 | VEC3 | VEC4 | MAT2 | MAT3 | MAT4
-		add_accessor_buffer( data, type, elm_cnt ){			
-			let com_type = 0;
-			if( data instanceof Float32Array )		com_type = 5126; // FLOAT
-			else if( data instanceof Uint16Array )	com_type = 5123; // UNSIGNED_SHORT
+		// https://github.com/KhronosGroup/glTF/tree/master/specification/2.0#accessors
+		//accessors:[
+		//	{ bufferView:0, byteOffset:0, componentType:5123, count:12636, max:[4212], min:[0], type: SCALAR }
+		//]
+		add_accessor_buffer( data, type, elm_cnt, calc_bounds=false ){			
+			let com_type = 0, bounds = null;
+
+			if( data instanceof Float32Array ){
+				com_type = 5126; // FLOAT
+				if( calc_bounds ){
+					switch( type ){
+						case "SCALAR": bounds = this._calc_bounds_scalar_f32( data ); break;
+						default: console.log("Unknown type to calc bounds for accessor:",type); break;
+					}
+				}
+			}else if( data instanceof Uint16Array )	com_type = 5123; // UNSIGNED_SHORT
 
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			let bvi = this.buffer_views.length,
@@ -231,17 +246,34 @@ class GltfExport{
 				data 		: buf,
 			});
 
-			this.accessors.push({
+
+			let a = {
 				bufferView 		: bvi,
 				componentType 	: com_type,
 				count			: elm_cnt,
 				type 			: type,
 				//byteOffset 		: 0, Interleaved Data Only
-			});
+			};
+
+			if( bounds ){
+				a.min = bounds[0];
+				a.max = bounds[1];
+			}
+
+			this.accessors.push( a );
 
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			this.buf_size += buf.byteLength;
 			return ai;
+		}
+
+		_calc_bounds_scalar_f32( ary ){
+			let i, min = Infinity, max = -Infinity;
+			for( i of ary ){
+				min = Math.min( min, i );
+				max = Math.max( max, i );
+			}
+			return [ [min], [max] ];
 		}
 
 	///////////////////////////////////////////////////////////////////////
@@ -323,9 +355,9 @@ class GltfExport{
 					if( i != 0 ) buf += ",";
 
 					buf += '{ "name":"'+o.name+'" ';
-					buf += ', "frame_cnt:"'+o.frame_cnt+'", "time_max":'+o.time_max+'"'; // Extra Fungi Info
-					buf += '\n\t\t\t",channels":' + JSON.stringify( o.channels );
-					buf += '\n\t\t\t,"samples":' + JSON.stringify( o.samples );
+					buf += ', "frame_cnt":'+o.frame_cnt+', "time_max":'+o.time_max; // Extra Fungi Info
+					buf += '\n\t\t\t,"channels":' + JSON.stringify( o.channels );
+					buf += '\n\t\t\t,"samplers":' + JSON.stringify( o.samplers );
 					buf += '}\n';
 				}
 
@@ -366,3 +398,5 @@ class GltfExport{
 }
 
 export default GltfExport;
+
+//App.global["GltfExport"] = GltfExport;

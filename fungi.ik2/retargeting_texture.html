@@ -1,6 +1,7 @@
 <!DOCTYPE html><html><head><title></title></head><script type="module">
-import App, { AppBuilder }		from "../fungi/engine/App.js";
+import App, { AppBuilder, Shader, Material }		from "../fungi/engine/App.js";
 import Maths, { Quat, Vec3 }	from "../fungi/maths/Maths.js";
+import DualQuat 				from "../fungi/maths/DualQuat.js";
 import XhrPromise				from "../fungi.misc/XhrPromise.js";
 import FungiGLTF, {Gltf} 		from "../fungi.misc/FungiGLTF.js";
 import GltfExport 				from "../fungi.misc/GltfExport.js";
@@ -26,76 +27,50 @@ import Pose 					from "./Pose.js";
 	.build().catch( (e)=>console.error("error",e) );
 })();
 
-let gIsActive = true;
-let gRigTar, gRigSrc, gSession, gAnimation;
-
+let gIsActive = false;
+let gPose, gAnimation, gAnimator;
 
 async function dl_files(){
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// SHADER & MATERIALS
+	/*
+	let json	= Shader.parseInline( "inline_shader" ),
+		shader	= Shader.buildFromJson( json );
+
+	if( !shader ) return false;
+
+	let mat = Material.build( shader, json.materials[ 0 ] );
+	mat.bind().apply(); // Bind Shader, Then Apply Uniforms to Shader
+	*/
+
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	let dl	= await XhrPromise.get( 
-		"../walking.gltf", "json", "../walking.bin", "arraybuffer",
+		"./test.gltf", "json", "./test.bin", "arraybuffer",
 		"../files/models/mannequin_female.gltf", "json", "../files/models/mannequin_female.bin", "arraybuffer", //files/models/
 	);
 	
-	build_src( dl[0], dl[1] );
-	build_target( dl[2], dl[3] );
 
-	gSession = new RetargetSession()
-		.set_rigs( gRigSrc, gRigTar )
-		.set_src_animation( gAnimation )
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	let e		= FungiGLTF.$debug_bind( "src_preview", dl[2], dl[3] );
+	gPose		= new Pose( e.Armature );
+	gAnimation	= FungiGLTF.animation( "Default", dl[0], dl[1] );
+	gAnimator	= new Animator();
+
+	let sat = new SkinAnimationTexture()
+		.set_entity( e )
+		.set_animation( gAnimation )
 		.build();
 
 
-	export_test();
-
+	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	return true;
 }
 
-
-function build_src( json, bin ){
-	let e 		= FungiGLTF.$preview( "src_preview", "Armature", json );
-	
-	gRigSrc		= new HumanRig( e, true );
-	gAnimation	= FungiGLTF.animation( "Armature|mixamo.com|Layer0", json, bin );
-}
-
-
-function build_target( json, bin ){
-	//let e = FungiGLTF.$preview_bind( "src_preview", "Armature", json );
-	//let e = FungiGLTF.$skin( "src_preview", json, bin );
-	let e = FungiGLTF.$skin_bind( "src_preview", json, bin );
-	//let e = FungiGLTF.$debug_bind( "src_preview", json, bin );
-
-	gRigTar = new HumanRig( e );
-	/*	.set_leg_l( ["LeftUpLeg", "LeftLeg"] )
-		.set_leg_r( ["RightUpLeg", "RightLeg"] )
-		.set_arm_l( ["LeftArm", "LeftForeArm"] )
-		.set_arm_r( ["RightArm", "RightForeArm"] )
-		.set_foot( 0, "LeftFoot" )
-		.set_foot( 1, "RightFoot" )
-		.gen_tpose();
-	*/
-
-	e.Node.setPos( 1, 0, 0 );
-}
-
-
 //#############################################################################
 function onDraw( dt, ss ){
-	/**/
 	if( gIsActive ){
-		//gSession.play_realtime( dt );
-		gSession.play_both( dt );
-		//gSession.play_target( dt );
-		//
-		if( test_animation ){
-			test_animator
-				.tick( dt )
-				.update( test_animation, test_pose );
-			test_pose.apply();
-
-			//test_animator.update( test_animation, gRigTar.pose_a );
-			//gRigTar.pose_a.apply();
-		}
+		gAnimator.tick( dt ).update( gAnimation, gPose );
+		gPose.apply();
 	}
 
 	App.ecs.sys_run();
@@ -202,40 +177,25 @@ class Animator{
 
 
 //############################################################################
-class RetargetSession{
+class SkinAnimationTexture{
 	constructor(){
-		this.rig_src	= null;
-		this.rig_tar	= null;
-
-		this.anim_src 	= null;
-		this.anim_tar 	= null;
-
+		this.entity 	= null;
+		this.animation 	= null;
 		this.animator 	= new Animator();
-		this.bone_map 	= new Array();
-
-		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		// retarget cached math objects
-		this.convert	= new Quat();
-		this.rot 		= new Quat();
-		this.pos 		= new Vec3();
-		this.scale 		= new Vec3();
-		this.a			= new Vec3();
-		this.b			= new Vec3();
+		this.pose 		= null;
 	}
 
 	/////////////////////////////////////////////////////////
 	// setters / getters
 	/////////////////////////////////////////////////////////
-		set_rigs( src, tar ){
-			this.rig_src = src;
-			this.rig_tar = tar;
-			this._auto_bone_map();
+		set_entity( e ){
+			this.entity	= e;
+			this.pose	= new Pose( e.Armature );
 			return this;
 		}
 
-		set_src_animation( anim ){
-			this.anim_src = anim;
-			this._build_target_animation();
+		set_animation( anim ){
+			this.animation = anim;
 			return this;
 		}
 
@@ -377,23 +337,57 @@ class RetargetSession{
 	/////////////////////////////////////////////////////////
 	// 
 	/////////////////////////////////////////////////////////
-		
-		// Run Retargeting and save the result to the target animation object
+
 		build(){
-			let b, i, frame_cnt = this.anim_src.frame_cnt;
+			let arm 		= this.entity.Armature,
+				bones 		= arm.bones,
+				frame_cnt	= 1, //this.animation.frame_cnt,
+				bone_cnt	= arm.bones.length,
+				pixel_w 	= frame_cnt * 2,		// Store Bone's Dual Quat for each frame
+				pixel_h 	= bone_cnt,				// How Many rows of frames will we need
+				pixel_cnt	= pixel_w * pixel_h, 	// Every bone Dual Quat will need 2 pixels, times total frames
+				float_cnt 	= pixel_cnt * 4,
+				row_cnt 	= frame_cnt * 2 * 4,
+				dq 			= new DualQuat(),
+				b, i, ii, j, jj, p;
+
+			let data = new Float32Array( float_cnt );
+			console.log( "FrameCount", frame_cnt, "Bone Count", bone_cnt, "pixel", pixel_cnt, "float", float_cnt );
+
 
 			for( i=0; i < frame_cnt; i++ ){
-				this.animator.key_frame( i, this.anim_src, this.rig_src.pose_a ); // Generate Pose
-				//this.rig_src.apply_pose();
-				this.rig_src.update_world();	// Update World Space 
+				this.animator.key_frame( i, this.animation, this.pose ); // Generate Pose
+				this.pose.update_world();	// Update World Space 
 
-				// Run Retarget on Each Bone.
-				for( b of this.bone_map ){
-					this.retarget_bone( b.src_name, b.tar_name, ( b.src_name == "Hips" ) );
+				ii = i * 8;
+
+				for( j=0; j < bone_cnt; j++ ){
+					b = bones[ j ].Bone;
+					p = this.pose.bones[ j ];
+					jj = ii + j * row_cnt;
+
+					dq
+						.set( p.world.rot, p.world.pos )
+						.mul( b.dqBindPose );
+
+					data[ jj+0 ] = dq[ 0 ];
+					data[ jj+1 ] = dq[ 1 ];
+					data[ jj+2 ] = dq[ 2 ];
+					data[ jj+3 ] = dq[ 3 ];
+					data[ jj+4 ] = dq[ 4 ];
+					data[ jj+5 ] = dq[ 5 ];
+					data[ jj+6 ] = dq[ 6 ];
+					data[ jj+7 ] = dq[ 7 ];
+
+					//DualQuat.mul( dq, e.Bone.dqBindPose, e.Bone.dqOffset );
+					//console.log( dq, b, p );
 				}
 
-				this._save_target_track( i );
+				//console.log( this.pose );
+				break;
 			}
+
+			console.log( data );
 
 			return this;
 		}
@@ -496,142 +490,152 @@ class RetargetSession{
 			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 			return this;
 		}
+
+		// With World Space Dual Quaternion, Need to multiple it by Bind Pose DQ to get the
+		// difference, thats what we need to save to the texture.
+		// dq.set( e.Node.world.rot, e.Node.world.pos );
+		// DualQuat.mul( dq, e.Bone.dqBindPose, e.Bone.dqOffset );
+		gen_inverse_bind( s_idx ){
+			let s		= this.skins[ s_idx ],
+				tary	= new Array( s.joints.length ),
+				fbuf	= new Float32Array( s.joints.length * 16 ),
+				m4		= new Mat4(),
+				i,ii,j, n, b, t;
+
+			for( i=0; i < s.joints.length; i++ ){
+				n = this.nodes[ s.joints[ i ] ];
+				b = s.bones[ i ];
+
+				if( !tary[i] )	t = tary[i] = new Transform();
+				else			t = tary[i];
+
+				if( b.p_idx == null )	t.set( n.rotation, n.translation, n.scale );
+				else 					t.copy( tary[b.p_idx] ).add( n.rotation, n.translation, n.scale );
+
+				Mat4.fromQuaternionTranslationScale( t.rot, t.pos, t.scl, m4 ).invert();
+
+				ii = i * 16;
+				for( j=0; j < 16; j++ ) fbuf[ ii+j ] = m4[ j ];
+			}
+
+			s.inverseBindMatrices = this.add_accessor_buffer( fbuf, "MAT4", s.joints.length );
+		}
 }
 
 
 //############################################################################
 
-let test_animator	= new Animator();
-let test_animation	= null;
-let test_entity 	= null;
-let test_pose 		= null;
-let test_json_text	= null;
-let test_bin		= null;
-
-function export_test( ){
-	let out = new GltfExport();
-
-	export_armature( gRigTar.entity, out );
-	export_animation( gSession.anim_tar, out );
-
-	test_json_text	= out.output_json();	//console.log( test_json_text );
-	test_bin		= out.output_bin();
-	let json		= JSON.parse( test_json_text );
-
-	test_preview( json, test_bin.buffer );
-}
-
-
-function test_preview( json, bin ){
-	let e = FungiGLTF.$preview_bind( "export_test", "Armature", json, bin );
-	e.Node.setPos( 0, 0, -1 );
-
-	test_entity		= e;
-	test_animation	= FungiGLTF.animation( "Default", json, bin );
-	test_pose 		= new Pose( e.Armature );
-
-	e.Draw.items.push( gRigTar.entity.Draw.items[0] );
-
-
-	//console.log( test_animation );
-	//console.log( gAnimation );
-	//console.log( gSession.anim_tar );
-}
-
-
-function export_armature( e, out ){
-	let arm		= e.Armature,
-		bones	= arm.bones,
-		skin_i	= out.add_skin(),
-		p_idx, b;
-
-	for( b of bones ){
-		p_idx = ( b.Node.parent && b.Node.parent.Bone )? b.Node.parent.Bone.order : null;
-		out.add_joint( skin_i, b.info.name, p_idx, b.Bone.bind.rot, b.Bone.bind.pos, b.Bone.bind.scl, b.Bone.length );
-	}
-
-	out.gen_inverse_bind( skin_i );
-}
-
-
-function export_animation( anim, out ){
-	let anim_idx	= out.add_animation( anim.frame_cnt, anim.time_max ),
-		j_nodes		= out.skins[0].joints,	// the Joint to Node mapping that exists in Skins
-		time_map	= {},					// Mapping Animation Time Index to Accessor Index
-		i;
-
-	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// Save Animation Time Arrays, keep track by way of mapping.
-	for( i=0; i < anim.times.length; i++ ){
-		time_map[ i ] = out.add_accessor_buffer( anim.times[i], "SCALAR", anim.times[i].length, true );
-	}
-
-	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// Save the Tracks as Channels & Samples
-	let track, access_idx, time_idx, samp_idx, node_idx, elm_cnt, d_type, t_path;
-	for( track of anim.tracks ){
-		//.......................................
-		// Type Specific Information
-		switch( track.type ){
-			case "rot":
-				d_type	= "VEC4";
-				elm_cnt	= track.data.length / 4;
-				t_path 	= "rotation";
-				break;
-			case "pos": case "scl":
-				d_type	= "VEC3";
-				elm_cnt	= track.data.length / 3;
-				t_path 	= ( track.type == "pos" )? "translation" : "scale";
-				break;
-		}
-
-		//.......................................
-		// Create Accessor Buffer from Track.data, Then sample with that plus time accessor.
-		// Put then create a channel from the sample.
-		time_idx	= time_map[ track.time_idx ];
-		node_idx 	= j_nodes[ track.joint_idx ];
-		access_idx	= out.add_accessor_buffer( track.data, d_type, elm_cnt );
-		samp_idx	= out.add_anim_sample( anim_idx, time_idx, access_idx, track.interp );
-		
-		out.add_anim_channel( anim_idx, samp_idx, node_idx, t_path );
-	}
-}
+// Need to compute World Space Transforms for Each Frame.
+// Create a Texture to hold the Data. 2 Pixels per Dual Quaternions
+// 2 pixels for each bone. Bone Animation PER Bone.
 
 /*
-// dummy json data to save
-var data = { x: 42, s: "hello, world", d: new Date() }
+https://webgl2fundamentals.org/webgl/lessons/webgl-skinning.html
 
-document.getElementById('myButton').onclick = function(event){
-    var json = JSON.stringify(data),
-    blob = new Blob([json], {type: "octet/stream"}),
-    url = window.URL.createObjectURL(blob);
-  
-  	this.href = url;
-    this.target = '_blank';
-  	
-  	// target filename
-    this.download = 'my-download.json';  
-}
-*/
 
-window.dl_json = function( o ){
-	let blob	= new Blob( [test_json_text], {type: "octet/stream"} );
-	let url 	= window.URL.createObjectURL( blob );
-	o.href		= url;
-	o.target	= "_blank";
-	o.download 	= "test.gltf";
+#version 300 es
+in vec4 a_position;
+in vec4 a_weight;
+in uvec4 a_boneNdx;
+ 
+uniform mat4 projection;
+uniform mat4 view;
+uniform sampler2D boneMatrixTexture;
+ 
+mat4 getBoneMatrix(uint boneNdx) {
+  return mat4(
+    texelFetch(boneMatrixTexture, ivec2(0, boneNdx), 0),
+    texelFetch(boneMatrixTexture, ivec2(1, boneNdx), 0),
+    texelFetch(boneMatrixTexture, ivec2(2, boneNdx), 0),
+    texelFetch(boneMatrixTexture, ivec2(3, boneNdx), 0));
+}
+ 
+void main() {
+ 
+  gl_Position = projection * view *
+                (getBoneMatrix(a_boneNdx[0]) * a_position * a_weight[0] +
+                 getBoneMatrix(a_boneNdx[1]) * a_position * a_weight[1] +
+                 getBoneMatrix(a_boneNdx[2]) * a_position * a_weight[2] +
+                 getBoneMatrix(a_boneNdx[3]) * a_position * a_weight[3]);
+ 
 }
 
-window.dl_bin = function( o ){
-	let blob	= new Blob( [test_bin], {type: "octet/stream"} );
-	let url 	= window.URL.createObjectURL( blob );
-	o.href		= url;
-	o.target	= "_blank";
-	o.download 	= "test.bin";
-}
+
+
+// prepare the texture for bone matrices
+const boneMatrixTexture = gl.createTexture();
+gl.bindTexture(gl.TEXTURE_2D, boneMatrixTexture);
+// since we want to use the texture for pure data we turn
+// off filtering
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+
+// update the texture with the current matrices
+gl.bindTexture(gl.TEXTURE_2D, boneMatrixTexture);
+gl.texImage2D(
+    gl.TEXTURE_2D,
+    0,          // level
+    gl.RGBA32F, // internal format
+    4,          // width 4 pixels, each pixel has RGBA so 4 pixels is 16 values WIDTH
+    numBones,   // one row per bone HEIGHT
+    0,          // border
+    gl.RGBA,    // format
+    gl.FLOAT,   // type
+    boneArray);
+ */
+
 
 </script><body>
-<div style="position:fixed; top:5px; left:5px; color:black; font-size:12px; z-index:1000; font-family:arial; font-weight:bold">
-	<a href="#" onClick="dl_json( this );">Download JSON File</a> -- <a href="#" onClick="dl_bin( this );">Download JSON Bin</a>
-</div>
+
+<script id="inline_shader" type="plain/text">
+<shader>{
+	"name"		: "VecWColor",
+	"ubo"		: [ "UBOGlobal" ],
+	"options"	: { "modelMatrix":false },
+	"uniforms"	: [
+		{ "name":"u_colorAry", "type":"vec3" }
+	]
+}<\shader>
+	
+<materials>[
+	{ "name":"VecWColor",	
+		"options"	: { "depthTest":true, "blend":false },
+		"uniforms":[
+		{ "name":"u_colorAry", "type":"rgb", "value": ["ff0000","00ff00","0000ff","555555","999999","dddddd","000000","ff7f7f","ff8c00","ffff00"] }
+	]}
+]<\materials>
+	
+<vertex>
+	#version 300 es
+	layout(location=0) in vec4 a_position;
+
+	uniform UBOGlobal{ 
+		mat4 projMatrix;
+		mat4 viewMatrix;
+	};
+
+	uniform vec3 u_colorAry[20];
+	out vec3 v_color;
+
+	void main(void){
+		v_color			= u_colorAry[ int(a_position.w) ];
+		gl_PointSize 	= 20.0;
+
+
+		//gl_Position		= vec4( a_position.xyz, 1.0 );
+		gl_Position		= projMatrix * viewMatrix * vec4( a_position.xyz, 1.0 );
+	}
+<\vertex>
+
+<fragment>
+	#version 300 es
+	precision mediump float;
+
+	in vec3 v_color;
+	out vec4 oFragColor;
+
+	void main(void){ oFragColor = vec4(v_color, 1.0); }
+<\fragment>	
+</script>
+
 </body></html>
