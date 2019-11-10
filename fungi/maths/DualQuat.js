@@ -73,13 +73,31 @@ class DualQuat extends Float32Array{
 		}
 
 		//Multiplies two dual quat's
-		mul(q,out){
+		mul( q,out ){
 			out = out || this;
 
-			var ax0 = this[0], ay0 = this[1], az0 = this[2], aw0 = this[3],
+			let ax0 = this[0], ay0 = this[1], az0 = this[2], aw0 = this[3],
 				ax1 = this[4], ay1 = this[5], az1 = this[6], aw1 = this[7],
 				bx0 = q[0], by0 = q[1], bz0 = q[2], bw0 = q[3],
 				bx1 = q[4], by1 = q[5], bz1 = q[6], bw1 = q[7];
+
+			out[0] = ax0 * bw0 + aw0 * bx0 + ay0 * bz0 - az0 * by0;
+			out[1] = ay0 * bw0 + aw0 * by0 + az0 * bx0 - ax0 * bz0;
+			out[2] = az0 * bw0 + aw0 * bz0 + ax0 * by0 - ay0 * bx0;
+			out[3] = aw0 * bw0 - ax0 * bx0 - ay0 * by0 - az0 * bz0;
+			out[4] = ax0 * bw1 + aw0 * bx1 + ay0 * bz1 - az0 * by1 + ax1 * bw0 + aw1 * bx0 + ay1 * bz0 - az1 * by0;
+			out[5] = ay0 * bw1 + aw0 * by1 + az0 * bx1 - ax0 * bz1 + ay1 * bw0 + aw1 * by0 + az1 * bx0 - ax1 * bz0;
+			out[6] = az0 * bw1 + aw0 * bz1 + ax0 * by1 - ay0 * bx1 + az1 * bw0 + aw1 * bz0 + ax1 * by0 - ay1 * bx0;
+			out[7] = aw0 * bw1 - ax0 * bx1 - ay0 * by1 - az0 * bz1 + aw1 * bw0 - ax1 * bx0 - ay1 * by0 - az1 * bz0;
+			return this;
+		}
+
+		pmul( q, out ){
+			out = out || this;
+			let ax0 = q[0], ay0 = q[1], az0 = q[2], aw0 = q[3],
+				ax1 = q[4], ay1 = q[5], az1 = q[6], aw1 = q[7],
+				bx0 = this[0], by0 = this[1], bz0 = this[2], bw0 = this[3],
+				bx1 = this[4], by1 = this[5], bz1 = this[6], bw1 = this[7];
 
 			out[0] = ax0 * bw0 + aw0 * bx0 + ay0 * bz0 - az0 * by0;
 			out[1] = ay0 * bw0 + aw0 * by0 + az0 * bx0 - ax0 * bz0;
@@ -428,6 +446,38 @@ export function equals(a, b) {
             Math.abs(a7 - b7) <= glMatrix.EPSILON*Math.max(1.0, Math.abs(a7), Math.abs(b7)));
 }*/
 
+
+/*
+export function normalize(out, a) {
+  let magnitude = squaredLength(a);
+  if (magnitude > 0) {
+    magnitude = Math.sqrt(magnitude);
+
+    let a0 = a[0] / magnitude;
+    let a1 = a[1] / magnitude;
+    let a2 = a[2] / magnitude;
+    let a3 = a[3] / magnitude;
+
+    let b0 = a[4];
+    let b1 = a[5];
+    let b2 = a[6];
+    let b3 = a[7];
+
+    let a_dot_b = (a0 * b0) + (a1 * b1) + (a2 * b2) + (a3 * b3);
+
+    out[0] = a0;
+    out[1] = a1;
+    out[2] = a2;
+    out[3] = a3;
+
+    out[4] = (b0 - (a0 * a_dot_b)) / magnitude;
+    out[5] = (b1 - (a1 * a_dot_b)) / magnitude;
+    out[6] = (b2 - (a2 * a_dot_b)) / magnitude;
+    out[7] = (b3 - (a3 * a_dot_b)) / magnitude;
+  }
+  return out;
+}
+ */
 
 } 
 

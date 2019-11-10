@@ -8,8 +8,25 @@ import Animation				from "../fungi.animation/Animation.js";
 import HumanRig 				from "./HumanRig.js";
 import Pose 					from "./Pose.js";
 
+/* [[[ PROCESS ]]] ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+1. First load up Animation and its Armature.
+2. Then load up the Source Armature and Mesh
+3. Create a new Animation object to store the retargeted animation.
+	- Share the same Time Array
+	- Create new Track array based on the Target Armature Bones
+	- Each Track should have enough space to hold the same amount of frames from the Src Animation.
+4. Loop each frame of the source animation which updates the pose object.
+5. Retarget the pose to the Target Armature Pose
+6. Save the Target Pose into the Target Animation Object by using the same Frame Index of the Source Animation.
+7. Exporting to GTLF
+	- Need to save the Target Armature. Create Skin data, Local Space Bind Pose in Nodes, 
+		Inverse World Space Bind pose stored as matrices in an accessor buffer.
+	- Save animation by creating channels which is track type and samples store the time array and data array
+		for each frame of the animation.
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ */
+
 //#############################################################################
-(function(){new AppBuilder()
+App.builder()
 	.launch()
 	.load_armature()
 	.download( dl=>dl.addGrp( "shader", 
@@ -19,12 +36,12 @@ import Pose 					from "./Pose.js";
 		"../fungi.armature/shaders/ArmatureSkinPhong.txt", 
 	) ) 
 	.load_scene( true, true, true )
-	.set_camera( -50, 10, 5, 0, 0.7, 0 )
+	.set_camera( -50, 10, 3, 0, 0.7, 0 )
 	.add( dl_files )
 	.render_loop( onDraw )
 	//.render_on_mouse( onDraw )
 	.build().catch( (e)=>console.error("error",e) );
-})();
+
 
 let gIsActive = true;
 let gRigTar, gRigSrc, gSession, gAnimation;
@@ -33,27 +50,24 @@ let gRigTar, gRigSrc, gSession, gAnimation;
 async function dl_files(){
 	let dl	= await XhrPromise.get( 
 		"../walking.gltf", "json", "../walking.bin", "arraybuffer",
-		"../files/models/mannequin_female.gltf", "json", "../files/models/mannequin_female.bin", "arraybuffer", //files/models/
+		"../files/models/vegeta.gltf", "json", "../files/models/vegeta.bin", "arraybuffer", //files/models/
 	);
 	
-	build_src( dl[0], dl[1] );
-	build_target( dl[2], dl[3] );
-
-	gSession = new RetargetSession()
-		.set_rigs( gRigSrc, gRigTar )
+	build_src( dl[0], dl[1] );				// Load Up Animation
+	build_target( dl[2], dl[3] );			// Load up Target Armature/Mesh
+	
+	gSession = new RetargetSession()		// Convert Animation to work on Target
+		.set_rigs( gRigSrc, gRigTar )		// 
 		.set_src_animation( gAnimation )
 		.build();
 
-
-	export_test();
-
+	export_test();							// Export Animation to GLTF, Then Import it back in.
 	return true;
 }
 
 
 function build_src( json, bin ){
 	let e 		= FungiGLTF.$preview( "src_preview", "Armature", json );
-	
 	gRigSrc		= new HumanRig( e, true );
 	gAnimation	= FungiGLTF.animation( "Armature|mixamo.com|Layer0", json, bin );
 }
@@ -65,16 +79,15 @@ function build_target( json, bin ){
 	let e = FungiGLTF.$skin_bind( "src_preview", json, bin );
 	//let e = FungiGLTF.$debug_bind( "src_preview", json, bin );
 
-	gRigTar = new HumanRig( e );
-	/*	.set_leg_l( ["LeftUpLeg", "LeftLeg"] )
+	gRigTar = new HumanRig( e )
+		.set_leg_l( ["LeftUpLeg", "LeftLeg"] )
 		.set_leg_r( ["RightUpLeg", "RightLeg"] )
 		.set_arm_l( ["LeftArm", "LeftForeArm"] )
 		.set_arm_r( ["RightArm", "RightForeArm"] )
 		.set_foot( 0, "LeftFoot" )
 		.set_foot( 1, "RightFoot" )
 		.gen_tpose();
-	*/
-
+	/**/
 	e.Node.setPos( 1, 0, 0 );
 }
 
@@ -83,10 +96,12 @@ function build_target( json, bin ){
 function onDraw( dt, ss ){
 	/**/
 	if( gIsActive ){
+
 		//gSession.play_realtime( dt );
 		gSession.play_both( dt );
 		//gSession.play_target( dt );
-		//
+		
+
 		if( test_animation ){
 			test_animator
 				.tick( dt )
@@ -204,17 +219,18 @@ class Animator{
 //############################################################################
 class RetargetSession{
 	constructor(){
-		this.rig_src	= null;
-		this.rig_tar	= null;
+		this.rig_src	= null;				// Source Armature Rig
+		this.rig_tar	= null;				// Target Armature Rig
 
-		this.anim_src 	= null;
-		this.anim_tar 	= null;
+		this.anim_src 	= null;				// Source Animation
+		this.anim_tar 	= null;				// Retarged Animation
 
-		this.animator 	= new Animator();
-		this.bone_map 	= new Array();
+		this.animator 	= new Animator();	// Run Pose Animations
+		this.bone_map 	= new Array();		// Map Src Bones to Target Bones 
 
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-		// retarget cached math objects
+		// retarget cached math objects, Since we're retargeting one bone at
+		// a time, Save time & memory by reusing a few math objects.
 		this.convert	= new Quat();
 		this.rot 		= new Quat();
 		this.pos 		= new Vec3();
@@ -226,6 +242,7 @@ class RetargetSession{
 	/////////////////////////////////////////////////////////
 	// setters / getters
 	/////////////////////////////////////////////////////////
+		// Set the Source and Target Rigs
 		set_rigs( src, tar ){
 			this.rig_src = src;
 			this.rig_tar = tar;
@@ -327,6 +344,7 @@ class RetargetSession{
 			}
 		}
 
+		// Find Bone Map by using the Bone Index of the Source Armature
 		_find_bone_map( src_idx ){
 			let b;
 			for( b of this.bone_map ){
@@ -335,6 +353,7 @@ class RetargetSession{
 			return null;
 		}
 
+		// Create Target Animation Object based on the Target Armature and Source Animation.
 		_build_target_animation(){
 			let src_tracks	= this.anim_src.tracks,
 				src_bind	= gRigSrc.bind_pose;
@@ -367,6 +386,10 @@ class RetargetSession{
 			}
 		}
 
+		// Need to clone Float32Array as a new object with its own ArrayBuffer.
+		// Float32Array from GLTF bin files are attached to that arraybuffer, which
+		// is just a slice of the bin array instead of being an array of itself. This 
+		// can cause issues when trying to export the binary data.
 		_clone_f32( ary ){
 			let i, out = new Float32Array( ary.length );
 			for( i=0; i < ary.length; i++ ) out[ i ] = ary[ i ];
@@ -392,20 +415,23 @@ class RetargetSession{
 					this.retarget_bone( b.src_name, b.tar_name, ( b.src_name == "Hips" ) );
 				}
 
-				this._save_target_track( i );
+				this._save_target_frame( i );
 			}
 
 			return this;
 		}
 
-		_save_target_track( i ){
+		// Save the current animated pose into a frame in the animation object.
+		_save_target_frame( i ){
 			let tk, b,
-				ri = i * 4,
-				pi = i * 3;
+				ri = i * 4,	// Start Index of Frame for Rotation
+				pi = i * 3;	// Start Index of frame for Position
 
+			// For every track, update the frame[i]
 			for( tk of this.anim_tar.tracks ){
-				b = this.rig_tar.pose_a.bones[ tk.joint_idx ];
+				b = this.rig_tar.pose_a.bones[ tk.joint_idx ]; // Target Bone
 
+				// Save Local Position/Rotation to the specific frame
 				switch( tk.type ){
 					case "pos":
 						tk.data[ pi ]	= b.local.pos[ 0 ];
@@ -500,138 +526,126 @@ class RetargetSession{
 
 
 //############################################################################
+// EXPORT TESTING
+	const OUT_FILE_NAME = "test";
+	let test_animator	= new Animator();
+	let test_animation	= null;
+	let test_entity 	= null;				// Entity / Armature
+	let test_pose 		= null;				// Pose object to save frame animation in.
+	let test_json_text	= null;				// Raw String
+	let test_bin		= null;				// Uint8Array ( Byte Type Array )
 
-let test_animator	= new Animator();
-let test_animation	= null;
-let test_entity 	= null;
-let test_pose 		= null;
-let test_json_text	= null;
-let test_bin		= null;
+	// Main Test Function
+	function export_test( ){
+		// Save Armature and Animation
+		let out = new GltfExport();
+		export_armature( gRigTar.entity, out );
+		export_animation( gSession.anim_tar, out );
 
-function export_test( ){
-	let out = new GltfExport();
+		// Save Results
+		test_json_text	= out.output_json( OUT_FILE_NAME );	//console.log( test_json_text );
+		test_bin		= out.output_bin(); // Returns back Uint8Array
 
-	export_armature( gRigTar.entity, out );
-	export_animation( gSession.anim_tar, out );
-
-	test_json_text	= out.output_json();	//console.log( test_json_text );
-	test_bin		= out.output_bin();
-	let json		= JSON.parse( test_json_text );
-
-	test_preview( json, test_bin.buffer );
-}
-
-
-function test_preview( json, bin ){
-	let e = FungiGLTF.$preview_bind( "export_test", "Armature", json, bin );
-	e.Node.setPos( 0, 0, -1 );
-
-	test_entity		= e;
-	test_animation	= FungiGLTF.animation( "Default", json, bin );
-	test_pose 		= new Pose( e.Armature );
-
-	e.Draw.items.push( gRigTar.entity.Draw.items[0] );
-
-
-	//console.log( test_animation );
-	//console.log( gAnimation );
-	//console.log( gSession.anim_tar );
-}
-
-
-function export_armature( e, out ){
-	let arm		= e.Armature,
-		bones	= arm.bones,
-		skin_i	= out.add_skin(),
-		p_idx, b;
-
-	for( b of bones ){
-		p_idx = ( b.Node.parent && b.Node.parent.Bone )? b.Node.parent.Bone.order : null;
-		out.add_joint( skin_i, b.info.name, p_idx, b.Bone.bind.rot, b.Bone.bind.pos, b.Bone.bind.scl, b.Bone.length );
+		// Now do Import Test on Exported Data
+		// Need an ArrayBuffer, can access it through the TypeArray.buffer
+		// The 
+		let json		= JSON.parse( test_json_text );
+		export_test_preview( json, test_bin.buffer );
 	}
 
-	out.gen_inverse_bind( skin_i );
-}
+	// Save Armature Data to GTLF
+	function export_armature( e, out ){
+		let arm		= e.Armature,
+			bones	= arm.bones,
+			skin_i	= out.add_skin(),
+			p_idx, b;
 
-
-function export_animation( anim, out ){
-	let anim_idx	= out.add_animation( anim.frame_cnt, anim.time_max ),
-		j_nodes		= out.skins[0].joints,	// the Joint to Node mapping that exists in Skins
-		time_map	= {},					// Mapping Animation Time Index to Accessor Index
-		i;
-
-	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// Save Animation Time Arrays, keep track by way of mapping.
-	for( i=0; i < anim.times.length; i++ ){
-		time_map[ i ] = out.add_accessor_buffer( anim.times[i], "SCALAR", anim.times[i].length, true );
-	}
-
-	//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// Save the Tracks as Channels & Samples
-	let track, access_idx, time_idx, samp_idx, node_idx, elm_cnt, d_type, t_path;
-	for( track of anim.tracks ){
-		//.......................................
-		// Type Specific Information
-		switch( track.type ){
-			case "rot":
-				d_type	= "VEC4";
-				elm_cnt	= track.data.length / 4;
-				t_path 	= "rotation";
-				break;
-			case "pos": case "scl":
-				d_type	= "VEC3";
-				elm_cnt	= track.data.length / 3;
-				t_path 	= ( track.type == "pos" )? "translation" : "scale";
-				break;
+		for( b of bones ){
+			p_idx = ( b.Node.parent && b.Node.parent.Bone )? b.Node.parent.Bone.order : null;
+			out.add_joint( skin_i, b.info.name, p_idx, b.Bone.bind.rot, b.Bone.bind.pos, b.Bone.bind.scl, b.Bone.length );
 		}
 
-		//.......................................
-		// Create Accessor Buffer from Track.data, Then sample with that plus time accessor.
-		// Put then create a channel from the sample.
-		time_idx	= time_map[ track.time_idx ];
-		node_idx 	= j_nodes[ track.joint_idx ];
-		access_idx	= out.add_accessor_buffer( track.data, d_type, elm_cnt );
-		samp_idx	= out.add_anim_sample( anim_idx, time_idx, access_idx, track.interp );
-		
-		out.add_anim_channel( anim_idx, samp_idx, node_idx, t_path );
+		out.gen_inverse_bind( skin_i );
 	}
-}
 
-/*
-// dummy json data to save
-var data = { x: 42, s: "hello, world", d: new Date() }
+	// Save Animation Data to GLTF
+	function export_animation( anim, out ){
+		let anim_idx	= out.add_animation( anim.frame_cnt, anim.time_max ),
+			j_nodes		= out.skins[0].joints,	// the Joint to Node mapping that exists in Skins
+			time_map	= {},					// Mapping Animation Time Index to Accessor Index
+			i;
 
-document.getElementById('myButton').onclick = function(event){
-    var json = JSON.stringify(data),
-    blob = new Blob([json], {type: "octet/stream"}),
-    url = window.URL.createObjectURL(blob);
-  
-  	this.href = url;
-    this.target = '_blank';
-  	
-  	// target filename
-    this.download = 'my-download.json';  
-}
-*/
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		// Save Animation Time Arrays, keep track by way of mapping.
+		for( i=0; i < anim.times.length; i++ ){
+			time_map[ i ] = out.add_accessor_buffer( anim.times[i], "SCALAR", anim.times[i].length, true );
+		}
 
-window.dl_json = function( o ){
-	let blob	= new Blob( [test_json_text], {type: "octet/stream"} );
-	let url 	= window.URL.createObjectURL( blob );
-	o.href		= url;
-	o.target	= "_blank";
-	o.download 	= "test.gltf";
-}
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		// Save the Tracks as Channels & Samples
+		let track, access_idx, time_idx, samp_idx, node_idx, elm_cnt, d_type, t_path;
+		for( track of anim.tracks ){
+			//.......................................
+			// Type Specific Information
+			switch( track.type ){
+				case "rot":
+					d_type	= "VEC4";
+					elm_cnt	= track.data.length / 4;
+					t_path 	= "rotation";
+					break;
+				case "pos": case "scl":
+					d_type	= "VEC3";
+					elm_cnt	= track.data.length / 3;
+					t_path 	= ( track.type == "pos" )? "translation" : "scale";
+					break;
+			}
 
-window.dl_bin = function( o ){
-	let blob	= new Blob( [test_bin], {type: "octet/stream"} );
-	let url 	= window.URL.createObjectURL( blob );
-	o.href		= url;
-	o.target	= "_blank";
-	o.download 	= "test.bin";
-}
+			//.......................................
+			// Create Accessor Buffer from Track.data, Then sample with that plus time accessor.
+			// Put then create a channel from the sample.
+			time_idx	= time_map[ track.time_idx ];
+			node_idx 	= j_nodes[ track.joint_idx ];
+			access_idx	= out.add_accessor_buffer( track.data, d_type, elm_cnt );
+			samp_idx	= out.add_anim_sample( anim_idx, time_idx, access_idx, track.interp );
+			
+			out.add_anim_channel( anim_idx, samp_idx, node_idx, t_path );
+		}
+	}
+
+	// Test exported GLTF by re importing it back in for testing.
+	function export_test_preview( json, bin ){
+		let e = FungiGLTF.$preview_bind( "export_test", "Armature", json, bin );
+		e.Node.setPos( -1, 0, 0 );
+
+		test_entity		= e;
+		test_animation	= FungiGLTF.animation( "Default", json, bin );
+		test_pose 		= new Pose( e.Armature );
+
+		e.Draw.items.push( gRigTar.entity.Draw.items[0] );
+
+		//console.log( test_animation );
+		//console.log( gAnimation );
+		//console.log( gSession.anim_tar );
+	}
+
+	window.dl_json = function( o ){
+		let blob	= new Blob( [test_json_text], {type: "octet/stream"} ); // Create a Blob
+		let url 	= window.URL.createObjectURL( blob );					// Create Url that can be used in a link
+		o.href		= url;													// Update link with Data Url
+		o.target	= "_blank";												// Set target to "open new tab"
+		o.download 	= OUT_FILE_NAME + ".gltf";								// Set file name to download as.
+	}
+
+	window.dl_bin = function( o ){
+		let blob	= new Blob( [test_bin], {type: "octet/stream"} );		// OK to use Uint8Array to keep data as Bytes
+		let url 	= window.URL.createObjectURL( blob );
+		o.href		= url;
+		o.target	= "_blank";
+		o.download 	= OUT_FILE_NAME + ".bin";
+	}
 
 </script><body>
-<div style="position:fixed; top:5px; left:5px; color:black; font-size:12px; z-index:1000; font-family:arial; font-weight:bold">
-	<a href="#" onClick="dl_json( this );">Download JSON File</a> -- <a href="#" onClick="dl_bin( this );">Download JSON Bin</a>
+<div style="position:fixed; top:5px; left:5px; font-size:14px; z-index:1000; font-family:arial; font-weight:bold">
+	<a href="#" onClick="dl_json( this );" style="color:white;">Download JSON File</a> -- <a href="#" style="color:white;" onClick="dl_bin( this );">Download JSON Bin</a>
 </div>
 </body></html>
