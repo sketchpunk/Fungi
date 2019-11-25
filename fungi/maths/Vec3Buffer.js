@@ -47,10 +47,16 @@
 
 const B_LEN = 3;
 class Vec3Buffer{
-	constructor( capacity=3, use_all=false ){
-		this.capacity	= capacity;
-		this.buffer		= new Float32Array( this.capacity * B_LEN );
-		this.len 		= (!use_all)? 0 : capacity;
+	constructor( capacity=3, use_all=false, buf=null ){
+		if( buf ){ // Passed in a Float Array filled with Vertex Positions.
+			this.buffer 	= buf;
+			this.capacity 	= buf.length / 3;
+			this.len 		= this.capacity;
+		}else{
+			this.capacity	= capacity;
+			this.buffer		= new Float32Array( this.capacity * B_LEN );
+			this.len 		= (!use_all)? 0 : capacity;
+		}
 	}
 
 	///////////////////////////////////////////////////////////////////
@@ -134,6 +140,7 @@ class Vec3Buffer{
 	///////////////////////////////////////////////////////////////////
 		get byte_capacity(){ return this.buffer.byteLength; }	// Total Bytes Available
 		get byte_len(){ return this.len * B_LEN * 4; }			// Length of Bytes in Use
+		//get ary_len(){ this.len * B_LEN; }
 
 		set( i, x, y, z ){
 			i *= B_LEN;

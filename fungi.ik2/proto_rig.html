@@ -1,0 +1,51 @@
+<!DOCTYPE html><html><head><title></title></head><script type="module">
+import App						from "../fungi/engine/App.js";
+import Vao, { Buf }				from "../fungi/core/Vao2.js";
+import Maths, { Quat, Vec3 }	from "../fungi/maths/Maths.js";
+import Transform				from "../fungi/maths/Transform.js";
+import Cylinder					from "../fungi/primitives/Cylinder.js";
+
+//#############################################################################
+new App.builder()
+	.launch()
+	.load_armature()
+	.download( dl=>dl.addGrp( "shader", 
+		"../fungi/shaders/VecWColor.txt", 
+		//"../fungi/shaders/LowPolyPhong.txt", 
+	) ) 
+	.load_scene( true, true, true )
+	.set_camera( -0, 20, 2, 0, 0.2, 0 )
+	.add( init )
+	//.render_loop( on_draw )
+	.render_on_mouse( on_draw )
+	.build().catch( (e)=>console.error("error",e) );
+
+//#############################################################################
+function on_draw( dt, ss ){ App.ecs.sys_run(); }
+
+
+//#############################################################################
+
+async function init(){
+
+    let verts = Cylinder.verts( );
+
+    let vao = new Vao()
+        .bind()
+        .add_vertices( Buf.new_array( verts.buffer, false, false ), 3 )
+		//.add_indices( Buf.new_element( ind ) )
+        .unbind_all();
+    vao.elmCount = verts.len;
+    //vao.elmCount = ind.length;
+
+
+    App.$Draw( "lattice", vao, "VecWColor", 0 );
+    //App.$Draw( "lattice", vao, "LowPolyPhong", 4 );
+
+	return true;
+}
+
+
+//#############################################################################
+</script><body>
+</body></html>
